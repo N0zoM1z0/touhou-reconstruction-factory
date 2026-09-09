@@ -1,0 +1,18 @@
+"""Factory-specific errors."""
+
+
+class FactoryError(Exception):
+    """Base error for deterministic factory failures."""
+
+
+class ValidationError(FactoryError, ValueError):
+    """Raised when data cannot satisfy the truth-kernel contract."""
+
+
+class CompatibilityError(FactoryError):
+    """Raised when providers cannot form a coherent reconstruction kit."""
+
+
+class AdapterError(FactoryError):
+    """Raised when an existing repository cannot be imported safely."""
+
