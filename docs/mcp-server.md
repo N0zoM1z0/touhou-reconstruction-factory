@@ -108,8 +108,8 @@ For a same-machine MCP client, use stdio:
 touhou-reconstruction-factory-mcp --transport stdio
 ```
 
-For GPT-web, place the service behind TLS on a private network or authenticated
-reverse proxy and start stateless Streamable HTTP:
+For GPT-web, place the service behind TLS and start stateless Streamable HTTP.
+The default profile remains bearer-authenticated:
 
 ```bash
 export FACTORY_MCP_BEARER_TOKEN='replace-with-at-least-32-random-characters'
@@ -117,16 +117,40 @@ touhou-reconstruction-factory-mcp \
   --transport streamable-http \
   --host 127.0.0.1 \
   --port 8765 \
+  --mcp-path /mcp \
+  --auth bearer \
   --allowed-host factory.example.internal \
   --allowed-origin https://chatgpt.com
 ```
 
-The MCP endpoint is `/mcp`. Configure GPT-web to send
+The default MCP endpoint is `/mcp`. Configure GPT-web to send
 `Authorization: Bearer <token>`. The built-in profile requires a minimum
 32-character token, exact bearer comparison, request-size enforcement, and MCP
 SDK Host/Origin validation. It intentionally binds to loopback by default. A
 public deployment still requires TLS and an appropriate network/authentication
 layer; the static bearer profile is not an OAuth authorization server.
+
+For one explicitly accepted single-user development deployment, authentication
+can be disabled without weakening the default:
+
+```bash
+touhou-reconstruction-factory-mcp \
+  --transport streamable-http \
+  --host 127.0.0.1 \
+  --port 8772 \
+  --mcp-path /touhou-reconstruction-factory-mcp \
+  --auth none \
+  --allowed-host machine-name.example.ts.net \
+  --allowed-host 127.0.0.1:8772 \
+  --allowed-origin https://chatgpt.com
+```
+
+`--auth none` is intentionally noisy and explicit. Anyone who can discover the
+public URL can inspect registered metadata, submit replay jobs, and request job
+cancellation. It does not grant a shell, arbitrary path access, game-source
+mutation, or registry bypass, but the endpoint is still public authority over
+bounded factory work. Do not use this profile for a shared or sensitive
+deployment.
 
 The HTTP MCP process may be restarted without changing job identity. The worker
 may also be restarted; only a safely leased new job is claimed. An already
@@ -140,7 +164,7 @@ The test suite exercises database restart, idempotency conflicts, atomic
 multi-worker claiming, lease expiry, queued and active cancellation, process
 group termination, queue-time identity drift, receipt acceptance, output
 paging, MCP discovery, structured output, and model-visible tool errors.
-The final local checkpoint passes all 87 tests with MCP SDK 2.2.0 and all 83
+The final local checkpoint passes all 89 tests with MCP SDK 2.2.0 and all 83
 applicable tests in the dependency-free core environment.
 
 Read-only capability questions for future MCP regression runs are in
@@ -148,38 +172,20 @@ Read-only capability questions for future MCP regression runs are in
 run against registered TH04, TH08, TH095, and TH105 repositories because their
 different adapters and replay drivers are the reason this boundary exists.
 
-## Deferred plugin UX layer
+## Plugin UX layer
 
-Version 0.2.0 deliberately finishes and validates the server boundary before
-packaging a ChatGPT plugin. The next usability layer should be an installable
-factory plugin that bundles this MCP connection with a small set of English
-skills. This matches the current OpenAI product model: a plugin can package
-skills and MCP tools together, installed skills can be selected automatically
-or explicitly with `@`, and a newly installed plugin becomes available in new
-ChatGPT conversations. See the official
+The repository now includes an installable plugin that combines this MCP
+connection with one focused English skill. This matches the current OpenAI
+product model: a plugin can package skills and MCP tools together, and installed
+skills can be selected automatically or explicitly with `@`. See the official
 [`Skills & Plugins`](https://learn.chatgpt.com/docs/skills-and-plugins) and
 [`Build plugins`](https://learn.chatgpt.com/docs/build-plugins) guides.
 
-The first plugin skills should remain narrow:
+The skill guides discovery, idempotent submission, reconnect-safe observation,
+diagnostic paging, and accepted-evidence reporting. It remains guidance, not
+authority: it cannot duplicate receipt verification, convert `completed` into
+`accepted`, add arbitrary shell tools, or promote a fact. Those invariants stay
+inside the MCP service, registry, and Truth Kernel.
 
-- **discover and submit**: select only a registered repository and imported
-  claim, generate a stable idempotency key, submit once, and retain the job ID;
-- **resume and diagnose**: recover a job in a later conversation, interpret its
-  event history, page every relevant artifact without losing the tail, and
-  distinguish execution failure from receipt rejection;
-- **report accepted evidence**: query the current registry, cite job/receipt/
-  registry identities, and explicitly label stale, rejected, or unknown state;
-- **coordinate GitHub**: use a separately authorized GitHub plugin for issues,
-  commits, CI, and pull requests while using the factory MCP only for replay and
-  truth queries.
-
-The skill layer is guidance, not authority. It must not duplicate receipt
-verification, convert `completed` into `accepted`, add arbitrary shell tools,
-or let a GitHub write promote a fact. Those invariants remain enforced by the
-server and Truth Kernel even if a model ignores or misapplies a skill.
-
-Before publishing that plugin, test automatic selection, explicit `@` use,
-fresh-conversation resume, MCP reauthentication, pagination, cancellation, and
-mixed GitHub/factory operation. The MCP service may require separate connection
-or authentication during plugin installation; the plugin must present that as
-setup state rather than an apparent replay failure.
+The exact fixed-URL deployment and TH105 smoke test are in
+[`gpt-web-plugin.md`](gpt-web-plugin.md).

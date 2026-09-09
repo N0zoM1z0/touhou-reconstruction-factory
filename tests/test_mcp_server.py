@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 import subprocess
@@ -10,7 +11,10 @@ try:
     from mcp import Client
     from reconstruction_factory.mcp_server import (
         BearerTokenMiddleware,
+        build_parser,
         build_mcp_server,
+        configure_http_auth,
+        mcp_path,
     )
 except ImportError:
     Client = None
@@ -107,6 +111,45 @@ target_identity_ids = ["target:th08-v1.00d-original"]
     def test_bearer_token_has_minimum_length_floor(self) -> None:
         with self.assertRaisesRegex(ValueError, "at least 32"):
             BearerTokenMiddleware(object(), "short")
+
+    def test_http_auth_defaults_safe_and_none_is_explicit(self) -> None:
+        defaults = build_parser().parse_args(
+            ["--config", str(self.config), "--transport", "streamable-http"]
+        )
+        self.assertEqual(defaults.auth, "bearer")
+        self.assertEqual(defaults.mcp_path, "/mcp")
+
+        app = object()
+        public = build_parser().parse_args(
+            [
+                "--config",
+                str(self.config),
+                "--transport",
+                "streamable-http",
+                "--auth",
+                "none",
+                "--mcp-path",
+                "/touhou-reconstruction-factory-mcp",
+            ]
+        )
+        self.assertEqual(public.auth, "none")
+        self.assertEqual(public.mcp_path, "/touhou-reconstruction-factory-mcp")
+        self.assertIs(configure_http_auth(app, public.auth, ""), app)
+
+    def test_mcp_path_rejects_ambiguous_routes(self) -> None:
+        for value in (
+            "mcp",
+            "/",
+            "/mcp/",
+            "//mcp",
+            "/mcp//v1",
+            "/mcp?q=1",
+            "/mcp path",
+            "/mcp%2Fhidden",
+        ):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(argparse.ArgumentTypeError, "MCP path"):
+                    mcp_path(value)
 
     async def test_bearer_middleware_rejects_wrong_token_and_forwards_exact_token(
         self,

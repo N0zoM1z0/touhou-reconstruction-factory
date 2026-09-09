@@ -1,0 +1,20 @@
+{
+  "name": "n0zom1z0",
+  "interface": {
+    "displayName": "N0zoM1z0"
+  },
+  "plugins": [
+    {
+      "name": "touhou-reconstruction-factory",
+      "source": {
+        "source": "local",
+        "path": "./plugins/touhou-reconstruction-factory"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

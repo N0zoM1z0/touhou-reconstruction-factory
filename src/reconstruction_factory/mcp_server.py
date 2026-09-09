@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hmac
 import os
+import sys
 from pathlib import Path
 from typing import Annotated, Any, Callable, TypeVar
 
@@ -385,6 +386,38 @@ class BearerTokenMiddleware:
         await self.app(scope, receive, send)
 
 
+def configure_http_auth(app: Any, mode: str, token: str) -> Any:
+    """Apply the explicitly selected HTTP authentication profile."""
+
+    if mode == "none":
+        return app
+    if mode == "bearer":
+        return BearerTokenMiddleware(app, token)
+    raise ValueError(f"unsupported HTTP authentication mode: {mode}")
+
+
+def mcp_path(value: str) -> str:
+    """Validate one non-root URL path without query or fragment syntax."""
+
+    if (
+        not value.startswith("/")
+        or value == "/"
+        or value.endswith("/")
+        or "//" in value
+        or any(character in value for character in ("?", "#"))
+        or any(
+            not character.isascii()
+            or not (character.isalnum() or character in "/._~-")
+            for character in value
+        )
+    ):
+        raise argparse.ArgumentTypeError(
+            "MCP path must be an absolute, non-root path without a trailing slash, "
+            "empty segment, query, or fragment"
+        )
+    return value
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="touhou-reconstruction-factory-mcp")
     parser.add_argument(
@@ -397,6 +430,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument(
+        "--mcp-path",
+        type=mcp_path,
+        default="/mcp",
+        help="Streamable HTTP endpoint path (default: /mcp)",
+    )
+    parser.add_argument(
+        "--auth",
+        choices=("bearer", "none"),
+        default="bearer",
+        help="HTTP authentication profile; none is an explicit public dev mode",
+    )
     parser.add_argument("--allowed-host", action="append", default=[])
     parser.add_argument("--allowed-origin", action="append", default=[])
     return parser
@@ -422,13 +467,21 @@ def main(argv: list[str] | None = None) -> int:
         allowed_origins=sorted(set(args.allowed_origin)),
     )
     app = server.streamable_http_app(
-        streamable_http_path="/mcp",
+        streamable_http_path=args.mcp_path,
         json_response=True,
         stateless_http=True,
         transport_security=security,
         host=args.host,
     )
-    uvicorn.run(BearerTokenMiddleware(app, token), host=args.host, port=args.port)
+    if args.auth == "none":
+        print(
+            "WARNING: MCP HTTP authentication is disabled; anyone who can reach the "
+            "endpoint can invoke every exposed factory tool.",
+            file=sys.stderr,
+        )
+    uvicorn.run(
+        configure_http_auth(app, args.auth, token), host=args.host, port=args.port
+    )
     return 0
 
 

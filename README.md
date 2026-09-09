@@ -70,3 +70,8 @@ page complete evidence, and query only accepted facts without receiving shell,
 working-directory, or raw-path authority. See
 [`durable replay jobs`](docs/durable-jobs.md) and the
 [`GPT-web MCP service`](docs/mcp-server.md).
+
+The repository also publishes a minimal plugin that combines the remote MCP
+connection with an evidence-preserving replay skill. The single-user deployment
+and first TH105 web test are documented in
+[`GPT-web plugin and Funnel deployment`](docs/gpt-web-plugin.md).

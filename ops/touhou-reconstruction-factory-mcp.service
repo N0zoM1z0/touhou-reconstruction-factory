@@ -1,0 +1,13 @@
+[Unit]
+Description=Touhou Reconstruction Factory MCP server
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/touhou-reconstruction-factory-mcp.env
+ExecStart=/usr/bin/env ${FACTORY_PYTHON} -m reconstruction_factory.mcp_server --config ${FACTORY_SERVICE_CONFIG} --transport streamable-http --host ${FACTORY_MCP_HOST} --port ${FACTORY_MCP_PORT} --mcp-path ${FACTORY_MCP_PATH} --auth none --allowed-host ${FACTORY_MCP_PUBLIC_HOST} --allowed-host ${FACTORY_MCP_PUBLIC_HOST}:443 --allowed-host 127.0.0.1:${FACTORY_MCP_PORT} --allowed-host localhost:${FACTORY_MCP_PORT} --allowed-origin https://chatgpt.com
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

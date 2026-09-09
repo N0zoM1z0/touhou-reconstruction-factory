@@ -1,0 +1,13 @@
+[Unit]
+Description=Touhou Reconstruction Factory replay worker
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/touhou-reconstruction-factory-mcp.env
+ExecStart=/usr/bin/env ${FACTORY_PYTHON} -m reconstruction_factory.service_cli --config ${FACTORY_SERVICE_CONFIG} worker --worker-id gpt-web-local
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

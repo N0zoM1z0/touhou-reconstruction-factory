@@ -1,0 +1,29 @@
+{
+  "name": "touhou-reconstruction-factory",
+  "version": "0.1.0",
+  "description": "Touhou Reconstruction Factory plugin",
+  "author": {
+    "name": "N0zoM1z0",
+    "url": "https://github.com/N0zoM1z0"
+  },
+  "homepage": "https://github.com/N0zoM1z0/touhou-reconstruction-factory/blob/main/docs/gpt-web-plugin.md",
+  "repository": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
+  "license": "MIT",
+  "keywords": ["touhou", "reconstruction", "verification", "mcp"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Touhou Reconstruction Factory",
+    "shortDescription": "Replay claims and query accepted evidence.",
+    "longDescription": "Submit bounded reconstruction replays, resume durable jobs, diagnose evidence, and query only facts admitted by the factory Truth Kernel.",
+    "developerName": "N0zoM1z0",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
+    "defaultPrompt": [
+      "Verify the known TH105 smoke-test claim and report only accepted evidence.",
+      "Resume a factory job and explain its current trust state.",
+      "List current accepted reconstruction facts."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
