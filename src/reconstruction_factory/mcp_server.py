@@ -7,7 +7,7 @@ import hmac
 import os
 import sys
 from pathlib import Path
-from typing import Annotated, Any, Callable, TypeVar
+from typing import Annotated, Any, Callable, Literal, TypeVar
 
 import anyio
 from mcp.server import MCPServer
@@ -19,6 +19,7 @@ from starlette.responses import JSONResponse
 import uvicorn
 
 from .job_service import FactoryService
+from .analysis_mcp import AnalysisGateway
 from .errors import FactoryError
 from .jobs import JobState
 from .knowledge import KnowledgeStatus
@@ -34,6 +35,8 @@ ClaimId = Annotated[
     str, Field(min_length=1, max_length=512, pattern=r"^[a-z0-9][a-z0-9._:-]*$")
 ]
 JobId = Annotated[str, Field(pattern=r"^job:[0-9a-f]{32}$")]
+WorkspaceId = Annotated[str, Field(pattern=r"^workspace:[0-9a-f]{32}$")]
+CommandId = Annotated[str, Field(pattern=r"^command:[0-9a-f]{32}$")]
 IdempotencyKey = Annotated[
     str,
     Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"),
@@ -43,9 +46,23 @@ ArtifactId = Annotated[str, Field(pattern=r"^artifact:sha256:[0-9a-f]{64}$")]
 NormalizedId = Annotated[
     str, Field(min_length=1, max_length=512, pattern=r"^[a-z0-9][a-z0-9._:-]*$")
 ]
+AnalysisProviderId = Annotated[
+    str, Field(min_length=1, max_length=128, pattern=r"^[a-z0-9][a-z0-9._:-]*$")
+]
+AnalysisOperation = Annotated[
+    str, Field(min_length=1, max_length=160, pattern=r"^[a-z][a-z0-9_]*$")
+]
+ArgumentsJson = Annotated[str, Field(min_length=2, max_length=65536)]
+OperationFilter = Annotated[str, Field(max_length=128)]
 PageLimit = Annotated[int, Field(ge=1, le=100)]
 ByteLimit = Annotated[int, Field(ge=1, le=65536)]
 Offset = Annotated[int, Field(ge=0)]
+RelativePath = Annotated[str, Field(min_length=1, max_length=1024)]
+GlobPattern = Annotated[str, Field(min_length=1, max_length=256)]
+SearchQuery = Annotated[str, Field(min_length=1, max_length=512)]
+UnifiedPatch = Annotated[str, Field(min_length=1, max_length=4194304)]
+ShellScript = Annotated[str, Field(min_length=1, max_length=65536)]
+CommandTimeout = Annotated[int, Field(ge=1, le=3600)]
 _READ_ONLY = ToolAnnotations(
     readOnlyHint=True,
     destructiveHint=False,
@@ -64,6 +81,24 @@ _CANCEL = ToolAnnotations(
     idempotentHint=True,
     openWorldHint=False,
 )
+_WORKSPACE_CREATE = ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
+)
+_WORKSPACE_EDIT = ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=False,
+)
+_WORKSPACE_SHELL = ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=True,
+    idempotentHint=False,
+    openWorldHint=False,
+)
 
 
 def build_mcp_server(config_path: str | Path) -> MCPServer:
@@ -72,21 +107,36 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     path = Path(config_path).expanduser().resolve(strict=True)
     server = MCPServer(
         "touhou-reconstruction-factory",
-        version="0.2.0",
+        version="0.3.0",
         instructions=(
             "Use registered repository IDs only. Submit replays with a stable, unique "
             "idempotency key, then poll factory_get_job. A completed job is not proof "
             "of exactness: inspect receipt_verdict and acceptance_decision. Only "
             "factory_query_accepted_facts and factory_get_accepted_snapshot expose "
-            "facts admitted to the Truth Kernel."
+            "facts admitted to the Truth Kernel. For source work, create a disposable "
+            "workspace and retain its capability ID. Workspace Bash is arbitrary but "
+            "confined: committed source only, no network, host HOME, ignored targets, "
+            "canonical worktree, or Truth Kernel write authority. Export and review its "
+            "diff; a workspace result is never accepted evidence by itself."
         ),
     )
 
     def service() -> FactoryService:
         return FactoryService.from_path(path)
 
+    def analysis() -> AnalysisGateway:
+        return AnalysisGateway(load_service_config(path))
+
     async def invoke(function: Callable[[], _T]) -> _T:
         return await _thread(function, config_path=path)
+
+    async def analysis_invoke(function: Callable[[], Any]) -> Any:
+        try:
+            return await function()
+        except (FactoryError, OSError, TypeError, ValueError) as error:
+            raise ToolError(
+                f"{type(error).__name__}: {_redact_error(str(error), path)}"
+            ) from error
 
     @server.tool(
         description=(
@@ -109,6 +159,276 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     )
     async def factory_list_repositories() -> dict[str, Any]:
         return await invoke(lambda: {"repositories": service().list_repositories()})
+
+    @server.tool(
+        description=(
+            "List operator-registered semantic-analysis providers, optionally for one "
+            "repository. Availability is not claimed until a target-attested operation "
+            "succeeds. Endpoints and host paths are omitted."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_list_analysis_providers(
+        repository_id: RepositoryId | None = None,
+    ) -> dict[str, Any]:
+        return await analysis_invoke(
+            lambda: _async_value(
+                {"analysis_providers": analysis().list_providers(repository_id)}
+            )
+        )
+
+    @server.tool(
+        description=(
+            "Page the factory-approved read-only operations for an analysis provider. "
+            "IDA discovery re-attests and independently checks active target metadata; "
+            "Ghidra schemas are static and report not-probed until invoked."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_list_analysis_operations(
+        analysis_provider_id: AnalysisProviderId,
+        filter: OperationFilter = "",
+        limit: PageLimit = 20,
+        offset: Offset = 0,
+    ) -> dict[str, Any]:
+        return await analysis_invoke(
+            lambda: analysis().list_operations(
+                analysis_provider_id,
+                filter=filter,
+                limit=limit,
+                offset=offset,
+            )
+        )
+
+    @server.tool(
+        description=(
+            "Run one factory-allowlisted, read-only semantic-analysis operation through "
+            "an operator-registered loopback bridge. Encode only the selected operation's "
+            "listed arguments as a JSON object. Every result is target-bound provisional "
+            "evidence with zero exactness credit; native writes and bridge Bash are unreachable."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_analysis_call(
+        analysis_provider_id: AnalysisProviderId,
+        operation: AnalysisOperation,
+        arguments_json: ArgumentsJson = "{}",
+    ) -> dict[str, Any]:
+        return await analysis_invoke(
+            lambda: analysis().call(analysis_provider_id, operation, arguments_json)
+        )
+
+    @server.tool(
+        description=(
+            "Create a capability-addressed disposable snapshot of one registered "
+            "repository's committed HEAD. Dirty, untracked, and ignored files are "
+            "reported as excluded, never copied. Retain the returned workspace ID."
+        ),
+        annotations=_WORKSPACE_CREATE,
+        structured_output=True,
+    )
+    async def factory_create_workspace(
+        repository_id: RepositoryId,
+        idempotency_key: IdempotencyKey,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().create_workspace(repository_id, idempotency_key)
+        )
+
+    @server.tool(
+        description=(
+            "Resume one workspace by its unguessable capability ID. Returns expiry, "
+            "committed source identity, and recent command IDs without listing other "
+            "callers' workspaces."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_get_workspace(workspace_id: WorkspaceId) -> dict[str, Any]:
+        return await invoke(lambda: service().get_workspace(workspace_id))
+
+    @server.tool(
+        description=(
+            "Page through regular files in a disposable workspace using a bounded POSIX "
+            "glob. Git control data and host paths are outside this namespace."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_workspace_list_files(
+        workspace_id: WorkspaceId,
+        glob: GlobPattern = "**",
+        limit: PageLimit = 20,
+        offset: Offset = 0,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().workspace_list_files(
+                workspace_id, glob=glob, limit=limit, offset=offset
+            )
+        )
+
+    @server.tool(
+        description=(
+            "Read one bounded byte page from a regular workspace file. The path must be "
+            "POSIX-relative and cannot traverse symlinks or Git control data."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_workspace_read_file(
+        workspace_id: WorkspaceId,
+        relative_path: RelativePath,
+        offset: Offset = 0,
+        limit: ByteLimit = 16384,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().workspace_read_file(
+                workspace_id, relative_path, offset=offset, limit=limit
+            )
+        )
+
+    @server.tool(
+        description=(
+            "Search workspace contents with ripgrep semantics and bounded results. Set "
+            "literal=true for exact text; truncated=true means the service deliberately "
+            "stopped before claiming a complete result set."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_workspace_search(
+        workspace_id: WorkspaceId,
+        query: SearchQuery,
+        glob: GlobPattern = "**",
+        literal: bool = True,
+        case_sensitive: bool = True,
+        limit: PageLimit = 20,
+        offset: Offset = 0,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().workspace_search(
+                workspace_id,
+                query,
+                glob=glob,
+                literal=literal,
+                case_sensitive=case_sensitive,
+                limit=limit,
+                offset=offset,
+            )
+        )
+
+    @server.tool(
+        description=(
+            "Apply one text-only unified Git diff to a disposable workspace after path, "
+            "file-type, size, and Git applicability checks. This never edits the canonical "
+            "repository and does not promote evidence."
+        ),
+        annotations=_WORKSPACE_EDIT,
+        structured_output=True,
+    )
+    async def factory_workspace_apply_patch(
+        workspace_id: WorkspaceId,
+        patch: UnifiedPatch,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().workspace_apply_patch(workspace_id, patch)
+        )
+
+    @server.tool(
+        description=(
+            "Return the bounded file inventory and structured change list for a workspace "
+            "relative to its immutable committed-source baseline."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_get_workspace_status(
+        workspace_id: WorkspaceId,
+    ) -> dict[str, Any]:
+        return await invoke(lambda: service().workspace_status(workspace_id))
+
+    @server.tool(
+        description=(
+            "Read a byte page of the reproducible Git diff from the workspace baseline. "
+            "Continue with next_offset and preserve the returned whole-diff SHA-256."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_get_workspace_diff(
+        workspace_id: WorkspaceId,
+        offset: Offset = 0,
+        limit: ByteLimit = 16384,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().workspace_diff(workspace_id, offset=offset, limit=limit)
+        )
+
+    @server.tool(
+        description=(
+            "Run arbitrary Bash transactionally inside a bounded source-only bubblewrap "
+            "sandbox. It has system binaries but no network, operator HOME, canonical repo, "
+            "ignored targets/toolchains, or factory stores. A timeout or invalid final tree "
+            "is discarded. The returned command ID resumes paged output."
+        ),
+        annotations=_WORKSPACE_SHELL,
+        structured_output=True,
+    )
+    async def factory_workspace_run_shell(
+        workspace_id: WorkspaceId,
+        script: ShellScript,
+        relative_cwd: RelativePath = ".",
+        timeout_seconds: CommandTimeout = 120,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().workspace_run_shell(
+                workspace_id,
+                script,
+                relative_cwd=relative_cwd,
+                timeout_seconds=timeout_seconds,
+            )
+        )
+
+    @server.tool(
+        description=(
+            "Read a bounded stdout or stderr page for a workspace command after reconnect. "
+            "Observed byte counts and output_truncated prevent silent completeness claims."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_get_workspace_command_output(
+        workspace_id: WorkspaceId,
+        command_id: CommandId,
+        stream: Literal["stdout", "stderr"] = "stdout",
+        offset: Offset = 0,
+        limit: ByteLimit = 16384,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().workspace_command_output(
+                workspace_id,
+                command_id,
+                stream=stream,
+                offset=offset,
+                limit=limit,
+            )
+        )
+
+    @server.tool(
+        description=(
+            "Permanently discard one disposable workspace payload. This cannot delete or "
+            "modify a canonical repository, receipt, job, or accepted fact."
+        ),
+        annotations=_CANCEL,
+        structured_output=True,
+    )
+    async def factory_discard_workspace(
+        workspace_id: WorkspaceId,
+    ) -> dict[str, Any]:
+        return await invoke(lambda: service().discard_workspace(workspace_id))
 
     @server.tool(
         description=(
@@ -338,24 +658,33 @@ async def _thread(function: Callable[[], _T], *, config_path: Path) -> _T:
     try:
         return await anyio.to_thread.run_sync(function)
     except (FactoryError, OSError, TypeError, ValueError) as error:
-        message = str(error)
-        redactions = {str(config_path), str(config_path.parent)}
-        try:
-            config = load_service_config(config_path)
-        except (FactoryError, OSError, TypeError, ValueError):
-            pass
-        else:
-            redactions.update(
-                {
-                    str(config.state_directory),
-                    str(config.evidence_store),
-                    str(config.policy_path),
-                    *(str(item.path) for item in config.repositories),
-                }
-            )
-        for value in sorted(redactions, key=len, reverse=True):
-            message = message.replace(value, "<operator-path>")
-        raise ToolError(f"{type(error).__name__}: {message}") from error
+        raise ToolError(
+            f"{type(error).__name__}: {_redact_error(str(error), config_path)}"
+        ) from error
+
+
+async def _async_value(value: _T) -> _T:
+    return value
+
+
+def _redact_error(message: str, config_path: Path) -> str:
+    redactions = {str(config_path), str(config_path.parent), str(Path.home())}
+    try:
+        config = load_service_config(config_path)
+    except (FactoryError, OSError, TypeError, ValueError):
+        pass
+    else:
+        redactions.update(
+            {
+                str(config.state_directory),
+                str(config.evidence_store),
+                str(config.policy_path),
+                *(str(item.path) for item in config.repositories),
+            }
+        )
+    for value in sorted(redactions, key=len, reverse=True):
+        message = message.replace(value, "<operator-path>")
+    return message
 
 
 class BearerTokenMiddleware:
@@ -406,8 +735,7 @@ def mcp_path(value: str) -> str:
         or "//" in value
         or any(character in value for character in ("?", "#"))
         or any(
-            not character.isascii()
-            or not (character.isalnum() or character in "/._~-")
+            not character.isascii() or not (character.isalnum() or character in "/._~-")
             for character in value
         )
     ):

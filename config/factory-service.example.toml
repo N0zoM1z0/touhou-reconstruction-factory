@@ -7,6 +7,32 @@ replay_timeout_seconds = 1800
 worker_lease_seconds = 30
 worker_poll_seconds = 1.0
 
+# Optional and disabled by default when omitted. If enabled, Web clients receive
+# opaque capabilities for disposable snapshots of committed source. Commands run
+# without network, operator HOME, ignored targets, or the canonical worktree.
+[workspace]
+enabled = false
+root = "/var/lib/touhou-reconstruction-factory/state/workspaces"
+ttl_seconds = 86400
+max_active = 4
+max_snapshot_files = 20000
+max_snapshot_bytes = 268435456
+max_file_bytes = 67108864
+command_timeout_seconds = 120
+max_command_output_bytes = 1048576
+max_patch_bytes = 4194304
+
+# Optional semantic-analysis bridges must be loopback-only. The factory calls
+# only the backend's attested read tool and never forwards its host Bash tool.
+[[analysis_providers]]
+id = "th105-ida"
+repository_id = "th105"
+target_identity_id = "target:th105-main"
+backend = "attested-ida-proxy-v1"
+endpoint = "http://127.0.0.1:8768/private-mcp-path"
+upstream_tool = "ida_call"
+timeout_seconds = 120
+
 [[repositories]]
 id = "th04"
 path = "/srv/reconstructions/th04"

@@ -34,6 +34,7 @@ from .replay_runner import (
     runner_implementation_sha256,
 )
 from .service_config import RepositoryRegistration, ServiceConfig, load_service_config
+from .workspaces import WorkspaceStore
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +68,7 @@ class FactoryService:
         self.config = config
         self.store = ArtifactStore(config.evidence_store)
         self.jobs = JobStore(config.database_path)
+        self.workspaces = WorkspaceStore(config)
 
     @classmethod
     def from_path(cls, path: str | Path) -> FactoryService:
@@ -77,6 +79,107 @@ class FactoryService:
 
     def list_repositories(self) -> tuple[dict[str, Any], ...]:
         return tuple(item.public_dict() for item in self.config.repositories)
+
+    def create_workspace(
+        self, repository_id: str, idempotency_key: str
+    ) -> dict[str, Any]:
+        return self.workspaces.create(
+            self.config.repository(repository_id), idempotency_key
+        )
+
+    def get_workspace(self, workspace_id: str) -> dict[str, Any]:
+        return self.workspaces.get(workspace_id)
+
+    def workspace_list_files(
+        self,
+        workspace_id: str,
+        *,
+        glob: str,
+        limit: int,
+        offset: int,
+    ) -> dict[str, Any]:
+        return self.workspaces.list_files(
+            workspace_id, glob=glob, limit=limit, offset=offset
+        )
+
+    def workspace_read_file(
+        self,
+        workspace_id: str,
+        relative_path: str,
+        *,
+        offset: int,
+        limit: int,
+    ) -> dict[str, Any]:
+        return self.workspaces.read_file(
+            workspace_id, relative_path, offset=offset, limit=limit
+        )
+
+    def workspace_search(
+        self,
+        workspace_id: str,
+        query: str,
+        *,
+        glob: str,
+        literal: bool,
+        case_sensitive: bool,
+        limit: int,
+        offset: int,
+    ) -> dict[str, Any]:
+        return self.workspaces.search(
+            workspace_id,
+            query,
+            glob=glob,
+            literal=literal,
+            case_sensitive=case_sensitive,
+            limit=limit,
+            offset=offset,
+        )
+
+    def workspace_apply_patch(self, workspace_id: str, patch: str) -> dict[str, Any]:
+        return self.workspaces.apply_patch(workspace_id, patch)
+
+    def workspace_status(self, workspace_id: str) -> dict[str, Any]:
+        return self.workspaces.status(workspace_id)
+
+    def workspace_diff(
+        self, workspace_id: str, *, offset: int, limit: int
+    ) -> dict[str, Any]:
+        return self.workspaces.diff(workspace_id, offset=offset, limit=limit)
+
+    def workspace_run_shell(
+        self,
+        workspace_id: str,
+        script: str,
+        *,
+        relative_cwd: str,
+        timeout_seconds: int,
+    ) -> dict[str, Any]:
+        return self.workspaces.run_shell(
+            workspace_id,
+            script,
+            relative_cwd=relative_cwd,
+            timeout_seconds=timeout_seconds,
+        )
+
+    def workspace_command_output(
+        self,
+        workspace_id: str,
+        command_id: str,
+        *,
+        stream: str,
+        offset: int,
+        limit: int,
+    ) -> dict[str, Any]:
+        return self.workspaces.command_output(
+            workspace_id,
+            command_id,
+            stream=stream,
+            offset=offset,
+            limit=limit,
+        )
+
+    def discard_workspace(self, workspace_id: str) -> dict[str, Any]:
+        return self.workspaces.discard(workspace_id)
 
     def inspect_repository(self, repository_id: str) -> dict[str, Any]:
         registration, snapshot = self._snapshot(repository_id)
@@ -165,7 +268,7 @@ class FactoryService:
                 source_binding=source,
                 policy_id=self.config.policy.id,
                 policy_sha256=self.config.policy.sha256,
-                configuration_sha256=self.config.sha256,
+                configuration_sha256=self.config.replay_sha256,
                 driver_id=plan.driver_id,
                 driver_version_sha256=driver_version(plan),
                 oracle_id=plan.oracle_id,
@@ -421,7 +524,7 @@ class ReplayWorker:
         try:
             if service.jobs.cancellation_requested(job.job_id):
                 return service.jobs.mark_cancelled(job.job_id, self.worker_id)
-            if job.spec.configuration_sha256 != config.sha256:
+            if job.spec.configuration_sha256 != config.replay_sha256:
                 raise JobError(
                     "service configuration changed after submission; resubmit explicitly"
                 )
@@ -487,7 +590,7 @@ class ReplayWorker:
                 stage_pid=None,
             )
             current = load_service_config(self.config_path)
-            if current.sha256 != job.spec.configuration_sha256:
+            if current.replay_sha256 != job.spec.configuration_sha256:
                 raise JobError(
                     "service configuration changed during replay; receipt was not promoted by this job"
                 )

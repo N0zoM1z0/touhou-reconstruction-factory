@@ -66,12 +66,26 @@ or receipt-backed knowledge queries; see the
 Long replays can now be submitted as SQLite-backed durable jobs and executed by
 a separate worker. Job completion, oracle pass, and policy acceptance remain
 three different states. The typed MCP v2 surface lets GPT-web submit, reconnect,
-page complete evidence, and query only accepted facts without receiving shell,
-working-directory, or raw-path authority. See
+page complete evidence, and query only accepted facts. It also provides
+capability-addressed disposable source workspaces: bounded repository primitives
+plus arbitrary Bash isolated from the host, canonical worktree, ignored targets,
+credentials, and network. See
 [`durable replay jobs`](docs/durable-jobs.md) and the
 [`GPT-web MCP service`](docs/mcp-server.md).
 
+Workspace source development and verification remain different authorities. A
+workspace exports a tested reviewable diff; a local operator applies it to the
+game repository, and only a later canonical replay receipt can enter the Truth
+Kernel. The exact boundary is specified in the
+[`disposable workspace provider`](docs/workspace-provider.md).
+
+IDA and Ghidra remain separate provisional authorities. The MCP analysis
+gateway exposes only registered loopback bridges, factory-allowlisted read
+operations, independent target binding, bounded/redacted output, and zero
+exactness credit. See the [`attested analysis provider`](docs/analysis-provider.md).
+
 The repository also publishes a minimal plugin that combines the remote MCP
-connection with an evidence-preserving replay skill. The single-user deployment
+connection with separate source-workspace and evidence-preserving replay skills.
+The single-user deployment
 and first TH105 web test are documented in
 [`GPT-web plugin and Funnel deployment`](docs/gpt-web-plugin.md).

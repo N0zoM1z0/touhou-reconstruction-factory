@@ -2,9 +2,12 @@
 
 ## Design boundary
 
-The MCP server is a narrow remote control for the factory. It submits durable
-jobs, observes state, pages evidence, and queries accepted knowledge. It does
-not contain another replay implementation or another definition of success.
+The MCP server is the typed remote boundary for two separate authorities. Its
+replay surface submits durable jobs, observes state, pages evidence, and queries
+accepted knowledge. Its workspace surface develops committed source in
+capability-addressed disposable sandboxes. Its analysis surface routes only
+factory-allowlisted reads through target-attested loopback IDA/Ghidra bridges.
+None of these surfaces contains another definition of reconstruction success.
 
 This improves on the exploratory
 [`mcp_for_gptweb`](https://github.com/N0zoM1z0/mcp_for_gptweb) server while
@@ -22,9 +25,13 @@ The old repository's history is valuable evidence:
 - `5a9de07` captured a useful reconstruction workflow, while synchronous output
   truncation could still discard the diagnostic tail.
 
-The factory replacement has no shell, command, working-directory, or raw-path
-parameter. Game-specific behavior lives behind adapters and replay drivers.
-Jobs and evidence survive MCP disconnects and server restarts.
+The factory replacement never accepts a host path or exposes a host shell. It
+does accept POSIX-relative workspace paths and arbitrary Bash inside a
+source-only Bubblewrap boundary. This preserves agent composability without
+mounting the canonical worktree, ignored targets/toolchains, operator home,
+network, jobs, evidence, or Truth Kernel state. Game-specific verification
+behavior remains behind adapters and replay drivers. Jobs and evidence survive
+MCP disconnects and server restarts.
 
 ## GPT-web workflow
 
@@ -52,12 +59,48 @@ the original job. Changed arguments with that key fail visibly. If a worker
 dies, the lease eventually fails closed; GPT-web can inspect events and submit a
 new request after repository inspection.
 
+For source development, GPT-web instead performs this sequence:
+
+1. Create a workspace for a returned repository ID with a stable idempotency
+   key and retain its random capability ID.
+2. Note the exact baseline commit and whether dirty canonical work was observed
+   and therefore omitted.
+3. List, read, and search files using relative paths; read repository
+   instructions before changing source.
+4. Apply a text patch or compose arbitrary Bash in the isolated tmpfs.
+5. Inspect command exit state, filesystem-commit state, and complete paged
+   output independently.
+6. Inspect workspace status and page the complete diff with its SHA-256.
+7. Return that diff for local review/application. Do not report that the
+   canonical repository changed and do not treat workspace tests as receipts.
+
+The complete isolation and handoff contract is in
+[`workspace-provider.md`](workspace-provider.md).
+
+For semantic target analysis, first list providers for the repository and then
+list the selected provider's operation schemas. Pass one discovered operation
+and a JSON object string to `factory_analysis_call`. The response binds the
+current adapter target, bridge identity, operation, arguments, attestation, and
+observation time while fixing `exactness_credit` to `none`. Native analysis
+writes and the legacy bridges' host Bash tools are unreachable. See
+[`analysis-provider.md`](analysis-provider.md).
+
 ## Tools
 
 | Tool | Effect |
 | --- | --- |
 | `factory_describe` | Show redacted configuration and policy identity. |
 | `factory_list_repositories` | List registered repository IDs. |
+| `factory_list_analysis_providers` | List redacted target-bound IDA/Ghidra registrations. |
+| `factory_list_analysis_operations` | Page factory-approved read schemas and attestation state. |
+| `factory_analysis_call` | Run one bounded, read-only, target-bound semantic query. |
+| `factory_create_workspace`, `factory_get_workspace` | Create or resume an expiring committed-source capability. |
+| `factory_workspace_list_files`, `factory_workspace_read_file`, `factory_workspace_search` | Inspect source with bounded relative-path operations. |
+| `factory_workspace_apply_patch` | Transactionally apply a checked text diff to disposable source. |
+| `factory_workspace_run_shell` | Run composable Bash in a bounded, networkless source-only tmpfs. |
+| `factory_get_workspace_command_output` | Resume bounded stdout/stderr paging with truncation accounting. |
+| `factory_get_workspace_status`, `factory_get_workspace_diff` | Inspect changes and export a content-identified diff. |
+| `factory_discard_workspace` | Remove only disposable workspace and command payloads. |
 | `factory_inspect_repository` | Read an adapter summary; no acceptance implied. |
 | `factory_list_claims` | Page imported replay candidates. |
 | `factory_submit_replay` | Idempotently queue controlled replay. |
@@ -147,10 +190,15 @@ touhou-reconstruction-factory-mcp \
 
 `--auth none` is intentionally noisy and explicit. Anyone who can discover the
 public URL can inspect registered metadata, submit replay jobs, and request job
-cancellation. It does not grant a shell, arbitrary path access, game-source
-mutation, or registry bypass, but the endpoint is still public authority over
-bounded factory work. Do not use this profile for a shared or sensitive
-deployment.
+cancellation. When the workspace provider is enabled, they can also read the
+committed source of every registration and consume bounded isolated compute and
+workspace slots. Registered analysis providers also permit bounded semantic
+queries and small raw-byte reads from the attested target. Callers still cannot
+name a host path, invoke bridge Bash, read dirty/untracked/ignored source, reach
+the workspace network, mutate canonical source or analysis databases, or bypass
+the registry. This is not caller authentication: use only non-sensitive
+registered source/targets, accept the residual denial-of-service risk, and
+disable the route when it is not wanted.
 
 The HTTP MCP process may be restarted without changing job identity. The worker
 may also be restarted; only a safely leased new job is claimed. An already
@@ -163,9 +211,13 @@ retaining the SDK's legacy initialization path.
 The test suite exercises database restart, idempotency conflicts, atomic
 multi-worker claiming, lease expiry, queued and active cancellation, process
 group termination, queue-time identity drift, receipt acceptance, output
-paging, MCP discovery, structured output, and model-visible tool errors.
-The final local checkpoint passes all 89 tests with MCP SDK 2.2.0 and all 83
-applicable tests in the dependency-free core environment.
+paging, MCP discovery, structured output, model-visible tool errors, committed
+source exclusion, random workspace capabilities, traversal rejection,
+transactional patching, networkless shell execution, timeout rollback, and
+symlink-result rejection. Analysis tests enforce loopback-only registration,
+repository/target ownership, closed operation names, argument bounds, target
+metadata equality, and the absence of native mutation/bridge-shell authority.
+The 2026-09-10 release checkpoint passes all 105 tests.
 
 Read-only capability questions for future MCP regression runs are in
 [`factory-mcp.xml`](../evaluations/factory-mcp.xml). Live validation should also
@@ -175,17 +227,18 @@ different adapters and replay drivers are the reason this boundary exists.
 ## Plugin UX layer
 
 The repository now includes an installable plugin that combines this MCP
-connection with one focused English skill. This matches the current OpenAI
-product model: a plugin can package skills and MCP tools together, and installed
-skills can be selected automatically or explicitly with `@`. See the official
+connection with focused English workspace, analysis, and replay skills. This
+matches the current OpenAI product model: a plugin can package skills and MCP
+tools together, and installed skills can be selected automatically or
+explicitly with `@`. See the official
 [`Skills & Plugins`](https://learn.chatgpt.com/docs/skills-and-plugins) and
 [`Build plugins`](https://learn.chatgpt.com/docs/build-plugins) guides.
 
-The skill guides discovery, idempotent submission, reconnect-safe observation,
-diagnostic paging, and accepted-evidence reporting. It remains guidance, not
-authority: it cannot duplicate receipt verification, convert `completed` into
-`accepted`, add arbitrary shell tools, or promote a fact. Those invariants stay
-inside the MCP service, registry, and Truth Kernel.
+The skills guide source development and evidence operation without merging
+their trust states. They remain guidance, not authority: they cannot duplicate
+receipt verification, convert `completed` into `accepted`, promote a workspace
+test, or write the canonical repository. Those invariants stay inside the MCP
+service, registry, and Truth Kernel.
 
 The exact fixed-URL deployment and TH105 smoke test are in
 [`gpt-web-plugin.md`](gpt-web-plugin.md).

@@ -27,6 +27,25 @@ class McpServerTests(unittest.IsolatedAsyncioTestCase):
         self.root = Path(self.temporary.name)
         (self.root / "repository").mkdir()
         subprocess.run(["git", "init", "-q"], cwd=self.root / "repository", check=True)
+        (self.root / "repository" / "README.md").write_text(
+            "committed fixture\n", encoding="utf-8"
+        )
+        subprocess.run(["git", "add", "."], cwd=self.root / "repository", check=True)
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Factory Test",
+                "-c",
+                "user.email=factory-test@example.invalid",
+                "commit",
+                "-q",
+                "-m",
+                "fixture",
+            ],
+            cwd=self.root / "repository",
+            check=True,
+        )
         source = Path(__file__).parents[1] / "policies/strict-live-v1.json"
         (self.root / "policy.json").write_text(
             source.read_text(encoding="utf-8"), encoding="utf-8"
@@ -40,6 +59,18 @@ policy = "policy.json"
 replay_timeout_seconds = 60
 worker_lease_seconds = 30
 worker_poll_seconds = 1.0
+
+[workspace]
+enabled = true
+root = "state/workspaces"
+ttl_seconds = 3600
+max_active = 2
+max_snapshot_files = 100
+max_snapshot_bytes = 1048576
+max_file_bytes = 262144
+command_timeout_seconds = 5
+max_command_output_bytes = 1024
+max_patch_bytes = 65536
 
 [[repositories]]
 id = "th08"
@@ -61,13 +92,22 @@ target_identity_ids = ["target:th08-v1.00d-original"]
             names,
             {
                 "factory_cancel_job",
+                "factory_analysis_call",
+                "factory_create_workspace",
                 "factory_describe",
+                "factory_discard_workspace",
                 "factory_get_acceptance_registry",
                 "factory_get_accepted_snapshot",
                 "factory_get_job",
                 "factory_get_job_events",
                 "factory_get_job_output_page",
+                "factory_get_workspace",
+                "factory_get_workspace_command_output",
+                "factory_get_workspace_diff",
+                "factory_get_workspace_status",
                 "factory_inspect_repository",
+                "factory_list_analysis_operations",
+                "factory_list_analysis_providers",
                 "factory_list_claims",
                 "factory_list_historical_fixtures",
                 "factory_list_jobs",
@@ -75,6 +115,11 @@ target_identity_ids = ["target:th08-v1.00d-original"]
                 "factory_query_accepted_facts",
                 "factory_query_knowledge",
                 "factory_submit_replay",
+                "factory_workspace_apply_patch",
+                "factory_workspace_list_files",
+                "factory_workspace_read_file",
+                "factory_workspace_run_shell",
+                "factory_workspace_search",
             },
         )
         schemas = json.dumps(
@@ -83,11 +128,20 @@ target_identity_ids = ["target:th08-v1.00d-original"]
         self.assertNotIn('"command"', schemas)
         self.assertNotIn('"cwd"', schemas)
         self.assertNotIn('"path"', schemas)
+        self.assertIn('"script"', schemas)
+        self.assertIn('"relative_cwd"', schemas)
         claims = next(
             tool for tool in discovered.tools if tool.name == "factory_list_claims"
         )
         self.assertEqual(claims.input_schema["properties"]["limit"]["maximum"], 100)
         self.assertEqual(claims.input_schema["properties"]["offset"]["minimum"], 0)
+        shell = next(
+            tool
+            for tool in discovered.tools
+            if tool.name == "factory_workspace_run_shell"
+        )
+        self.assertEqual(shell.input_schema["properties"]["script"]["maxLength"], 65536)
+        self.assertTrue(shell.annotations.destructive_hint)
 
     async def test_structured_read_and_model_visible_error(self) -> None:
         async with Client(build_mcp_server(self.config)) as client:
@@ -100,6 +154,7 @@ target_identity_ids = ["target:th08-v1.00d-original"]
             )
         self.assertFalse(description.is_error)
         self.assertEqual(description.structured_content["policy_id"], "strict-live-v1")
+        self.assertTrue(description.structured_content["workspace"]["enabled"])
         rendered = json.dumps(description.structured_content)
         self.assertNotIn(str(self.root), rendered)
         self.assertTrue(failure.is_error)

@@ -33,6 +33,18 @@ class ServiceConfigError(FactoryError):
     """Raised when a factory service registration is unsafe or inconsistent."""
 
 
+class WorkspaceError(FactoryError):
+    """Raised when an isolated source workspace cannot satisfy its contract."""
+
+
+class WorkspaceConflictError(WorkspaceError):
+    """Raised when a workspace capability or idempotency key is rebound."""
+
+
+class AnalysisError(FactoryError):
+    """Raised when attested read-only semantic analysis cannot be completed."""
+
+
 class JobError(FactoryError):
     """Raised when durable job storage or execution fails."""
 

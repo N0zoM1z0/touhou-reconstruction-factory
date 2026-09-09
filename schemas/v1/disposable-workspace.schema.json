@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/touhou-reconstruction-factory/schemas/v1/disposable-workspace.schema.json",
+  "title": "Disposable source workspace record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workspace_id",
+    "repository_id",
+    "registration_sha256",
+    "idempotency_key_sha256",
+    "request_sha256",
+    "created_at",
+    "expires_at",
+    "state",
+    "source_mode",
+    "source_git_commit",
+    "source_git_tree",
+    "source_worktree_dirty_observed",
+    "snapshot_file_count",
+    "snapshot_bytes"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "workspace_id": {"type": "string", "pattern": "^workspace:[0-9a-f]{32}$"},
+    "repository_id": {"type": "string", "minLength": 1},
+    "registration_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "idempotency_key_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "expired_at": {"type": "string", "format": "date-time"},
+    "discarded_at": {"type": "string", "format": "date-time"},
+    "state": {"enum": ["active", "expired", "discarded"]},
+    "source_mode": {"const": "committed-head"},
+    "source_git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_git_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_worktree_dirty_observed": {"type": "boolean"},
+    "snapshot_file_count": {"type": "integer", "minimum": 0},
+    "snapshot_bytes": {"type": "integer", "minimum": 0}
+  }
+}

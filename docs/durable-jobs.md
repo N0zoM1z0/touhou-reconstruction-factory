@@ -54,7 +54,7 @@ stores one immutable `ReplayJobSpec`. The spec binds:
 
 - registration, adapter, target, claim, claim type, subject, and their digests;
 - the full Git/source snapshot, including dirty and untracked state;
-- policy ID and digest plus the complete service-configuration digest;
+- policy ID and digest plus the replay-relevant service-configuration digest;
 - driver ID, driver version, oracle ID, and declared coldness;
 - the digest of every factory Python module that can affect replay semantics;
 - the per-stage timeout.
@@ -63,6 +63,11 @@ The worker takes the existing exclusive repository replay lock and re-observes
 these values before starting a native stage. A changed source, oracle input,
 adapter interpretation, driver, policy, or factory implementation fails the job
 without pretending that the new state fulfilled the old request.
+
+Workspace policy and capacity settings are intentionally excluded from the
+replay configuration digest. Changing source-sandbox limits therefore does not
+invalidate an already queued canonical replay. Repository registrations,
+policy, replay timeout, job/evidence locations, and worker timing remain bound.
 
 ## Storage and concurrency
 

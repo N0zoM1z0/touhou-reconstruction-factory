@@ -2,10 +2,12 @@
 
 ## Scope
 
-This is a deliberately small, single-operator integration. It packages one
-factory skill with the existing 15 bounded MCP tools and exposes them through a
-fixed Tailscale Funnel URL. It does not automate repository creation, edit game
-sources, require GitHub access, or introduce another verification path.
+This is a deliberately small, single-operator integration. It packages separate
+source-workspace and evidence-replay skills with the factory MCP and exposes
+them, plus a target-attested analysis skill, through a fixed Tailscale Funnel
+URL. It does not automate repository
+creation, grant remote writes to canonical game repositories, require GitHub
+access, or introduce another verification path.
 
 The committed endpoint is:
 
@@ -14,11 +16,14 @@ https://laptop-9d3a7045.taile42c02.ts.net/touhou-reconstruction-factory-mcp
 ```
 
 It uses no token or login. Possession is not authorization: the URL is a public
-endpoint. Anyone who discovers it can inspect factory metadata, queue supported
-replays, and request cancellation. The server still exposes no shell, arbitrary
-path, upload, source mutation, or fact-promotion tool. Keep the registered
-repositories and artifacts non-sensitive, monitor the queue, and disable the
-Funnel route when it is not wanted.
+endpoint. Anyone who discovers it can inspect factory metadata and committed
+registered source, queue supported replays, request cancellation, and consume
+bounded source-only sandbox compute. Registered IDA/Ghidra providers also expose
+bounded read-only semantic queries. Arbitrary Bash exists only inside an
+expiring workspace with no network, host path, dirty/untracked/ignored source,
+canonical write, or fact-promotion authority. Keep registered source and
+artifacts non-sensitive, monitor capacity, and disable the Funnel route when it
+is not wanted.
 
 ## Components
 
@@ -28,6 +33,12 @@ Funnel route when it is not wanted.
   plugin to the fixed remote URL without credentials.
 - [`factory-replay/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-replay/SKILL.md)
   teaches the model the factory's trust states and resume workflow.
+- [`factory-workspace/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-workspace/SKILL.md)
+  teaches source exploration, transactional Bash, diff handoff, and the evidence
+  boundary.
+- [`factory-analysis/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-analysis/SKILL.md)
+  teaches target-attested semantic queries without native database writes or
+  exactness inflation.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
@@ -49,6 +60,12 @@ repository path. Copy `config/factory-mcp.env.example` to
 `~/.config/touhou-reconstruction-factory-mcp.env` and set the exact Python,
 service-config, hostname, port, and path values. Do not put shell quoting around
 values in this systemd environment file.
+
+To enable source work, configure `[workspace]` with a root that is a strict
+child of `state_directory`. The MCP host must provide `bwrap`, `prlimit`,
+`nice`, Git, and ripgrep. Omit the table to disable every workspace operation.
+The committed systemd unit applies a private umask, no-new-privileges, task,
+memory, swap, and core-dump limits to the whole MCP service cgroup.
 
 Install and start both user units:
 
@@ -133,34 +150,81 @@ If any discovery result, target binding, replay output, freshness check, or
 policy decision differs, the correct smoke-test result is rejected, failed, or
 unknown—not a remembered success from an earlier receipt.
 
+## TH105 workspace smoke test
+
+After installing a plugin version that includes `factory-workspace`, start a
+new conversation and use:
+
+```text
+Use the Touhou Reconstruction Factory to create a disposable TH105 source
+workspace. Read its repository instructions, prove that local dirty and ignored
+files are not present, run a small read-only shell inspection, and return the
+workspace baseline, command state, and unchanged diff. Do not claim that the
+canonical repository was modified or verified.
+```
+
+The intended sequence is `factory_describe`, repository discovery,
+`factory_create_workspace`, bounded file reads/search, one isolated shell call,
+command-output paging if needed, and `factory_get_workspace_diff`. For an
+unchanged smoke test the diff size is zero. The returned
+`source_worktree_dirty_observed` may correctly be true while the workspace still
+contains only committed `HEAD`.
+
+For a semantic/source combined test, select `th105-ida`, discover
+`get_function_by_address`, query `0x00401000`, and confirm the result is bound to
+the expected TH105 target while still reporting `exactness_credit="none"`.
+Then create a separate TH105 workspace and inspect the corresponding committed
+source. The analysis result guides the hypothesis; only a later replay can
+verify it.
+
 ## Live deployment checkpoint
 
-The fixed public URL was exercised without credentials on 2026-09-09. Remote
-discovery returned exactly the factory's 15 bounded tools, policy
-`strict-live-v1`, and repositories TH04, TH08, TH095, and TH105. Filtered TH105
-claim discovery returned the expected 52-byte candidate first.
+The fixed public URL was exercised without credentials on 2026-09-10. Remote
+discovery returned exactly 29 factory tools: 15 replay/registry tools, 11
+workspace tools, and three analysis tools. It exposed no upstream
+`run_command`, arbitrary host path, canonical-source write, analysis mutation,
+or fact-promotion tool. The public description returned policy
+`strict-live-v1`, repositories TH04, TH08, TH095, and TH105, four redacted
+analysis registrations, and replay-configuration digest
+`f3b26f68e0bf0fd12c7d29dca3c85e8070aea082839b106586ea317003361f89`.
 
-The smoke test submitted job
-`job:cb18ab0823c64e0e94a3893e09ddfabe`. Its queue-time source binding records
-TH105 commit `20f993b7908d8a207a39cf13da8d7614b9a3b23f`, dirty state, one untracked
-file, and snapshot digest
-`3a11765bdcc7657d09e2fa8842d72752f7a3bdab137ba4de8488623f6e4e96a8`.
-This is a precise live-state result, not a clean-release claim.
+A public TH105 workspace smoke created
+`workspace:eccb0d3deb4848c799fb1e98e6e74569` from commit
+`20f993b7908d8a207a39cf13da8d7614b9a3b23f`, tree
+`0614c96746c130bfdded94e63c12e8aaf8b0cd35`, and exactly 860 committed
+files/8,456,219 bytes while reporting the canonical worktree as dirty. Its
+isolated command `command:ea4af458f13941dd83d555a6f63eca12` confirmed that
+host home, host `/etc/passwd`, the ignored `.tools` and original executable,
+the canonical untracked file, and network access were absent. The command added
+one disposable file; the complete 195-byte diff had SHA-256
+`9013675ae8607ac868e60ed8b67ee769e65bc7b57ad369ac347a438eac499ce0`.
+The workspace was then explicitly discarded. The six pre-existing TH105
+working-tree changes remained unchanged and outside the snapshot.
 
-The independent worker completed the job with receipt
-`receipt:165ddfd4de16c88b78efed46b5e6427eee0c94e607bb488d4e15adb2e54eccb6`,
+The public analysis gateway independently attested `th105-ida` and returned
+`sub_401000`, size `0x34`, for `0x00401000`, with authority
+`provisional-semantic-analysis` and `exactness_credit="none"`. Bounded
+`list_functions` calls also succeeded through the registered TH095 and TH04
+Ghidra bridges. The registered TH08 IDA call accurately failed because the
+active database did not attest as TH08 at image base `0x400000`; this is an
+unavailable result, not a substituted backend or remembered success. A native
+IDA mutation request was rejected by the factory allowlist.
+
+The final public replay submitted job
+`job:f04d64dde74a48db886e7293154c7ed7`. Its queue-time binding records the
+same TH105 commit and tree, dirty state, one untracked file, source snapshot
+`3a11765bdcc7657d09e2fa8842d72752f7a3bdab137ba4de8488623f6e4e96a8`,
+and runner implementation
+`fe8f2d54b6fc61c5b18fafb1c3c25d9ad93871a44d59041182bc164e92fa49e0`.
+The independent worker completed it with receipt
+`receipt:bedc8671518b9a8a4102280ffa2ce1aeae7871a4770044eef2631538af34c3fb`,
 verdict `pass`, acceptance decision `accepted`, and registry
-`registry:5df414aaf0f999865183f320db6dc3cdb302dc8669f942d2926c7aaae37ec78b`.
-The remote accepted-facts query returned exactly this current 52/52 result for
-the selected target, claim type, and oracle. Materializing the accepted TH105
-snapshot produced one oracle result and input fingerprint
-`37ed883aaed2c413b9a7a706302337e8f24772763e6f906c7a733e175a45e385`.
-Repeating the public submission with the same idempotency key returned the same
-job with `reused=true`.
+`registry:0d68a1d266e8c83cc47d9630c9da4014f4208777dfc87fdf7de26fb4d6cda3d8`.
+The subsequent public accepted-facts query returned exactly one current 52/52
+complete result for the selected target, claim type, and oracle. Materializing
+the accepted TH105 snapshot produced one oracle result and input fingerprint
+`e363a026621ad814bdbb1bd8e4afa935494a1811fe2f72ae261f8cc477c4651b`.
 
-As an environment-binding negative check, invoking the registry from an
-ordinary interactive shell with a different effective toolchain environment
-returned zero accepted facts and a different registry identity. The server and
-worker units, which share one environment file, continued to accept the live
-receipt. This is expected fail-closed behavior: a receipt is not portable to a
-different effective replay environment merely because it passed elsewhere.
+The complete local suite passed all 105 tests. The installed MCP unit also
+reported `NoNewPrivileges=yes`, `PrivateTmp=yes`, a 768-task limit, a 3 GiB
+memory limit with swap disabled, a private umask, and core dumps disabled.

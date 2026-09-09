@@ -56,6 +56,37 @@ worker_poll_seconds = 1.0
         self.assertNotIn(str(self.root), rendered)
         self.assertEqual(public["repositories"][0]["id"], "th08")
         self.assertEqual(len(public["configuration_sha256"]), 64)
+        self.assertEqual(len(public["replay_configuration_sha256"]), 64)
+        self.assertFalse(public["workspace"]["enabled"])
+        self.assertNotIn("root", public["workspace"])
+
+    def test_explicit_workspace_policy_is_strict_and_state_contained(self) -> None:
+        path = self.write_config()
+        document = path.read_text(encoding="utf-8")
+        document += """
+
+[workspace]
+enabled = true
+root = "state/workspaces"
+ttl_seconds = 3600
+max_active = 2
+max_snapshot_files = 100
+max_snapshot_bytes = 1048576
+max_file_bytes = 262144
+command_timeout_seconds = 30
+max_command_output_bytes = 65536
+max_patch_bytes = 65536
+"""
+        path.write_text(document, encoding="utf-8")
+        config = load_service_config(path)
+        self.assertTrue(config.workspace.enabled)
+        self.assertTrue(config.workspace.root.is_relative_to(config.state_directory))
+
+        path.write_text(
+            document.replace('root = "state/workspaces"', 'root = "outside"')
+        )
+        with self.assertRaisesRegex(ServiceConfigError, "strict child"):
+            load_service_config(path)
 
     def test_configuration_identity_includes_policy_contents(self) -> None:
         path = self.write_config()
@@ -65,6 +96,87 @@ worker_poll_seconds = 1.0
         (self.root / "policy.json").write_text(json.dumps(policy), encoding="utf-8")
         second = load_service_config(path).sha256
         self.assertNotEqual(first, second)
+
+    def test_workspace_limits_do_not_rebind_queued_replay_semantics(self) -> None:
+        path = self.write_config()
+        original = load_service_config(path)
+        document = (
+            path.read_text(encoding="utf-8")
+            + """
+
+[workspace]
+enabled = true
+root = "state/workspaces"
+ttl_seconds = 3600
+max_active = 2
+max_snapshot_files = 100
+max_snapshot_bytes = 1048576
+max_file_bytes = 262144
+command_timeout_seconds = 30
+max_command_output_bytes = 65536
+max_patch_bytes = 65536
+"""
+        )
+        path.write_text(document, encoding="utf-8")
+        changed = load_service_config(path)
+        self.assertNotEqual(original.sha256, changed.sha256)
+        self.assertEqual(original.replay_sha256, changed.replay_sha256)
+
+    def test_analysis_provider_is_loopback_target_bound_and_replay_independent(
+        self,
+    ) -> None:
+        path = self.write_config()
+        original = load_service_config(path)
+        document = (
+            path.read_text(encoding="utf-8")
+            + """
+
+[[analysis_providers]]
+id = "th08-ida"
+repository_id = "th08"
+target_identity_id = "target:th08-v1.00d-original"
+backend = "attested-ida-proxy-v1"
+endpoint = "http://127.0.0.1:8767/private-mcp-path"
+upstream_tool = "ida_call"
+timeout_seconds = 120
+"""
+        )
+        path.write_text(document, encoding="utf-8")
+        changed = load_service_config(path)
+        public = changed.public_dict()["analysis_providers"][0]
+        self.assertEqual(public["id"], "th08-ida")
+        self.assertNotIn("endpoint", public)
+        self.assertEqual(original.replay_sha256, changed.replay_sha256)
+
+        path.write_text(
+            document.replace(
+                "http://127.0.0.1:8767/private-mcp-path",
+                "https://analysis.example.com/mcp",
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ServiceConfigError, "loopback"):
+            load_service_config(path)
+
+    def test_analysis_provider_cannot_cross_repository_target(self) -> None:
+        path = self.write_config()
+        path.write_text(
+            path.read_text(encoding="utf-8")
+            + """
+
+[[analysis_providers]]
+id = "wrong-target"
+repository_id = "th08"
+target_identity_id = "target:another"
+backend = "attested-ida-proxy-v1"
+endpoint = "http://127.0.0.1:8767/private-mcp-path"
+upstream_tool = "ida_call"
+timeout_seconds = 120
+""",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ServiceConfigError, "outside"):
+            load_service_config(path)
 
     def test_target_identity_cannot_be_registered_twice(self) -> None:
         (self.root / "other").mkdir()

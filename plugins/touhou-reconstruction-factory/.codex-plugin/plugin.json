@@ -1,6 +1,6 @@
 {
   "name": "touhou-reconstruction-factory",
-  "version": "0.1.0",
+  "version": "0.3.0+codex.20260909183635",
   "description": "Touhou Reconstruction Factory plugin",
   "author": {
     "name": "N0zoM1z0",
@@ -9,19 +9,27 @@
   "homepage": "https://github.com/N0zoM1z0/touhou-reconstruction-factory/blob/main/docs/gpt-web-plugin.md",
   "repository": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
   "license": "MIT",
-  "keywords": ["touhou", "reconstruction", "verification", "mcp"],
+  "keywords": [
+    "touhou",
+    "reconstruction",
+    "verification",
+    "mcp"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Touhou Reconstruction Factory",
-    "shortDescription": "Replay claims and query accepted evidence.",
-    "longDescription": "Submit bounded reconstruction replays, resume durable jobs, diagnose evidence, and query only facts admitted by the factory Truth Kernel.",
+    "shortDescription": "Develop source and verify reconstruction evidence.",
+    "longDescription": "Explore and test committed reconstruction source in disposable sandboxes, query target-attested read-only IDA/Ghidra analysis, export reviewable diffs, submit bounded replays, and query only facts admitted by the factory Truth Kernel.",
     "developerName": "N0zoM1z0",
     "category": "Developer Tools",
-    "capabilities": ["Interactive", "Write"],
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
     "websiteURL": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
     "defaultPrompt": [
       "Verify the known TH105 smoke-test claim and report only accepted evidence.",
-      "Resume a factory job and explain its current trust state.",
+      "Analyze TH105, test a candidate source change in a disposable workspace, and return a reviewable diff.",
       "List current accepted reconstruction facts."
     ]
   },
