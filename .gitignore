@@ -9,4 +9,4 @@ __pycache__/
 dist/
 build/
 .factory-cache/
-
+.factory/

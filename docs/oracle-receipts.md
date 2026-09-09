@@ -24,6 +24,9 @@ Every receipt binds all of the following values:
   after execution;
 - the driver version, defined by the exact checked-in native scripts and
   manifests that implement its build and comparison contract;
+- the complete factory Python implementation before and after the replay, so
+  changes to normalization, execution, receipt, or adapter semantics cannot be
+  hidden behind a static runner version;
 - every shell-free invocation stage, its declared input digest, exit status,
   duration, and complete stdout and stderr artifacts;
 - structured native comparison evidence, explicit coverage, normalizations,
@@ -80,3 +83,51 @@ coverage from names, or reinterpret a native diagnostic as acceptance.
 
 The normative machine shape is
 [`schemas/v1/oracle-receipt.schema.json`](../schemas/v1/oracle-receipt.schema.json).
+
+## Controlled drivers
+
+The first drivers deliberately expose different native mechanisms behind one
+receipt contract. They do not pretend that the mechanisms prove the same
+platform facts.
+
+| Driver | Accepted claim scope | Coldness proof | Native evidence and limit |
+|---|---|---|---|
+| TH04 Borland 16-bit | one declared MAIN owned extent | two isolated materializations | Both builds must agree on raw bytes, map ownership, relocations, and valid OMF objects. The native toolchain attestation must bind the same target and all required Borland surfaces. |
+| TH08 VC7 | one declared function extent | clean generated-output graph followed by a selected rebuild | The strict JSON function comparator must bind unit, address, size, byte count, and relocations. This proves neither source/object ownership nor whole-image equality. |
+| TH095 VC7.1 | one declared function extent | unconditional selected-unit compiler invocation | The strict COFF report must bind unit, address, size, matched bytes, and relocations. It does not promote whole-build closure. |
+| TH105 VC8 | one declared standalone function extent | unconditional non-LTCG probe compilation | Build provenance and the manifest-derived comparison contract must agree. The oracle ID explicitly says `standalone-function-exact`; it does not prove LTCG physical ownership, linked-owner layout, or whole-image closure. |
+
+Driver selection is factory code. Ledger command strings are evidence for an
+adapter, but are never executed. Every argument vector is rebuilt from typed
+claim fields and checked native manifests. Driver identity hashes the factory
+driver implementation and every native script or manifest that defines the
+selected build/comparison contract.
+
+## Running and verifying a replay
+
+```bash
+PYTHONPATH=src python3 -m reconstruction_factory replay /path/to/game \
+  --claim claim:project-main:function:00401000:codegen-exact \
+  --store .factory
+
+PYTHONPATH=src python3 -m reconstruction_factory verify-receipt \
+  .factory/receipts/<sha256>.json \
+  --store .factory \
+  --repository /path/to/game
+```
+
+The first command takes a lock in the repository's Git administrative area,
+then performs inspection, planning, observation, execution, and receipt
+sealing under that lock. Locks therefore remain exclusive even when two
+factory processes select different artifact stores.
+
+Verification without `--repository` checks the receipt content ID, semantic
+invariants, and every referenced artifact object. Live verification also
+reconstructs the current normalized claim and invocation plan and checks the
+full Git snapshot, target, toolchain surfaces, environment selector values,
+driver version, and factory runner implementation.
+
+Content addressing is integrity, not authorship. A hostile writer capable of
+replacing an entire store can manufacture a different internally consistent
+store. Signed receipts and remote transparency are separate future contracts;
+the current store is suitable for a trusted local or CI execution boundary.

@@ -8,12 +8,14 @@ from pathlib import Path
 import sys
 
 from .adapters import inspect_repository
+from .artifact_store import ArtifactStore
 from .errors import FactoryError
 from .factory import kit_for_snapshot
 from .knowledge import load_knowledge_catalog
 from .live_validation import validate_live_repository
 from .providers import builtin_registry
 from .regressions import run_fixture_suite, verify_fixture_provenance
+from .replay_runner import ReplayRunner, verify_live_freshness
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,6 +60,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     provenance_parser.add_argument(
         "--directory", type=Path, help="use an alternate fixture directory"
+    )
+
+    replay_parser = subparsers.add_parser(
+        "replay", help="cold-replay one claim through a factory-controlled driver"
+    )
+    replay_parser.add_argument("repository", type=Path)
+    replay_parser.add_argument("--claim", required=True)
+    replay_parser.add_argument(
+        "--store", type=Path, default=Path(".factory"), help="content-addressed evidence store"
+    )
+    replay_parser.add_argument(
+        "--timeout", type=int, default=1800, help="timeout in seconds for each native stage"
+    )
+
+    receipt_parser = subparsers.add_parser(
+        "verify-receipt", help="verify receipt and content-addressed artifact integrity"
+    )
+    receipt_parser.add_argument("receipt", type=Path)
+    receipt_parser.add_argument("--store", type=Path, default=Path(".factory"))
+    receipt_parser.add_argument(
+        "--repository", type=Path, help="also require the receipt to be fresh for this repository"
     )
     return parser
 
@@ -129,6 +152,50 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
             return 0 if report.passed else 1
+        if args.command == "replay":
+            run = ReplayRunner(
+                ArtifactStore(args.store), timeout_seconds=args.timeout
+            ).run(args.repository, args.claim)
+            result = run.receipt.result
+            print(
+                json.dumps(
+                    {
+                        "receipt_id": run.receipt.receipt_id,
+                        "receipt_path": str(run.receipt_path),
+                        "verdict": result.verdict.value,
+                        "coverage": {
+                            "domain": result.coverage.domain,
+                            "expected": result.coverage.expected_units,
+                            "observed": result.coverage.observed_units,
+                            "complete": result.coverage.complete,
+                        },
+                        "acceptance_errors": list(run.receipt.acceptance_errors),
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0 if result.verdict.value == "pass" else 1
+        if args.command == "verify-receipt":
+            document = ArtifactStore(args.store).verify_receipt_document(args.receipt)
+            freshness = (
+                verify_live_freshness(document, args.repository)
+                if args.repository is not None
+                else ()
+            )
+            print(
+                json.dumps(
+                    {
+                        "receipt_id": document["receipt_id"],
+                        "integrity": "pass",
+                        "fresh": not freshness if args.repository is not None else None,
+                        "freshness_errors": list(freshness),
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0 if not freshness else 1
     except (FactoryError, OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

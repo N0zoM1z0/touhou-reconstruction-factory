@@ -1,6 +1,6 @@
 # Touhou Reconstruction Factory: Evidence, Architecture, and Roadmap
 
-> Status: architecture working paper; no factory implementation exists yet  
+> Status: architecture working paper with an executable v0 foundation
 > Snapshot date: 2026-09-09  
 > Primary requirements source: `/tmp/vc_sth.txt`  
 > Evidence base: local repositories, their current reports, selected source and documentation, and full commit-subject histories with focused commit inspection
@@ -818,7 +818,7 @@ TH09 should be the first clean-room consumer of factory v0 rather than another s
 - Implement importers for existing repository ledgers.
 - Produce one unified read-only status report that preserves native denominators.
 
-### Phase 2: oracle runner and artifact store
+### Phase 2: oracle runner and artifact store (partially implemented)
 
 - Wrap existing commands without rewriting their internal comparators first.
 - Add content-addressed output, explicit `incomplete`, pagination, retention, and fixture replay.
@@ -901,10 +901,24 @@ Git working-tree state checked before and after each native report. A separate
 provenance command resolves every fixture's full commit, confirms the actual
 GitHub origin, and verifies all 29 cited evidence paths as committed blobs.
 
-This is still foundation infrastructure. Imported exact rows remain claims
-with zero factory `OracleResult(pass)` objects until a factory-controlled cold
-replay exists. Runtime equivalence, durable jobs, artifact storage, and write
-adapters remain future layers.
+Imported exact rows still remain claims with zero factory
+`OracleResult(pass)` objects. Acceptance is a separate explicit operation: a
+factory-controlled driver must cold-replay one claim and issue a
+content-addressed receipt. The initial runner now provides a local artifact
+store, repository-wide lock, complete stage output, strict target/source/
+toolchain/environment bindings, and live freshness verification.
+
+Four independent live replays exercise the first driver family: TH04's
+isolated Borland double build, TH08's clean VC7 output graph, TH095's forced
+VC7.1 compilation, and TH105's forced standalone VC8 probe. All four selected
+claims passed with complete extent coverage and fresh receipt verification.
+TH105 is intentionally named and bounded as standalone function codegen; it
+does not imply LTCG owner or image closure. Exact receipt IDs, repository
+commits, dirty-tree caveats, and reproduction commands are recorded in
+[`replay-validation.md`](replay-validation.md).
+
+Durable asynchronous jobs, pagination, retention enforcement, signatures,
+named CI tiers, runtime equivalence, and write adapters remain future layers.
 
 ## Appendix A: Evidence Anchors
 

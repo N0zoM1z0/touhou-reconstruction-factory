@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/N0zoM1z0/touhou-reconstruction-factory/schemas/v1/oracle-receipt.schema.json",
+  "$id": "https://touhou-reconstruction.invalid/schemas/v1/oracle-receipt.schema.json",
   "title": "Touhou Reconstruction Factory Oracle Receipt",
   "type": "object",
   "additionalProperties": false,
@@ -9,7 +9,7 @@
     "oracle_version", "claim", "source_before", "source_after", "target",
     "toolchain", "invocation", "result", "artifacts", "native_report_ref",
     "acceptance_errors", "schema_version", "runner_id", "runner_version",
-    "metadata"
+    "runner_implementation_sha256", "runner_observed_after_sha256", "metadata"
   ],
   "properties": {
     "receipt_id": { "type": "string", "pattern": "^receipt:[0-9a-f]{64}$" },
@@ -26,7 +26,7 @@
     "result": { "$ref": "truth-snapshot.schema.json#/$defs/oracleResult" },
     "artifacts": {
       "type": "array",
-      "items": { "$ref": "truth-snapshot.schema.json#/$defs/artifactRef" }
+      "items": { "$ref": "truth-snapshot.schema.json#/$defs/artifact" }
     },
     "native_report_ref": {
       "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }]
@@ -39,6 +39,8 @@
     "schema_version": { "const": 1 },
     "runner_id": { "const": "touhou-reconstruction-factory.replay" },
     "runner_version": { "const": "1" },
+    "runner_implementation_sha256": { "$ref": "#/$defs/sha256" },
+    "runner_observed_after_sha256": { "$ref": "#/$defs/sha256" },
     "metadata": { "type": "object" }
   },
   "$defs": {
@@ -76,16 +78,19 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "identity_id", "repository_path", "declared_sha256", "observed_sha256",
-        "declared_size", "observed_size"
+        "identity_id", "repository_path", "declared_sha256",
+        "observed_before_sha256", "observed_after_sha256", "declared_size",
+        "observed_before_size", "observed_after_size"
       ],
       "properties": {
         "identity_id": { "$ref": "#/$defs/id" },
         "repository_path": { "$ref": "#/$defs/relativePath" },
         "declared_sha256": { "$ref": "#/$defs/sha256" },
-        "observed_sha256": { "$ref": "#/$defs/sha256" },
+        "observed_before_sha256": { "$ref": "#/$defs/sha256" },
+        "observed_after_sha256": { "$ref": "#/$defs/sha256" },
         "declared_size": { "type": "integer", "minimum": 1 },
-        "observed_size": { "type": "integer", "minimum": 1 }
+        "observed_before_size": { "type": "integer", "minimum": 1 },
+        "observed_after_size": { "type": "integer", "minimum": 1 }
       }
     },
     "component": {
@@ -106,7 +111,8 @@
       "additionalProperties": false,
       "required": [
         "identity_id", "declared_fingerprint_sha256", "attestation", "components",
-        "environment_sha256", "environment_names"
+        "components_sha256", "observed_after_sha256", "environment_sha256",
+        "environment_names"
       ],
       "properties": {
         "identity_id": { "$ref": "#/$defs/id" },
@@ -116,6 +122,8 @@
           "type": "array",
           "items": { "$ref": "#/$defs/component" }
         },
+        "components_sha256": { "$ref": "#/$defs/sha256" },
+        "observed_after_sha256": { "$ref": "#/$defs/sha256" },
         "environment_sha256": { "$ref": "#/$defs/sha256" },
         "environment_names": {
           "type": "array",
@@ -139,14 +147,14 @@
         "subject_sha256": { "$ref": "#/$defs/sha256" },
         "extents": {
           "type": "array",
-          "items": { "type": "object" }
+          "items": { "$ref": "truth-snapshot.schema.json#/$defs/extent" }
         }
       }
     },
     "invocationStage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "argv", "cwd", "input_sha256"],
+      "required": ["id", "argv", "cwd", "environment_sha256", "input_sha256"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "argv": {
@@ -155,6 +163,7 @@
           "items": { "type": "string", "minLength": 1 }
         },
         "cwd": { "$ref": "#/$defs/relativePath" },
+        "environment_sha256": { "$ref": "#/$defs/sha256" },
         "input_sha256": { "$ref": "#/$defs/sha256" }
       }
     },
