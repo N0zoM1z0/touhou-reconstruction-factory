@@ -416,7 +416,7 @@ class RepositorySnapshot:
         toolchains = _unique_by_id(self.toolchains, "toolchain")
         subjects = _unique_by_id(self.subjects, "subject")
         claims = _unique_by_id(self.claims, "claim")
-        results = _unique_by_id(self.oracle_results, "oracle result")
+        _unique_by_id(self.oracle_results, "oracle result")
         _unique_by_id(self.artifacts, "artifact")
 
         for product in self.products:

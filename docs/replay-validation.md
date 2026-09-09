@@ -126,3 +126,59 @@ The second snapshot is retained in the ignored local
 private target and toolchain evidence and is not publishable by default. The
 TH095 receipt remains integrity-verifiable after worktree removal, but live
 freshness requires reconstructing the same source and environment binding.
+
+## Durable job and MCP checkpoint
+
+The durable service was validated again after its Python implementation was
+frozen, using runner implementation digest
+`3a90629a2731d7a6fa2420a58276ca348fccc1e0ff73d9386fa33d0080be337b`
+and private service configuration digest
+`06aa468a7bc9d5824221c6ced557d69cc5c76d941556c8f094c9546b900ea2ba`.
+The private configuration used policy digest
+`2c8e8eacece083a5941fb188cab76d15d9be72397ffe283a1db81413312b4b17`.
+All four requests were submitted before a separate FIFO worker process was
+started. A repeated TH08 submission with the same idempotency key returned its
+original completed job and did not create a fifth job.
+
+| Game | Job | Queue-time source | Receipt | Completion decision |
+|---|---|---|---|---|
+| TH04 | `job:da19c9ca156e48bf8900c3da0a018712` | commit `1fa8de07742255053299628213f0674d742a410c`, clean | `receipt:8c40bcd84e2911d07e8abcb3fdcbcc113f9389c0b3abeedb8be7939dae2b7331` | pass, accepted |
+| TH08 | `job:fb7b77b163a744ffb2ea37e0ca569385` | commit `bd54d865ebbc9f7291b355d152b16cc4b7f5be59`, clean | `receipt:2c5ad0e61c467a3aef7862911a95d46a2cf24b39dffcb3bb9fd6d4fd067b46ff` | pass, accepted |
+| TH095 | `job:0c264449e513429f8dcc0ded475d40d8` | commit `a298606a3e4452a5f7b79da88cd3f365ff459734`, dirty with three tracked modifications and two untracked files | `receipt:004351fa2646361ebb07ad62b7ecac16bd9a36839added6f55ba5493b1b19494` | pass, accepted |
+| TH105 | `job:a3266052d50f4162876c64922ddc3e3a` | commit `20f993b7908d8a207a39cf13da8d7614b9a3b23f`, clean | `receipt:aa22fdee5e5e2eef2f0d0c82adb1f96c1c69e2bc39eab63daab279ea2a7f3e8d` | pass, accepted |
+
+At fourth-job completion and again after a separate live rebuild, the registry
+contained exactly four accepted candidates and no rejected or invalid
+candidates, with identity
+`registry:b327c0d5e00d3b46bee3332f4e51dfd1ee4f31d72d027ee7b89705e8f70b302f`.
+The accepted-fact query returned exactly those four bounded results. TH04's
+isolated double build remained leased and heartbeat-visible for about two
+minutes; the shorter Windows jobs then completed from the same queue.
+
+The TH095 acceptance is intentionally narrow. The queue-time source digest
+bound its three tracked modifications and two untracked files, and the worker
+observed exactly that state before and after replay. It proves the selected
+24-byte claim for that live snapshot, not repository cleanliness, completion,
+or any other function. An earlier checkpoint correctly rejected an older
+TH095 receipt after the active worktree changed; freshness is recomputed and a
+historical job outcome is never treated as permanently current.
+
+The private TOML document, four replay specifications, four public job records,
+four receipts, the registry, and four materialized snapshots were validated
+offline against all nine published Draft 2020-12 schemas. The complete suite
+contained 87 tests: 83 core tests plus four MCP tests. All 87 passed with MCP
+SDK 2.2.0; the dependency-free core run also passed all 83 applicable tests and
+skipped only those four optional MCP tests.
+
+The real stateless Streamable HTTP endpoint accepted the ChatGPT-style
+`server/discover` exchange for protocol `2026-07-28` and listed exactly 15
+structured-output tools. None exposed a `command`, `cwd`, or filesystem `path`
+argument. A missing bearer token returned HTTP 401, and an authenticated
+request with a non-allowlisted Host returned HTTP 421. A 64-byte TH04 artifact
+page returned exactly 64 bytes plus `next_offset`; the retained artifact was
+still hashed in full before any bytes were returned.
+
+Running an accepted-fact query from a different Python virtual environment can
+correctly reject receipts because the resolved runtime/toolchain surface differs
+from the worker environment. Production workers and the MCP process must use
+the same factory installation and relevant environment.

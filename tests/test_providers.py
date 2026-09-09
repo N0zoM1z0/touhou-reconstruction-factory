@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from reconstruction_factory.errors import CompatibilityError
-from reconstruction_factory.ontology import Product, Project, TargetIdentity
+from reconstruction_factory.ontology import TargetIdentity
 from reconstruction_factory.providers import (
     Capability,
     ProjectSpec,

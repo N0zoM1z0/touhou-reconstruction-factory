@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "touhou-reconstruction-factory"
-version = "0.1.0"
+version = "0.2.0"
 description = "Evidence-first control plane for verified Touhou reconstruction projects"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -12,8 +12,13 @@ license = { text = "MIT" }
 authors = [{ name = "Touhou Reconstruction Factory contributors" }]
 dependencies = []
 
+[project.optional-dependencies]
+mcp = ["mcp>=2.2,<3"]
+
 [project.scripts]
 reconstruction-factory = "reconstruction_factory.cli:main"
+reconstruction-factory-service = "reconstruction_factory.service_cli:main"
+touhou-reconstruction-factory-mcp = "reconstruction_factory.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

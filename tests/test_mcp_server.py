@@ -1,0 +1,151 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+
+try:
+    from mcp import Client
+    from reconstruction_factory.mcp_server import (
+        BearerTokenMiddleware,
+        build_mcp_server,
+    )
+except ImportError:
+    Client = None
+
+
+@unittest.skipIf(Client is None, "MCP v2 optional dependency is not installed")
+class McpServerTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        (self.root / "repository").mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=self.root / "repository", check=True)
+        source = Path(__file__).parents[1] / "policies/strict-live-v1.json"
+        (self.root / "policy.json").write_text(
+            source.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        self.config = self.root / "service.toml"
+        self.config.write_text(
+            """schema_version = 1
+state_directory = "state"
+evidence_store = "evidence"
+policy = "policy.json"
+replay_timeout_seconds = 60
+worker_lease_seconds = 30
+worker_poll_seconds = 1.0
+
+[[repositories]]
+id = "th08"
+path = "repository"
+adapter_id = "th08-vc7-ledgers-v1"
+target_identity_ids = ["target:th08-v1.00d-original"]
+""",
+            encoding="utf-8",
+        )
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    async def test_discovery_exposes_only_bounded_factory_tools(self) -> None:
+        async with Client(build_mcp_server(self.config)) as client:
+            discovered = await client.list_tools()
+        names = {tool.name for tool in discovered.tools}
+        self.assertEqual(
+            names,
+            {
+                "factory_cancel_job",
+                "factory_describe",
+                "factory_get_acceptance_registry",
+                "factory_get_accepted_snapshot",
+                "factory_get_job",
+                "factory_get_job_events",
+                "factory_get_job_output_page",
+                "factory_inspect_repository",
+                "factory_list_claims",
+                "factory_list_historical_fixtures",
+                "factory_list_jobs",
+                "factory_list_repositories",
+                "factory_query_accepted_facts",
+                "factory_query_knowledge",
+                "factory_submit_replay",
+            },
+        )
+        schemas = json.dumps(
+            [tool.input_schema for tool in discovered.tools], sort_keys=True
+        )
+        self.assertNotIn('"command"', schemas)
+        self.assertNotIn('"cwd"', schemas)
+        self.assertNotIn('"path"', schemas)
+        claims = next(
+            tool for tool in discovered.tools if tool.name == "factory_list_claims"
+        )
+        self.assertEqual(claims.input_schema["properties"]["limit"]["maximum"], 100)
+        self.assertEqual(claims.input_schema["properties"]["offset"]["minimum"], 0)
+
+    async def test_structured_read_and_model_visible_error(self) -> None:
+        async with Client(build_mcp_server(self.config)) as client:
+            description = await client.call_tool("factory_describe")
+            failure = await client.call_tool(
+                "factory_get_job", {"job_id": "job:" + "0" * 32}
+            )
+            repository_failure = await client.call_tool(
+                "factory_inspect_repository", {"repository_id": "th08"}
+            )
+        self.assertFalse(description.is_error)
+        self.assertEqual(description.structured_content["policy_id"], "strict-live-v1")
+        rendered = json.dumps(description.structured_content)
+        self.assertNotIn(str(self.root), rendered)
+        self.assertTrue(failure.is_error)
+        self.assertIn("unknown job_id", failure.content[0].text)
+        self.assertTrue(repository_failure.is_error)
+        self.assertNotIn(str(self.root), repository_failure.content[0].text)
+        self.assertIn("<operator-path>", repository_failure.content[0].text)
+
+    def test_bearer_token_has_minimum_length_floor(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at least 32"):
+            BearerTokenMiddleware(object(), "short")
+
+    async def test_bearer_middleware_rejects_wrong_token_and_forwards_exact_token(
+        self,
+    ) -> None:
+        calls = 0
+
+        async def app(_scope, _receive, send):
+            nonlocal calls
+            calls += 1
+            await send({"type": "http.response.start", "status": 204, "headers": []})
+            await send({"type": "http.response.body", "body": b""})
+
+        token = "a" * 32
+        middleware = BearerTokenMiddleware(app, token)
+
+        async def request(authorization: bytes) -> int:
+            messages = []
+
+            async def receive():
+                return {"type": "http.request", "body": b""}
+
+            async def send(message):
+                messages.append(message)
+
+            await middleware(
+                {
+                    "type": "http",
+                    "method": "POST",
+                    "headers": [(b"authorization", authorization)],
+                },
+                receive,
+                send,
+            )
+            return messages[0]["status"]
+
+        self.assertEqual(await request(b"Bearer wrong"), 401)
+        self.assertEqual(await request(f"Bearer {token}".encode()), 204)
+        self.assertEqual(calls, 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

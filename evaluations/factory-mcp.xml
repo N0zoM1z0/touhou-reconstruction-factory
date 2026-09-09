@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<evaluation name="touhou-reconstruction-factory-mcp-readonly-v1">
+  <qa_pair>
+    <question>Which registered repository uses the TH04 PC-98 adapter, and what target identity IDs does it declare?</question>
+    <answer>Use factory_list_repositories. Report the matching repository ID and its complete target_identity_ids list without inventing filesystem paths.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>How many imported claims and accepted oracle results are currently visible for the registered TH08 repository?</question>
+    <answer>Use factory_inspect_repository for imported claim count and factory_get_accepted_snapshot for accepted oracle results. Keep imported and accepted counts distinct.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What does the factory know about cross-platform runtime equivalence?</question>
+    <answer>Use factory_query_knowledge with status unknown. The entry says a common acceptance contract across PC-98 emulators, Windows, Wine, and native ports has not yet been established.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Does matching a relocation type, addend, and destination address prove that relocation destination bytes are equal?</question>
+    <answer>No. Use factory_query_knowledge and factory_list_historical_fixtures. The TH08 fixture rejects the claim with relocation-destination-content-mismatch.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What is the historical verdict for TH095 whole-build closure, and why must it not be promoted from a function match?</question>
+    <answer>Use factory_list_historical_fixtures(project="th095"). The verdict is fail with whole-build-unresolved-symbols; function exactness and whole-product closure are separate claims.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What are the exactness conclusions for the TH105 Reimu and Sakuya owned extents?</question>
+    <answer>Use factory_list_historical_fixtures(project="th105"). Both owned-extent fixtures are incomplete with main-extent-exactness-unknown and remote-extent-exactness-unknown.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>May a different VC8 LTCG code-generation context waive an observed byte mismatch?</question>
+    <answer>No. The verified knowledge entry and th105-ltcg-context-mismatch fixture preserve codegen-content-mismatch and codegen-context-not-equivalent.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What evidence does the factory require before calling a disassembler-created function boundary complete?</question>
+    <answer>Use the boundaries-require-complete-coverage knowledge entry and TH04 boundary fixture. A disassembler extent is observational; insufficient independent coverage remains incomplete.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>List only currently accepted codegen_exact facts for the TH08 target.</question>
+    <answer>Use factory_query_accepted_facts with the exact target identity and claim_type codegen_exact. An empty page is a valid answer; never substitute imported claims.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>A completed replay job has acceptance_decision rejected. Is the claim verified, and where should its diagnostics be read?</question>
+    <answer>No. Completion is workflow completion, not truth acceptance. Use factory_get_job_events and factory_get_job_output_page, and only accepted-fact queries for verified conclusions.</answer>
+  </qa_pair>
+</evaluation>

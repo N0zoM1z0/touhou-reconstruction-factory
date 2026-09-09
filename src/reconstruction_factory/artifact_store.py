@@ -82,8 +82,12 @@ class ArtifactStore:
 
     def object_path(self, digest_or_ref: str) -> Path:
         digest = digest_or_ref.removeprefix("artifact:sha256:")
-        if len(digest) != 64 or any(value not in "0123456789abcdef" for value in digest):
-            raise ValidationError("artifact object key must be a lowercase SHA-256 digest")
+        if len(digest) != 64 or any(
+            value not in "0123456789abcdef" for value in digest
+        ):
+            raise ValidationError(
+                "artifact object key must be a lowercase SHA-256 digest"
+            )
         return self.objects / digest[:2] / digest
 
     def write_receipt(self, receipt: OracleReceipt) -> Path:
@@ -138,18 +142,70 @@ class ArtifactStore:
                 artifact.size,
             )
 
+    def read_verified_page(
+        self, artifact: ArtifactRef, *, offset: int, limit: int
+    ) -> bytes:
+        """Hash an object while retaining only one bounded response page."""
+
+        if (
+            not isinstance(offset, int)
+            or isinstance(offset, bool)
+            or offset < 0
+            or not isinstance(limit, int)
+            or isinstance(limit, bool)
+            or limit <= 0
+        ):
+            raise ValidationError(
+                "artifact page requires a non-negative offset and positive limit"
+            )
+        return self._verify_and_slice(
+            self.object_path(artifact.sha256),
+            artifact.sha256,
+            artifact.size,
+            offset=offset,
+            limit=limit,
+        )
+
     @staticmethod
     def _verify_object(path: Path, expected_sha256: str, expected_size: int) -> None:
+        ArtifactStore._verify_and_slice(path, expected_sha256, expected_size)
+
+    @staticmethod
+    def _verify_and_slice(
+        path: Path,
+        expected_sha256: str,
+        expected_size: int,
+        *,
+        offset: int | None = None,
+        limit: int | None = None,
+    ) -> bytes:
         try:
             descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
         except FileNotFoundError as error:
             raise ReplayError(f"artifact object is missing: {path}") from error
         except OSError as error:
-            raise ReplayError(f"artifact object cannot be opened safely: {path}") from error
+            raise ReplayError(
+                f"artifact object cannot be opened safely: {path}"
+            ) from error
         with os.fdopen(descriptor, "rb") as stream:
-            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+            metadata = os.fstat(stream.fileno())
+            if not stat.S_ISREG(metadata.st_mode):
                 raise ReplayError(f"artifact object is not a regular file: {path}")
-            payload = stream.read()
-        actual = hashlib.sha256(payload).hexdigest()
-        if len(payload) != expected_size or actual != expected_sha256:
+            if metadata.st_size != expected_size:
+                raise ReplayError(
+                    f"artifact object failed integrity verification: {path}"
+                )
+            hasher = hashlib.sha256()
+            page = bytearray()
+            position = 0
+            while chunk := stream.read(1024 * 1024):
+                hasher.update(chunk)
+                if offset is not None and limit is not None and len(page) < limit:
+                    start = max(offset - position, 0)
+                    end = min(offset + limit - position, len(chunk))
+                    if start < end:
+                        page.extend(chunk[start:end])
+                position += len(chunk)
+        if position != expected_size or hasher.hexdigest() != expected_sha256:
             raise ReplayError(f"artifact object failed integrity verification: {path}")
+        return bytes(page)

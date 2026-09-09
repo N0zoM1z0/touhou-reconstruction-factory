@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -8,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from reconstruction_factory.artifact_store import ArtifactStore
-from reconstruction_factory.errors import ReplayError
+from reconstruction_factory.errors import ReplayCancelled, ReplayError
 from reconstruction_factory.ontology import (
     Claim,
     ClaimType,
@@ -30,9 +32,21 @@ from reconstruction_factory.replay_drivers import (
     ReplayDriver,
     ReplayPlan,
     ReplayStagePlan,
+    driver_version,
 )
-from reconstruction_factory.replay_identity import file_sha256, repository_lock
-from reconstruction_factory.replay_runner import ReplayRunner, verify_live_freshness
+from reconstruction_factory.replay_identity import (
+    capture_source_binding,
+    file_sha256,
+    repository_lock,
+)
+from reconstruction_factory.replay_runner import (
+    ReplayExpectation,
+    ReplayRunner,
+    runner_implementation_sha256,
+    verify_live_freshness,
+)
+from reconstruction_factory.oracle_receipts import canonical_sha256
+from reconstruction_factory.ontology import to_primitive
 
 
 class FakeDriver(ReplayDriver):
@@ -134,13 +148,15 @@ class ReplayRunnerTests(unittest.TestCase):
         (self.root / "toolchain/cl.exe").write_bytes(b"compiler")
         (self.root / ".gitignore").write_text("resources/\ntoolchain/\n", encoding="utf-8")
         (self.root / "scripts/oracle.py").write_text(
-            """import json, pathlib, sys
+            """import json, pathlib, sys, time
 if sys.argv[1] == 'source':
     pathlib.Path('source.txt').write_text('changed\\n')
 elif sys.argv[1] == 'target':
     pathlib.Path('resources/test.exe').write_bytes(b'EVIL')
 elif sys.argv[1] == 'toolchain':
     pathlib.Path('toolchain/cl.exe').write_bytes(b'changed')
+elif sys.argv[1] == 'sleep':
+    time.sleep(30)
 print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
 """,
             encoding="utf-8",
@@ -164,6 +180,30 @@ print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
                 self.root,
                 self.snapshot.claims[0].id,
             )
+
+    def expectation(self, driver: FakeDriver) -> ReplayExpectation:
+        claim = self.snapshot.claims[0]
+        subject = self.snapshot.subjects[0]
+        plan = driver.prepare(
+            self.root,
+            self.snapshot,
+            claim,
+            subject,
+            "factory-20260909T000000Z-000000000000",
+        )
+        return ReplayExpectation(
+            repository_adapter_id=self.snapshot.adapter_id,
+            target_identity_id=claim.target_identity_id,
+            claim_id=claim.id,
+            claim_sha256=canonical_sha256(to_primitive(claim)),
+            subject_id=subject.id,
+            subject_sha256=canonical_sha256(to_primitive(subject)),
+            source_binding=capture_source_binding(self.root),
+            driver_id=driver.driver_id,
+            driver_version_sha256=driver_version(plan),
+            oracle_id=driver.oracle_id,
+            runner_implementation_sha256=runner_implementation_sha256(),
+        )
 
     def test_exact_run_persists_a_verifiable_receipt(self) -> None:
         driver = FakeDriver()
@@ -204,6 +244,61 @@ print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
         run = self.run_with(FakeDriver(coldness=Coldness.INCREMENTAL))
         self.assertEqual(run.receipt.result.verdict, Verdict.INCOMPLETE)
         self.assertIn("replay-coldness-insufficient", run.receipt.acceptance_errors)
+
+    def test_stale_queue_expectation_stops_before_native_process(self) -> None:
+        driver = FakeDriver()
+        expected = self.expectation(driver)
+        expected = replace(expected, claim_sha256="0" * 64)
+        with (
+            patch(
+                "reconstruction_factory.replay_runner.inspect_repository",
+                return_value=self.snapshot,
+            ),
+            patch(
+                "reconstruction_factory.replay_runner.select_driver",
+                return_value=driver,
+            ),
+            self.assertRaisesRegex(ReplayError, "claim digest"),
+        ):
+            ReplayRunner(self.store, expectation=expected).run(
+                self.root, self.snapshot.claims[0].id
+            )
+        self.assertFalse(self.store.receipts.exists())
+
+    def test_cancellation_terminates_process_group_without_receipt(self) -> None:
+        driver = FakeDriver(mutate="sleep")
+        requested = False
+        process_ids: list[int] = []
+
+        def progress(_stage, pid):
+            nonlocal requested
+            if pid is not None:
+                process_ids.append(pid)
+                requested = True
+
+        with (
+            patch(
+                "reconstruction_factory.replay_runner.inspect_repository",
+                return_value=self.snapshot,
+            ),
+            patch(
+                "reconstruction_factory.replay_runner.select_driver",
+                return_value=driver,
+            ),
+            self.assertRaises(ReplayCancelled),
+        ):
+            ReplayRunner(
+                self.store,
+                expectation=self.expectation(driver),
+                cancel_requested=lambda: requested,
+                on_stage_process=progress,
+                poll_seconds=0.01,
+                cancellation_grace_seconds=0.1,
+            ).run(self.root, self.snapshot.claims[0].id)
+        self.assertTrue(process_ids)
+        with self.assertRaises(ProcessLookupError):
+            os.kill(process_ids[0], 0)
+        self.assertFalse(self.store.receipts.exists())
 
     def test_shared_registry_lock_cannot_overlap_exclusive_replay(self) -> None:
         with repository_lock(self.root, exclusive=True):

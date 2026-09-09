@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/touhou-reconstruction-factory/schemas/v1/service-config.schema.json",
+  "title": "Factory service configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "state_directory",
+    "evidence_store",
+    "policy",
+    "replay_timeout_seconds",
+    "worker_lease_seconds",
+    "worker_poll_seconds",
+    "repositories"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "state_directory": {"type": "string", "minLength": 1},
+    "evidence_store": {"type": "string", "minLength": 1},
+    "policy": {"type": "string", "minLength": 1},
+    "replay_timeout_seconds": {"type": "integer", "minimum": 1},
+    "worker_lease_seconds": {"type": "integer", "minimum": 3},
+    "worker_poll_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "repositories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "adapter_id", "target_identity_ids"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$"},
+          "path": {"type": "string", "minLength": 1},
+          "adapter_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$"},
+          "target_identity_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$"}
+          }
+        }
+      }
+    }
+  }
+}

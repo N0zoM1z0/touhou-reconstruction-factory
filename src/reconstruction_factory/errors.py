@@ -27,3 +27,23 @@ class ReplayError(FactoryError):
 
 class AcceptanceError(FactoryError):
     """Raised when receipts cannot satisfy an acceptance registry contract."""
+
+
+class ServiceConfigError(FactoryError):
+    """Raised when a factory service registration is unsafe or inconsistent."""
+
+
+class JobError(FactoryError):
+    """Raised when durable job storage or execution fails."""
+
+
+class JobConflictError(JobError):
+    """Raised when an idempotency key is rebound to a different request."""
+
+
+class JobStateError(JobError):
+    """Raised when a job transition violates the durable state machine."""
+
+
+class ReplayCancelled(ReplayError):
+    """Raised after a controlled replay stage is terminated on request."""

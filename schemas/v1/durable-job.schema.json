@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/touhou-reconstruction-factory/schemas/v1/durable-job.schema.json",
+  "title": "Durable factory job record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "job_id", "idempotency_key", "spec_sha256", "spec", "state", "attempt",
+    "created_utc", "updated_utc", "started_utc", "finished_utc",
+    "lease_expires_utc", "current_stage", "cancellation_reason", "outcome", "error"
+  ],
+  "properties": {
+    "job_id": {"type": "string", "pattern": "^job:[0-9a-f]{32}$"},
+    "idempotency_key": {"type": "string", "minLength": 1, "maxLength": 128},
+    "spec_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "spec": {"$ref": "replay-job.schema.json"},
+    "state": {"enum": ["queued", "leased", "running", "cancel-requested", "completed", "failed", "cancelled"]},
+    "attempt": {"type": "integer", "minimum": 0},
+    "created_utc": {"type": "string", "format": "date-time"},
+    "updated_utc": {"type": "string", "format": "date-time"},
+    "started_utc": {"type": ["string", "null"], "format": "date-time"},
+    "finished_utc": {"type": ["string", "null"], "format": "date-time"},
+    "lease_expires_utc": {"type": ["string", "null"], "format": "date-time"},
+    "current_stage": {"type": ["string", "null"]},
+    "cancellation_reason": {"type": ["string", "null"]},
+    "outcome": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["receipt_id", "receipt_verdict", "acceptance_decision", "acceptance_reasons", "registry_id"],
+          "properties": {
+            "receipt_id": {"type": "string", "pattern": "^receipt:[0-9a-f]{64}$"},
+            "receipt_verdict": {"enum": ["pass", "fail", "incomplete", "error"]},
+            "acceptance_decision": {"enum": ["accepted", "rejected", "invalid"]},
+            "acceptance_reasons": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+            "registry_id": {"type": "string", "pattern": "^registry:[0-9a-f]{64}$"}
+          }
+        }
+      ]
+    },
+    "error": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message"],
+          "properties": {
+            "code": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+            "message": {"type": "string", "minLength": 1, "maxLength": 1000}
+          }
+        }
+      ]
+    }
+  }
+}

@@ -11,12 +11,12 @@ import signal
 import subprocess
 import tempfile
 import time
-from typing import Iterator, Mapping
+from typing import Callable, Iterator, Mapping
 import uuid
 
 from .adapters import inspect_repository
 from .artifact_store import ArtifactStore
-from .errors import ReplayError
+from .errors import ReplayCancelled, ReplayError
 from .ontology import (
     ArtifactRef,
     Claim,
@@ -37,6 +37,7 @@ from .oracle_receipts import (
     InvocationBinding,
     InvocationStage,
     OracleReceipt,
+    SourceBinding,
     StageExecution,
     TargetBinding,
     ToolchainBinding,
@@ -66,12 +67,46 @@ class ReplayRun:
     receipt_path: Path
 
 
+@dataclass(frozen=True, slots=True)
+class ReplayExpectation:
+    """Immutable queue-time facts that a worker must re-observe before execution."""
+
+    repository_adapter_id: str
+    target_identity_id: str
+    claim_id: str
+    claim_sha256: str
+    subject_id: str
+    subject_sha256: str
+    source_binding: SourceBinding
+    driver_id: str
+    driver_version_sha256: str
+    oracle_id: str
+    runner_implementation_sha256: str
+
+
 class ReplayRunner:
-    def __init__(self, store: ArtifactStore, *, timeout_seconds: int = 1800) -> None:
+    def __init__(
+        self,
+        store: ArtifactStore,
+        *,
+        timeout_seconds: int = 1800,
+        expectation: ReplayExpectation | None = None,
+        cancel_requested: Callable[[], bool] | None = None,
+        on_stage_process: Callable[[str | None, int | None], None] | None = None,
+        poll_seconds: float = 0.25,
+        cancellation_grace_seconds: float = 2.0,
+    ) -> None:
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive")
+        if poll_seconds <= 0 or cancellation_grace_seconds <= 0:
+            raise ValueError("replay polling and cancellation grace must be positive")
         self.store = store
         self.timeout_seconds = timeout_seconds
+        self.expectation = expectation
+        self.cancel_requested = cancel_requested or (lambda: False)
+        self.on_stage_process = on_stage_process or (lambda _stage, _pid: None)
+        self.poll_seconds = poll_seconds
+        self.cancellation_grace_seconds = cancellation_grace_seconds
 
     def run(self, repository: str | Path, claim_id: str) -> ReplayRun:
         root = Path(repository).expanduser().resolve(strict=True)
@@ -94,6 +129,7 @@ class ReplayRunner:
                 + uuid.uuid4().hex[:12]
             )
             plan = driver.prepare(root, snapshot, claim, subject, run_id)
+            self._check_expectation(snapshot, claim, subject, target, driver, plan)
             return self._run_locked(
                 root,
                 snapshot,
@@ -118,13 +154,22 @@ class ReplayRunner:
         plan: ReplayPlan,
         run_id: str,
     ) -> ReplayRun:
+        if self.cancel_requested():
+            raise ReplayCancelled("replay was cancelled before evidence capture")
         source_before = capture_source_binding(root)
+        if (
+            self.expectation is not None
+            and source_before != self.expectation.source_binding
+        ):
+            raise ReplayError(
+                "queued source binding is stale; no replay stage was started"
+            )
         target_before_sha256, target_before_size = _observe_target(plan.target_path)
         components_before, component_errors_before = _observe_components(plan)
         environment_names, environment_sha256 = environment_binding(
             plan.environment_names
         )
-        runner_implementation_before = _runner_implementation_sha256()
+        runner_implementation_before = runner_implementation_sha256()
         version = driver_version(plan)
         claim_sha256 = canonical_sha256(to_primitive(claim))
         subject_sha256 = canonical_sha256(to_primitive(subject))
@@ -177,7 +222,7 @@ class ReplayRunner:
             )
 
         source_after = capture_source_binding(root)
-        runner_implementation_after = _runner_implementation_sha256()
+        runner_implementation_after = runner_implementation_sha256()
         target_after_sha256, target_after_size = _observe_target(plan.target_path)
         components_after, component_errors_after = _observe_components(plan)
         component_digest_before = canonical_sha256(to_primitive(components_before))
@@ -355,7 +400,57 @@ class ReplayRunner:
         path = self.store.write_receipt(receipt)
         return ReplayRun(receipt, path)
 
+    def _check_expectation(
+        self,
+        snapshot: RepositorySnapshot,
+        claim: Claim,
+        subject: Subject,
+        target: TargetIdentity,
+        driver: ReplayDriver,
+        plan: ReplayPlan,
+    ) -> None:
+        expected = self.expectation
+        if expected is None:
+            return
+        observed = {
+            "repository adapter": snapshot.adapter_id,
+            "target identity": target.id,
+            "claim identity": claim.id,
+            "claim digest": canonical_sha256(to_primitive(claim)),
+            "subject identity": subject.id,
+            "subject digest": canonical_sha256(to_primitive(subject)),
+            "driver identity": plan.driver_id,
+            "driver version": driver_version(plan),
+            "oracle identity": plan.oracle_id,
+            "runner implementation": runner_implementation_sha256(),
+        }
+        required = {
+            "repository adapter": expected.repository_adapter_id,
+            "target identity": expected.target_identity_id,
+            "claim identity": expected.claim_id,
+            "claim digest": expected.claim_sha256,
+            "subject identity": expected.subject_id,
+            "subject digest": expected.subject_sha256,
+            "driver identity": expected.driver_id,
+            "driver version": expected.driver_version_sha256,
+            "oracle identity": expected.oracle_id,
+            "runner implementation": expected.runner_implementation_sha256,
+        }
+        mismatches = [
+            label for label in observed if observed[label] != required[label]
+        ]
+        if driver.driver_id != plan.driver_id or driver.oracle_id != plan.oracle_id:
+            mismatches.append("driver plan declaration")
+        if mismatches:
+            raise ReplayError(
+                "queued replay expectation changed: " + ", ".join(sorted(mismatches))
+            )
+
     def _execute_stage(self, stage: ReplayStagePlan) -> RawExecution:
+        if self.cancel_requested():
+            raise ReplayCancelled(
+                f"replay was cancelled before stage {stage.id!r} started"
+            )
         environment = os.environ.copy()
         environment.update(stage.environment)
         started = time.monotonic()
@@ -370,14 +465,37 @@ class ReplayRunner:
                 start_new_session=True,
             )
             timed_out = False
-            exit_code: int | None
+            exit_code: int | None = None
             try:
-                exit_code = process.wait(timeout=self.timeout_seconds)
-            except subprocess.TimeoutExpired:
-                timed_out = True
-                os.killpg(process.pid, signal.SIGKILL)
-                process.wait()
-                exit_code = None
+                while True:
+                    exit_code = process.poll()
+                    if exit_code is not None:
+                        break
+                    self.on_stage_process(stage.id, process.pid)
+                    if self.cancel_requested():
+                        _terminate_process_group(
+                            process,
+                            grace_seconds=self.cancellation_grace_seconds,
+                        )
+                        raise ReplayCancelled(
+                            f"replay was cancelled during stage {stage.id!r}"
+                        )
+                    if time.monotonic() - started >= self.timeout_seconds:
+                        timed_out = True
+                        os.killpg(process.pid, signal.SIGKILL)
+                        process.wait()
+                        exit_code = None
+                        break
+                    time.sleep(self.poll_seconds)
+            except BaseException:
+                if process.poll() is None:
+                    _terminate_process_group(
+                        process,
+                        grace_seconds=self.cancellation_grace_seconds,
+                    )
+                raise
+            finally:
+                self.on_stage_process(None, None)
             duration_ms = round((time.monotonic() - started) * 1000)
             stdout.seek(0)
             stderr.seek(0)
@@ -390,6 +508,28 @@ class ReplayRunner:
                 stderr.read(),
             )
 
+
+def _terminate_process_group(
+    process: subprocess.Popen[bytes], *, grace_seconds: float
+) -> None:
+    """Terminate one isolated process group and synchronously reap its leader."""
+
+    if process.poll() is not None:
+        return
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        process.wait()
+        return
+    try:
+        process.wait(timeout=grace_seconds)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.wait()
+
 def verify_live_freshness(
     document: Mapping[str, object], repository: str | Path
 ) -> tuple[str, ...]:
@@ -400,7 +540,7 @@ def verify_live_freshness(
     errors: list[str] = []
     if document.get("repository_adapter_id") != snapshot.adapter_id:
         errors.append("adapter-id-changed")
-    current_runner = _runner_implementation_sha256()
+    current_runner = runner_implementation_sha256()
     if document.get("runner_implementation_sha256") != current_runner:
         errors.append("runner-implementation-stale")
     claim_doc = document.get("claim")
@@ -507,7 +647,7 @@ def verify_live_freshness(
     return tuple(sorted(set(errors)))
 
 
-def _runner_implementation_sha256() -> str:
+def runner_implementation_sha256() -> str:
     """Hash the factory Python implementation that can affect replay semantics."""
 
     package_root = Path(__file__).resolve(strict=True).parent

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/touhou-reconstruction-factory/schemas/v1/replay-job.schema.json",
+  "title": "Factory replay job specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "repository_id", "repository_adapter_id", "target_identity_id", "claim_id",
+    "claim_type", "claim_sha256", "subject_id", "subject_sha256", "source_binding",
+    "policy_id", "policy_sha256", "configuration_sha256", "driver_id",
+    "driver_version_sha256", "oracle_id", "coldness",
+    "runner_implementation_sha256", "timeout_seconds", "kind", "schema_version"
+  ],
+  "properties": {
+    "repository_id": {"$ref": "#/$defs/id"},
+    "repository_adapter_id": {"$ref": "#/$defs/id"},
+    "target_identity_id": {"$ref": "#/$defs/id"},
+    "claim_id": {"$ref": "#/$defs/id"},
+    "claim_type": {
+      "enum": [
+        "target_attested", "boundary_extent", "origin_classified", "source_present",
+        "compile_succeeded", "codegen_exact", "owned_extent_exact",
+        "relocation_data_exact", "source_ownership", "object_ownership",
+        "physical_ownership", "semantic_ownership", "whole_build_closed",
+        "whole_image_exact", "semantic_evidence", "portable_runtime_validated"
+      ]
+    },
+    "claim_sha256": {"$ref": "#/$defs/sha256"},
+    "subject_id": {"$ref": "#/$defs/id"},
+    "subject_sha256": {"$ref": "#/$defs/sha256"},
+    "source_binding": {"$ref": "#/$defs/source_binding"},
+    "policy_id": {"$ref": "#/$defs/id"},
+    "policy_sha256": {"$ref": "#/$defs/sha256"},
+    "configuration_sha256": {"$ref": "#/$defs/sha256"},
+    "driver_id": {"$ref": "#/$defs/id"},
+    "driver_version_sha256": {"$ref": "#/$defs/sha256"},
+    "oracle_id": {"$ref": "#/$defs/id"},
+    "coldness": {
+      "enum": ["isolated-double-build", "clean-output-graph", "forced-recompile", "incremental", "unknown"]
+    },
+    "runner_implementation_sha256": {"$ref": "#/$defs/sha256"},
+    "timeout_seconds": {"type": "integer", "minimum": 1},
+    "kind": {"const": "replay-claim"},
+    "schema_version": {"const": 1}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["git_commit", "git_tree", "repository_scope", "snapshot_sha256", "file_count", "dirty", "untracked_files"],
+      "properties": {
+        "git_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "git_tree": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "repository_scope": {"type": "string", "minLength": 1},
+        "snapshot_sha256": {"$ref": "#/$defs/sha256"},
+        "file_count": {"type": "integer", "minimum": 0},
+        "dirty": {"type": "boolean"},
+        "untracked_files": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

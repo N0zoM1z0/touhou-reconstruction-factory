@@ -1,0 +1,37 @@
+# Trusted operator configuration. Keep the real file outside the public repository.
+schema_version = 1
+state_directory = "/var/lib/touhou-reconstruction-factory/state"
+evidence_store = "/var/lib/touhou-reconstruction-factory/evidence"
+policy = "../policies/strict-live-v1.json"
+replay_timeout_seconds = 1800
+worker_lease_seconds = 30
+worker_poll_seconds = 1.0
+
+[[repositories]]
+id = "th04"
+path = "/srv/reconstructions/th04"
+adapter_id = "th04-pc98-v1"
+target_identity_ids = [
+  "target:th04-main",
+  "target:th04-maine",
+  "target:th04-op",
+  "target:th04-zun",
+]
+
+[[repositories]]
+id = "th08"
+path = "/srv/reconstructions/th08"
+adapter_id = "th08-vc7-ledgers-v1"
+target_identity_ids = ["target:th08-main"]
+
+[[repositories]]
+id = "th095"
+path = "/srv/reconstructions/th095"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:th095-main"]
+
+[[repositories]]
+id = "th105"
+path = "/srv/reconstructions/th105"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:th105-main"]

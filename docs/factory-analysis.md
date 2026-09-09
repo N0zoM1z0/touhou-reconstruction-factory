@@ -934,8 +934,42 @@ the isolated TH095 receipt to a different live worktree rejected it as stale.
 Exact IDs and limitations are recorded in
 [`replay-validation.md`](replay-validation.md).
 
-Durable asynchronous jobs, pagination, retention enforcement, signatures,
-named CI tiers, runtime equivalence, and write adapters remain future layers.
+The durable asynchronous layer is now executable as well. A strict operator
+configuration registers repository IDs and paths, while model-facing responses
+redact those paths. SQLite transactions provide idempotent submission, atomic
+worker leases, append-only events, restart recovery, and fail-closed lease
+expiry. Queue-time specs bind repository, source, claim, subject, target,
+policy, configuration, driver version, coldness, oracle, runner implementation,
+and timeout. Workers re-observe those bindings under the existing exclusive
+replay lock before any native process starts.
+
+A typed MCP v2 server exposes only bounded repository inspection, job
+submission/observation/cancellation, paged receipt artifacts, historical
+fixtures, scoped knowledge, and accepted snapshots/facts. It has no generic
+shell, cwd, or raw repository path. Expected failures are MCP tool errors, not
+success-shaped strings. Streamable HTTP is stateless and bearer protected;
+durability belongs to SQLite and the content-addressed store rather than an MCP
+session. The design and GPT-web operating sequence are recorded in
+[`durable-jobs.md`](durable-jobs.md) and [`mcp-server.md`](mcp-server.md).
+
+The checkpoint passes 87 tests in the MCP SDK 2.2.0 environment; the
+dependency-free run passes all 83 applicable tests and skips only four optional
+MCP tests. Four fresh jobs exercised TH04, TH08, TH095, and TH105. Each produced
+a passing receipt that a separate live registry rebuild still accepted. TH095
+was explicitly bound to its dirty queue-time snapshot rather than mislabeled as
+clean. An earlier replay was correctly rejected after that active worktree
+changed, demonstrating that acceptance is recomputed rather than copied from
+historical job state. Exact job, receipt, registry, schema, paging, and HTTP
+protocol observations are in
+[`replay-validation.md`](replay-validation.md).
+
+Retention enforcement, evidence signatures/transparency, named CI tiers,
+runtime equivalence, and controlled write adapters remain future layers. A
+separate ChatGPT plugin packaging phase should bundle the verified MCP surface
+with narrow discover/submit, resume/diagnose, accepted-evidence, and GitHub
+coordination skills. Skills may improve tool selection and continuity, but they
+must never become another acceptance authority; the concrete boundary is
+recorded in [`mcp-server.md`](mcp-server.md).
 
 ## Appendix A: Evidence Anchors
 
@@ -1033,6 +1067,11 @@ Reviewed implementation root: `/home/pentester/coding/codex_ida/th04-reconstruct
 - `src/server.ts`: tool registration, HTTP/auth/logging, and per-handler server factory.
 - `src/ghidra.ts`: serialized attested Ghidra calls, bounded result read, workspace-contained scratch, and unconditional temporary-output deletion.
 - `.tools/mcp_for_gptweb*/..._WORKFLOW.md` in TH04, TH08, TH095, and TH105: current game-local prompt/workflow packaging.
+- Public exploratory repository
+  `https://github.com/N0zoM1z0/mcp_for_gptweb`: commits `8f38474`,
+  `0d4d47f`, `96b0624`, `bed0c6f`, `198c2d3`, and `5a9de07` establish the
+  Bash-to-IDA-to-workflow evolution and the deployment behavior retained or
+  replaced by the durable service.
 
 ### A.9 Review limitations
 
@@ -1040,6 +1079,6 @@ Reviewed implementation root: `/home/pentester/coding/codex_ida/th04-reconstruct
 - Imported upstream history makes raw commit counts a scale indicator, not a direct measure of reconstruction labor.
 - This review did not launch games or perform new dynamic behavioral tests.
 - It inspected all commit subjects in the principal reconstruction ranges and selected high-impact diffs/documents, not every line of every commit.
-- Foundation contracts exercised by schemas, fixtures, and live parity are
-  implemented. Later runtime, job, artifact, and write-path proposals remain
-  design recommendations.
+- Foundation, receipt, acceptance, durable-job, and MCP contracts are
+  implemented and exercised by local tests. Runtime equivalence, signatures,
+  retention policy, and write-path proposals remain design recommendations.

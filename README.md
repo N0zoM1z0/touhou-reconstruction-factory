@@ -17,7 +17,8 @@ is in [`docs/ontology.md`](docs/ontology.md).
 
 ## Development
 
-The v0 foundation has no runtime dependencies outside Python 3.11 or newer.
+The core has no runtime dependencies outside Python 3.11 or newer. The GPT-web
+service uses the optional, version-bounded MCP v2 dependency.
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
@@ -31,6 +32,9 @@ PYTHONPATH=src python3 -m reconstruction_factory verify-receipt --help
 PYTHONPATH=src python3 -m reconstruction_factory acceptance-registry --help
 PYTHONPATH=src python3 -m reconstruction_factory inspect-accepted --help
 PYTHONPATH=src python3 -m reconstruction_factory accepted-knowledge --help
+PYTHONPATH=src python3 -m reconstruction_factory.service_cli --help
+python3 -m pip install -e '.[mcp]'
+touhou-reconstruction-factory-mcp --help
 ```
 
 Game repository adapters are read-only. They never run a compiler, mutate a
@@ -58,3 +62,11 @@ are recorded in [`docs/replay-validation.md`](docs/replay-validation.md).
 Only receipts admitted by an explicit live policy can enter accepted snapshots
 or receipt-backed knowledge queries; see the
 [`acceptance registry contract`](docs/acceptance-registry.md).
+
+Long replays can now be submitted as SQLite-backed durable jobs and executed by
+a separate worker. Job completion, oracle pass, and policy acceptance remain
+three different states. The typed MCP v2 surface lets GPT-web submit, reconnect,
+page complete evidence, and query only accepted facts without receiving shell,
+working-directory, or raw-path authority. See
+[`durable replay jobs`](docs/durable-jobs.md) and the
+[`GPT-web MCP service`](docs/mcp-server.md).

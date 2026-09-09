@@ -323,7 +323,7 @@ def load_fixture_suite(directory: Path | None = None) -> tuple[HistoricalFixture
         context=str(manifest_path),
     )
     if root["schema_version"] != FIXTURE_SCHEMA_VERSION:
-        raise RegressionFixtureError(f"unsupported fixture manifest schema version")
+        raise RegressionFixtureError("unsupported fixture manifest schema version")
     raw_entries = root["fixtures"]
     if not isinstance(raw_entries, list) or not raw_entries:
         raise RegressionFixtureError("fixture manifest must contain at least one entry")
