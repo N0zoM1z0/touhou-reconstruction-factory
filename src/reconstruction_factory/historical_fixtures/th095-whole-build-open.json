@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th095-whole-build-open",
+  "title": "Function-level exactness does not imply whole-program closure",
+  "project": "th095",
+  "contract": "whole-build-closure",
+  "provenance": {
+    "repository": "N0zoM1z0/th095-reconstruction",
+    "commit": "b864c31b0896eca14988e1af8e4d642a9d337c0a",
+    "paths": ["docs/WHOLE_BUILD_TODO.md"],
+    "observation": "Both canonical profiles compiled all 88 source translation units, and 696 of 697 source-present functions were exact, while the real link still reported 239 unique unresolved symbols across 258 diagnostics."
+  },
+  "input": {
+    "coverage_complete": true,
+    "objects_expected": 88,
+    "objects_compiled": 88,
+    "source_profiles": 2,
+    "link_attempted": true,
+    "link_succeeded": false,
+    "unique_unresolved_symbols": 239,
+    "unresolved_diagnostics": 258,
+    "source_present_functions": 697,
+    "exact_functions": 696
+  },
+  "expected": {
+    "verdict": "fail",
+    "diagnostics": ["whole-build-unresolved-symbols"]
+  }
+}

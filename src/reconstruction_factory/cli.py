@@ -12,6 +12,7 @@ from .errors import FactoryError
 from .factory import kit_for_snapshot
 from .live_validation import validate_live_repository
 from .providers import builtin_registry
+from .regressions import run_fixture_suite
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -35,6 +36,13 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("repositories", nargs="+", type=Path)
 
     subparsers.add_parser("providers", help="list built-in provider IDs")
+
+    fixtures_parser = subparsers.add_parser(
+        "fixtures", help="run hash-pinned historical regression fixtures"
+    )
+    fixtures_parser.add_argument(
+        "--directory", type=Path, help="use an alternate fixture directory"
+    )
     return parser
 
 
@@ -83,8 +91,11 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
             return 0
+        if args.command == "fixtures":
+            report = run_fixture_suite(args.directory)
+            print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+            return 0 if report.passed else 1
     except (FactoryError, OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     return 2
-

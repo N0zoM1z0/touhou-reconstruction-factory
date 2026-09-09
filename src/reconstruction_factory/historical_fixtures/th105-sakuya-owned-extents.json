@@ -1,0 +1,67 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th105-sakuya-owned-extents",
+  "title": "Remote function chunks and internal alignment must be accounted separately",
+  "project": "th105",
+  "contract": "owned-extent-exactness",
+  "provenance": {
+    "repository": "N0zoM1z0/th105-reconstruction",
+    "commit": "07f5ac9f35c041858962acc35e941ef9379451a5",
+    "paths": [
+      "config/function-byte-ownership.toml",
+      "config/functions.csv",
+      "docs/RE_HANDOFF.md"
+    ],
+    "observation": "Sakuya vslot +0x28 owns 41,490 instruction bytes in its provisional main span plus ten remote chunks totaling 33,451 bytes. The three internal seven-byte NOP ranges are exclusions, and remote_exact remains false."
+  },
+  "input": {
+    "main_size": 41511,
+    "main_exclusions": [
+      {
+        "start": "0x004D2839",
+        "end": "0x004D283F",
+        "size": 7,
+        "sha256": "4fe06c07aad18cb5faea1a925ff71a52931084bbb3f844ffd60bae6a9ce14cce"
+      },
+      {
+        "start": "0x004D2C79",
+        "end": "0x004D2C7F",
+        "size": 7,
+        "sha256": "4fe06c07aad18cb5faea1a925ff71a52931084bbb3f844ffd60bae6a9ce14cce"
+      },
+      {
+        "start": "0x004D2E19",
+        "end": "0x004D2E1F",
+        "size": 7,
+        "sha256": "4fe06c07aad18cb5faea1a925ff71a52931084bbb3f844ffd60bae6a9ce14cce"
+      }
+    ],
+    "remote_chunks": [
+      {"start": "0x004D4FE0", "end": "0x004D5177", "size": 408, "sha256": "c87285e5b0078331cec2e9b416d51f698a212889a7bf894d26b28e2d553a27ca"},
+      {"start": "0x004D5180", "end": "0x004D5487", "size": 776, "sha256": "f94fbb8bce030f54e5c26abea86acefe9a9952bd23e763de4abb99826dfcf74c"},
+      {"start": "0x004D5490", "end": "0x004D5EE3", "size": 2644, "sha256": "4316dfcb06d63e533ca1cbfc5b5577b80f00c6bff9508dc824363f1d87877370"},
+      {"start": "0x004D5EF0", "end": "0x004D6087", "size": 408, "sha256": "aac9dd67a1644dfb3cc512cc1666a0c5486deb4489107a82cd8cd0819b520ee9"},
+      {"start": "0x004D6090", "end": "0x004D6397", "size": 776, "sha256": "c36ea7f39b8cb828ea8f68453b10d79bf68e753d7c8ac0c75a6df36952917c5e"},
+      {"start": "0x004D63A0", "end": "0x004DB92B", "size": 21900, "sha256": "e8206848adc6bed88b2f6d12908810d6f61de081f6db7adb1e2c13dd573f9cd7"},
+      {"start": "0x004DB930", "end": "0x004DBA96", "size": 359, "sha256": "527409a1d721ddecefdf5caa39c98df5629da57478156bdbc52d717ee8270de1"},
+      {"start": "0x004DBAA0", "end": "0x004DBC08", "size": 361, "sha256": "a8011211e903843c480d7a59c416a6272851db94247f8fa77767b291dd3a73b2"},
+      {"start": "0x004DBC10", "end": "0x004DBD78", "size": 361, "sha256": "95c72063695bfba71a294239c14f0b9df051a310b33f817bc80ef3d2f9211aca"},
+      {"start": "0x004DBD80", "end": "0x004DD2D1", "size": 5458, "sha256": "a482e1abaca46f91f8fb3b72ceecfa271305a6ad0ab0aca3cc1b9bd3ff718f84"}
+    ],
+    "declared_main_excluded_bytes": 21,
+    "declared_remote_bytes": 33451,
+    "declared_owned_bytes": 74941,
+    "main_exact": false,
+    "remote_exact": false,
+    "declared_exact_bytes": 0,
+    "require_complete_exact": true
+  },
+  "expected": {
+    "verdict": "incomplete",
+    "diagnostics": [
+      "main-extent-exactness-unknown",
+      "remote-extent-exactness-unknown"
+    ]
+  }
+}

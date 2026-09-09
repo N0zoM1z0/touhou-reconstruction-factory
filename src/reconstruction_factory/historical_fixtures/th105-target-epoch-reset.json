@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th105-target-epoch-reset",
+  "title": "A version label cannot substitute for target identity",
+  "project": "th105",
+  "contract": "target-binding",
+  "provenance": {
+    "repository": "N0zoM1z0/th105-reconstruction",
+    "commit": "c10b80aeae04b9fbdf6a89830abea3fe8989dfd5",
+    "paths": ["config/target.toml", "config/functions.csv", "config/matches.csv"],
+    "observation": "The reconstruction state was reset from a 3,039,232-byte retained executable to the 3,129,344-byte official updater executable. Both manifests called the target 1.06a, but their SHA-256 identities differ."
+  },
+  "input": {
+    "active_target_sha256": "56350024879199861579c11b0e1c67b9590e10a8d40cd5996b109deec9afca7e",
+    "evidence_target_sha256": "49c23d9467b9927ba687ed2b873c4bc2d2f39ddadc9f55051ccf10172c0b7c11",
+    "active_version": "1.06a",
+    "evidence_version": "1.06a"
+  },
+  "expected": {
+    "verdict": "fail",
+    "diagnostics": ["target-identity-mismatch"]
+  }
+}

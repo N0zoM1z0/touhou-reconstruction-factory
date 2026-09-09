@@ -16,3 +16,6 @@ class CompatibilityError(FactoryError):
 class AdapterError(FactoryError):
     """Raised when an existing repository cannot be imported safely."""
 
+
+class RegressionFixtureError(ValidationError):
+    """Raised when a historical regression fixture is malformed or tampered."""

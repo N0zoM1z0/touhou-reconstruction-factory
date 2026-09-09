@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th04-boundary-undercoverage",
+  "title": "A disassembler-created function may cover only the prologue",
+  "project": "th04",
+  "contract": "boundary-coverage",
+  "provenance": {
+    "repository": "N0zoM1z0/th04-reconstruction",
+    "commit": "13abf3647902ad6f7e79c7f2b993ea90152680e6",
+    "paths": [
+      "config/units.csv",
+      "docs/RE_HANDOFF.md",
+      "src/main/boss/gengetsu6_fg_render.cpp"
+    ],
+    "observation": "Ghidra created gengetsu_fg_render at 0x22F5F with a five-byte body. Pinned TASM PROC ownership and raw decoding through RET at 0x230EC established the 0x18E-byte accepted extent."
+  },
+  "input": {
+    "candidate_start": "0x22F5F",
+    "candidate_size": 5,
+    "accepted_start": "0x22F5F",
+    "accepted_size": 398
+  },
+  "expected": {
+    "verdict": "incomplete",
+    "diagnostics": ["boundary-coverage-incomplete"]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "fixtures": [
+    {
+      "path": "th04-boundary-undercoverage.json",
+      "sha256": "51be08e29e2490dcd59ef8c29e7f51200599ae7804398990e4518f30d93b2065"
+    },
+    {
+      "path": "th08-relocation-literal-content.json",
+      "sha256": "b89e2095418a2d25fca0edd8087336f34f6e5b3e2415f558d5d2b9d5d545858c"
+    },
+    {
+      "path": "th095-whole-build-open.json",
+      "sha256": "54b3fa857a1ac67487507112910c80513c74c0f0e5ca10708152761ee138f6a8"
+    },
+    {
+      "path": "th105-reimu-owned-extents.json",
+      "sha256": "5fc1f9c4f791099a3a0e751b61bf4966c093dc06387105205d46123d9968e200"
+    },
+    {
+      "path": "th105-sakuya-owned-extents.json",
+      "sha256": "32422d86817e40150344178782459a90edba5097d5f3a2f07dff14f224e34adc"
+    },
+    {
+      "path": "th105-target-epoch-reset.json",
+      "sha256": "1ebc669c310ddfd5ef89c2fcb743415624e389db83a0d7a8d844a517defdf685"
+    }
+  ]
+}

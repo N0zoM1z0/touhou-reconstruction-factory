@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/N0zoM1z0/touhou-reconstruction-factory/schemas/v1/historical-regression-fixture.schema.json",
+  "title": "Touhou Reconstruction Historical Regression Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "project",
+    "contract",
+    "provenance",
+    "input",
+    "expected"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "title": {"type": "string", "minLength": 1},
+    "project": {"type": "string", "minLength": 1},
+    "contract": {
+      "enum": [
+        "boundary-coverage",
+        "relocation-destination-content",
+        "whole-build-closure",
+        "target-binding",
+        "owned-extent-exactness"
+      ]
+    },
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "input": {"type": "object", "minProperties": 1},
+    "expected": {"$ref": "#/$defs/expected"}
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "paths", "observation"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "observation": {"type": "string", "minLength": 1}
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "diagnostics"],
+      "properties": {
+        "verdict": {"enum": ["pass", "fail", "incomplete", "error"]},
+        "diagnostics": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}
