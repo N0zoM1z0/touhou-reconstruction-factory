@@ -19,3 +19,7 @@ class AdapterError(FactoryError):
 
 class RegressionFixtureError(ValidationError):
     """Raised when a historical regression fixture is malformed or tampered."""
+
+
+class ReplayError(FactoryError):
+    """Raised when a controlled replay cannot satisfy its execution contract."""

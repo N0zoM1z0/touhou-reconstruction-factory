@@ -24,6 +24,7 @@ from .ontology import (
     Verdict,
     WorkLease,
 )
+from .oracle_receipts import OracleReceipt
 
 __all__ = [
     "ArtifactRef",
@@ -36,6 +37,7 @@ __all__ = [
     "ExtentRole",
     "Metric",
     "OracleResult",
+    "OracleReceipt",
     "OracleRole",
     "OriginKind",
     "Product",
@@ -49,4 +51,3 @@ __all__ = [
     "Verdict",
     "WorkLease",
 ]
-

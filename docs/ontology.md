@@ -62,6 +62,12 @@ An acceptance `pass` requires complete coverage and at least one durable
 evidence reference. Missing bytes, unknown extents, stale manifests, absent
 relocation destinations, and truncated output are `incomplete`, never `pass`.
 
+The `OracleResult` is the truth-kernel verdict, not the execution transcript.
+When it originates from replay, it is carried by a content-addressed
+[`OracleReceipt`](oracle-receipts.md) that additionally binds the full claim,
+subject extents, observed target and toolchain surfaces, exact live source
+snapshot, invocation stages, and retained output.
+
 ## Evidence maturity
 
 - `observed`: directly present in an attested artifact or deterministic output;
