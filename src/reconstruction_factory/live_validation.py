@@ -39,6 +39,8 @@ def validate_live_repository(root: str | Path) -> LiveValidationResult:
     snapshot = inspect_repository(resolved)
     if snapshot.project.id == "th04":
         result = _validate_th04(resolved, snapshot)
+    elif snapshot.adapter_id == "th08-vc7-ledgers-v1":
+        result = _validate_th08(resolved, snapshot)
     elif snapshot.adapter_id == "windows-pe-ledgers-v1":
         result = _validate_windows(resolved, snapshot)
     else:
@@ -131,6 +133,42 @@ def _validate_windows(root: Path, snapshot: RepositorySnapshot) -> LiveValidatio
     )
 
 
+def _validate_th08(root: Path, snapshot: RepositorySnapshot) -> LiveValidationResult:
+    native = _run_json(
+        root,
+        (
+            "python3",
+            "scripts/analysis/report-reconstruction-status.py",
+            "--summary",
+            "--json",
+        ),
+    )["summary"]
+    authored = native["authored"]
+    library = native["library"]
+    project_id = snapshot.project.id
+    comparisons = {
+        (project_id, "inventory.authored"): authored["functions"],
+        (project_id, "inventory.authored-bytes"): authored["bytes"],
+        (project_id, "source.present-functions"): authored["source_present_functions"],
+        (project_id, "source.present-bytes"): authored["source_present_bytes"],
+        (project_id, "exact.functions"): authored["exact_functions"],
+        (project_id, "exact.bytes"): authored["exact_bytes"],
+        (project_id, "inventory.library"): library["functions"],
+        (project_id, "inventory.library-sized"): library["sized_functions"],
+        (project_id, "inventory.library-known-bytes"): library["known_bytes"],
+        (project_id, "library.configured-units"): library["with_match_units"],
+        (project_id, "library.exact-functions"): library["accepted_matches"],
+    }
+    _require_metric_parity(snapshot, comparisons)
+    return LiveValidationResult(
+        project_id=project_id,
+        adapter_id=snapshot.adapter_id,
+        native_report="scripts/analysis/report-reconstruction-status.py --summary --json",
+        compared_metrics=len(comparisons),
+        input_fingerprint_sha256=snapshot.input_fingerprint_sha256,
+    )
+
+
 def _require_metric_parity(
     snapshot: RepositorySnapshot, expected: dict[tuple[str, str], int | float]
 ) -> None:
@@ -182,4 +220,3 @@ def _git_status(root: Path) -> str:
     if completed.returncode != 0:
         raise AdapterError(f"cannot record repository status: {completed.stderr.strip()}")
     return completed.stdout
-

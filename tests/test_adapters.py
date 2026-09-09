@@ -192,7 +192,97 @@ sha256 = "{HASH_B}"
         )
 
 
+def make_th08(root: Path) -> None:
+    write(
+        root,
+        "config/target.toml",
+        f'''[target]
+title = "Test th08"
+version = "1.00d"
+region = "test"
+filename = "th08.exe"
+size = 4096
+sha256 = "{HASH_A}"
+
+[pe]
+machine = "i386"
+image_base = "0x00400000"
+entry_point = "0x00401000"
+text_start = "0x00401000"
+text_end = "0x0040102F"
+
+[toolchain]
+family = "Microsoft Visual C++ .NET 2002 (VC7)"
+compiler_build = 9466
+''',
+    )
+    write(
+        root,
+        "config/mapping.csv",
+        "th08::Shared,0x00401000,0x10,__cdecl,,void\n"
+        "th08::Shared,0x00401010,0x10,__cdecl,,void\n"
+        "LibraryFn,0x00401020,0x10,__cdecl,,void\n",
+    )
+    write(
+        root,
+        "config/reccmp-functions.csv",
+        "name,address,type\n"
+        "th08::Shared,0x00401000,function\n"
+        "th08::Shared,0x00401010,function\n"
+        "LibraryFn,0x00401020,library\n",
+    )
+    write(root, "config/implemented.csv", "th08::Shared\n")
+    write(
+        root,
+        "config/matches.csv",
+        "address,name,size,status,match_percent,unit,evidence\n"
+        "0x00401000,th08::Shared,16,matching,100.00,shared-a,exact\n"
+        "0x00401010,th08::Shared,16,matching,100.00,shared-b,exact\n",
+    )
+    write(
+        root,
+        "config/match-units.toml",
+        "schema_version = 1\n"
+        "[[units]]\nname = \"shared-a\"\ntarget_address = 0x00401000\n"
+        "[[units]]\nname = \"shared-b\"\ntarget_address = 0x00401010\n",
+    )
+    write(
+        root,
+        "config/library-matches.csv",
+        "address,name,size,status,unit,evidence\n"
+        "0x00401020,LibraryFn,16,matching,library-fn,exact\n",
+    )
+    write(
+        root,
+        "config/library-match-units.toml",
+        "schema_version = 1\n"
+        "[[units]]\nname = \"library-fn\"\ntarget_address = 0x00401020\n",
+    )
+    write(
+        root,
+        "config/library-provenance.toml",
+        f'''schema_version = 1
+[[archives]]
+id = "vc7-lib"
+sha256 = "{HASH_B}"
+''',
+    )
+
+
 class AdapterTests(unittest.TestCase):
+    def test_th08_name_aliases_count_source_presence_by_address(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            make_th08(root)
+            snapshot = inspect_repository(root)
+            self.assertEqual(snapshot.adapter_id, "th08-vc7-ledgers-v1")
+            self.assertEqual(metric(snapshot, "inventory.authored"), 2)
+            self.assertEqual(metric(snapshot, "source.present-functions"), 2)
+            self.assertEqual(metric(snapshot, "exact.functions"), 2)
+            self.assertEqual(metric(snapshot, "library.exact-functions"), 1)
+            self.assertEqual(snapshot.oracle_results, ())
+            self.assertEqual(kit_for_snapshot(snapshot).toolchain.id, "msvc7")
+
     def test_th04_preserves_unknown_version_and_zero_extent(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

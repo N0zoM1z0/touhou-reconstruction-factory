@@ -68,6 +68,29 @@ executable.
 value is retained in claim data. Unrecognized origin values produce error
 diagnostics rather than guessed classifications.
 
+### `th08-vc7-ledgers-v1`
+
+Inputs:
+
+- `config/target.toml`
+- the headerless `config/mapping.csv`
+- `config/reccmp-functions.csv`
+- `config/implemented.csv`
+- authored `matches.csv` and `match-units.toml`
+- library `library-matches.csv`, `library-match-units.toml`, and
+  `library-provenance.toml`
+
+TH08 has a distinct, older Windows ledger shape and is intentionally not
+coerced into the TH095/TH105 adapter. Its inventory separates `function`
+(authored) and `library` rows. Authored and library exactness remain separate
+metrics and claims, and neither is converted into a factory oracle result.
+
+`implemented.csv` is a set of source-level names, not function identities. One
+name may cover more than one target address, so source-present function counts
+are computed over target-address rows. At the validated checkpoint, 1,106
+unique implemented names cover 1,107 authored target functions. Treating the
+set size as the function count would be a silent undercount.
+
 ## Native parity validation
 
 `validate-live` runs each repository's read-only native status command and
@@ -77,12 +100,13 @@ and rejects a report if validation changed the working tree.
 ```bash
 PYTHONPATH=src python3 -m reconstruction_factory validate-live \
   /path/to/th04 \
+  /path/to/th08 \
   /path/to/th095 \
   /path/to/th105
 ```
 
 At the 2026-09-09 development snapshot, validation compared 36 TH04 metrics,
-10 TH095 metrics, and 12 TH105 metrics with exact parity.
+11 TH08 metrics, 10 TH095 metrics, and 12 TH105 metrics with exact parity.
 
 ## Snapshot inspection
 
@@ -98,7 +122,7 @@ snapshot.
 
 - Adapters do not execute compilers, disassemblers, exact comparators, or
   whole-build commands.
-- TH07 and TH08 adapters are not yet implemented.
+- A TH07 adapter is not yet implemented.
 - Existing evidence prose and IDs are imported but are not automatically
   promoted into the factory artifact store.
 - Whole-build closure remains unattested unless a structured receipt exists;

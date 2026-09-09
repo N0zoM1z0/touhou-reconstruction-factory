@@ -62,6 +62,13 @@ class RepositoryReader:
         except (UnicodeDecodeError, csv.Error) as error:
             raise AdapterError(f"invalid CSV input {relative}: {error}") from error
 
+    def csv_rows(self, relative: str) -> list[list[str]]:
+        try:
+            text = self.bytes(relative).decode("utf-8-sig")
+            return list(csv.reader(io.StringIO(text, newline="")))
+        except (UnicodeDecodeError, csv.Error) as error:
+            raise AdapterError(f"invalid CSV input {relative}: {error}") from error
+
     def csv_column(self, relative: str) -> list[str]:
         try:
             text = self.bytes(relative).decode("utf-8-sig")
