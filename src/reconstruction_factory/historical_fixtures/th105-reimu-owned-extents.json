@@ -6,7 +6,7 @@
   "project": "th105",
   "contract": "owned-extent-exactness",
   "provenance": {
-    "repository": "N0zoM1z0/th105-reconstruction",
+    "repository": "N0zoM1z0/th105",
     "commit": "07f5ac9f35c041858962acc35e941ef9379451a5",
     "paths": [
       "config/function-byte-ownership.toml",

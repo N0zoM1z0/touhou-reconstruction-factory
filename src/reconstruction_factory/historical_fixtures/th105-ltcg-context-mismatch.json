@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th105-ltcg-context-mismatch",
+  "title": "Decompiler source shape does not reproduce LTCG physical layout by itself",
+  "project": "th105",
+  "contract": "codegen-context-comparison",
+  "provenance": {
+    "repository": "N0zoM1z0/th105",
+    "commit": "0b2474986909c4be8c241fa26c5acb960648d4d5",
+    "paths": ["docs/KNOWLEDGE_BASE.md", "docs/RE_HANDOFF.md"],
+    "observation": "Two target-shaped C++ label variants compiled as standalone VC8 candidates both retained 321 byte differences, while a separate event-label variant retained 509. The clean retained baseline remained at 239 differences; no exact credit was granted because linked LTCG owner/layout context remained unknown."
+  },
+  "input": {
+    "coverage_complete": true,
+    "target_codegen_context": "vc8-ltcg-linked-owner-layout",
+    "candidate_codegen_context": "vc8-standalone-translation-unit",
+    "differing_bytes": 239
+  },
+  "expected": {
+    "verdict": "fail",
+    "diagnostics": [
+      "codegen-content-mismatch",
+      "codegen-context-not-equivalent"
+    ]
+  }
+}

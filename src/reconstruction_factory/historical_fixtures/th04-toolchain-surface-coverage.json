@@ -1,0 +1,52 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th04-toolchain-surface-coverage",
+  "title": "A compiler executable alone is not a complete toolchain identity",
+  "project": "th04",
+  "contract": "toolchain-surface-coverage",
+  "provenance": {
+    "repository": "N0zoM1z0/th04",
+    "commit": "90a66e8a539fbaf0e391f4a443ded135a49be10a",
+    "paths": ["config/toolchain.toml", "docs/KNOWLEDGE_BASE.md"],
+    "observation": "The reviewed exact profile marks installation media, BIN, INCLUDE, LIB, startup source, active compiler/linker/runtime files, configuration files, assembler archive/binary, and the DOS runner as fourteen independent required hash surfaces."
+  },
+  "input": {
+    "required_surfaces": [
+      "tc40j-media",
+      "tc40j-bin",
+      "tc40j-include",
+      "tc40j-lib",
+      "tc40j-startup-source",
+      "active-tcc",
+      "active-tlink",
+      "active-dpmi16bi",
+      "active-rtm",
+      "turboc-cfg",
+      "tlink-cfg",
+      "tasm50-archive",
+      "active-tasm32",
+      "msdos-player-p0281"
+    ],
+    "fingerprinted_surfaces": [
+      "tc40j-media",
+      "tc40j-bin",
+      "tc40j-include",
+      "tc40j-lib",
+      "tc40j-startup-source",
+      "active-tcc",
+      "active-tlink",
+      "active-dpmi16bi",
+      "active-rtm",
+      "turboc-cfg",
+      "tlink-cfg",
+      "tasm50-archive",
+      "active-tasm32",
+      "msdos-player-p0281"
+    ]
+  },
+  "expected": {
+    "verdict": "pass",
+    "diagnostics": []
+  }
+}

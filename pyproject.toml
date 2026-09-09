@@ -19,4 +19,4 @@ reconstruction-factory = "reconstruction_factory.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-reconstruction_factory = ["historical_fixtures/*.json"]
+reconstruction_factory = ["historical_fixtures/*.json", "knowledge/*.json"]

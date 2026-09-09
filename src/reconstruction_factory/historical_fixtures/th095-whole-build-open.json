@@ -6,7 +6,7 @@
   "project": "th095",
   "contract": "whole-build-closure",
   "provenance": {
-    "repository": "N0zoM1z0/th095-reconstruction",
+    "repository": "N0zoM1z0/th095",
     "commit": "b864c31b0896eca14988e1af8e4d642a9d337c0a",
     "paths": ["docs/WHOLE_BUILD_TODO.md"],
     "observation": "Both canonical profiles compiled all 88 source translation units, and 696 of 697 source-present functions were exact, while the real link still reported 239 unique unresolved symbols across 258 diagnostics."

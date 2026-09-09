@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "target-identity-is-content-addressed",
+      "title": "Target identity is content-addressed",
+      "status": "verified",
+      "statement": "Claims and evidence are bound to an exact target digest; a title or version label is not a substitute for content identity.",
+      "scopes": ["all"],
+      "evidence_fixture_ids": ["th105-target-epoch-reset"],
+      "consequences": [
+        "Reject evidence whose target digest differs from the active target identity."
+      ],
+      "limitations": [
+        "Digest equality proves identity, not provenance, legality, or canonicality."
+      ]
+    },
+    {
+      "id": "boundaries-require-complete-coverage",
+      "title": "Observed boundaries require independent coverage",
+      "status": "verified",
+      "statement": "A disassembler-created function extent is an observation and cannot become an accepted complete boundary without sufficient independent coverage.",
+      "scopes": ["all"],
+      "evidence_fixture_ids": ["th04-boundary-undercoverage"],
+      "consequences": [
+        "Return incomplete when an observed extent covers less than the accepted extent."
+      ],
+      "limitations": [
+        "The first counterexample is segmented PC-98 code; it does not quantify error rates for other analysis tools or platforms."
+      ]
+    },
+    {
+      "id": "relocation-edge-and-content-are-distinct",
+      "title": "Relocation edges and destination contents are distinct evidence",
+      "status": "verified",
+      "statement": "Matching relocation type, addend, and destination address does not prove equality of the bytes stored at the destination.",
+      "scopes": ["windows-pe-coff", "msvc7"],
+      "evidence_fixture_ids": ["th08-relocation-literal-content"],
+      "consequences": [
+        "Attest referenced literal or data bytes before accepting a relocation-dependent exact claim."
+      ],
+      "limitations": [
+        "The fixture covers a VC7 DIR32 floating literal; providers must define encoding rules for other relocation and data kinds."
+      ]
+    },
+    {
+      "id": "function-exactness-and-product-closure-are-orthogonal",
+      "title": "Function exactness does not imply product closure",
+      "status": "verified",
+      "statement": "Source presence, exact function replay, translation-unit compilation, link closure, whole-image equality, and runtime validation are separate claims.",
+      "scopes": ["all"],
+      "evidence_fixture_ids": ["th095-whole-build-open"],
+      "consequences": [
+        "Never derive whole_build_closed from function, byte, source, or object progress metrics."
+      ],
+      "limitations": [
+        "The fixture disproves one implication; it does not prescribe a universal linker or runtime oracle."
+      ]
+    },
+    {
+      "id": "physical-ownership-and-exactness-are-orthogonal",
+      "title": "Physical ownership does not imply exactness",
+      "status": "verified",
+      "statement": "Owned source-function bytes may include exclusions and noncontiguous chunks, while exactness for each covered lane remains independently unproved.",
+      "scopes": ["windows-pe-coff", "msvc8-ltcg"],
+      "evidence_fixture_ids": [
+        "th105-reimu-owned-extents",
+        "th105-sakuya-owned-extents"
+      ],
+      "consequences": [
+        "Compute physical byte ownership from an extent graph and grant exact credit only to independently verified extents."
+      ],
+      "limitations": [
+        "The initial evidence covers two VC8 LTCG giant roots and must not be used to infer noncontiguous ownership for every function."
+      ]
+    },
+    {
+      "id": "source-names-and-function-identities-are-distinct",
+      "title": "Source-name cardinality is not function cardinality",
+      "status": "verified",
+      "statement": "A source-level implementation name may map to more than one target function identity, so progress must count the intended identity domain.",
+      "scopes": ["windows-pe-coff", "msvc7"],
+      "evidence_fixture_ids": ["th08-source-name-cardinality"],
+      "consequences": [
+        "Count source-present functions over target identities rather than unique implementation strings."
+      ],
+      "limitations": [
+        "The fixture establishes one TH08 authored alias group; other repositories may use one-to-one or different mapping rules."
+      ]
+    },
+    {
+      "id": "toolchain-identity-covers-output-affecting-surfaces",
+      "title": "Toolchain identity is a surface set",
+      "status": "verified",
+      "statement": "An exact toolchain and oracle-environment identity includes every pinned compiler, assembler, linker, configuration, header, library, startup, and execution surface required by its provider.",
+      "scopes": ["pc98-mz-omf", "borland16"],
+      "evidence_fixture_ids": ["th04-toolchain-surface-coverage"],
+      "consequences": [
+        "Return incomplete when any provider-required toolchain surface is absent from the identity fingerprint."
+      ],
+      "limitations": [
+        "The fourteen concrete surfaces belong to the reviewed TH04 profile; another provider may require a different set."
+      ]
+    },
+    {
+      "id": "codegen-context-cannot-waive-content-mismatch",
+      "title": "Codegen context explains but does not waive byte mismatch",
+      "status": "verified",
+      "statement": "Standalone and linked whole-program codegen contexts may produce different physical layouts, but observed differing bytes still reject an exact claim.",
+      "scopes": ["windows-pe-coff", "msvc8-ltcg"],
+      "evidence_fixture_ids": ["th105-ltcg-context-mismatch"],
+      "consequences": [
+        "Keep the claim non-exact while context recovery remains an open cause of observed byte differences."
+      ],
+      "limitations": [
+        "Different codegen context alone is not a failure when complete comparison independently proves equal target bytes."
+      ]
+    },
+    {
+      "id": "exact-evidence-is-claim-scoped",
+      "title": "Exact evidence is claim-scoped",
+      "status": "verified",
+      "statement": "A passing oracle result is reusable only when its artifact, unit, target extent, and other required identity fields match the exact claim being evaluated.",
+      "scopes": ["all"],
+      "evidence_fixture_ids": ["th04-exact-evidence-scope"],
+      "consequences": [
+        "Reject passing evidence rebound to another unit or extent, even when every oracle ID and result value is otherwise valid."
+      ],
+      "limitations": [
+        "Global and artifact-scoped oracle classes remain valid only when explicitly declared by the provider policy."
+      ]
+    },
+    {
+      "id": "mutable-tool-workspaces-are-invocation-scoped",
+      "title": "Concurrent mutable tools require invocation-scoped workspaces",
+      "status": "verified",
+      "statement": "Concurrent invocations of a tool that writes intermediates must not share the same case-insensitive workspace identity.",
+      "scopes": ["pc98-mz-omf", "borland16"],
+      "evidence_fixture_ids": ["th04-concurrent-workspace-isolation"],
+      "consequences": [
+        "Allocate unique provider-valid workspace paths before concurrent compiler, assembler, linker, or attestation probes run."
+      ],
+      "limitations": [
+        "The concrete eight-character naming rule is required by the reviewed DOS profile, not by every modern toolchain."
+      ]
+    },
+    {
+      "id": "cross-platform-runtime-equivalence",
+      "title": "Cross-platform runtime equivalence",
+      "status": "unknown",
+      "statement": "A common acceptance contract for replay-driven runtime equivalence across PC-98 emulators, Windows, Wine, and native ports has not yet been established in the factory.",
+      "scopes": ["all"],
+      "evidence_fixture_ids": [],
+      "consequences": [],
+      "limitations": [
+        "Existing repositories contain platform-specific smoke and runtime work, but no reviewed shared receipt schema has been imported here."
+      ]
+    },
+    {
+      "id": "vc8-linked-ltcg-reproduction",
+      "title": "VC8 linked LTCG reproduction",
+      "status": "unknown",
+      "statement": "A general recipe for reproducing every shipped VC8 LTCG physical-owner merge and placement decision is not known.",
+      "scopes": ["windows-pe-coff", "msvc8-ltcg"],
+      "evidence_fixture_ids": ["th105-ltcg-context-mismatch"],
+      "consequences": [],
+      "limitations": [
+        "Many individual functions are exact under focused reconstruction; this unknown applies only where linked layout context remains necessary."
+      ]
+    }
+  ]
+}

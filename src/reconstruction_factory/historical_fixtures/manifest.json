@@ -3,27 +3,47 @@
   "fixtures": [
     {
       "path": "th04-boundary-undercoverage.json",
-      "sha256": "51be08e29e2490dcd59ef8c29e7f51200599ae7804398990e4518f30d93b2065"
+      "sha256": "6fc2a444d2a59b0a1181f409bb870bc72f06f0a0fa946347e1d47b156075d03b"
+    },
+    {
+      "path": "th04-concurrent-workspace-isolation.json",
+      "sha256": "4983273a3a5e94373889d086585092f31a3d3c44a39da11f55d4540a10f55611"
+    },
+    {
+      "path": "th04-exact-evidence-scope.json",
+      "sha256": "2149ad3534c018e7a160f937495bc9468d89c006e35726af04fb5b92588604aa"
+    },
+    {
+      "path": "th04-toolchain-surface-coverage.json",
+      "sha256": "7f0203c0390dfbb45f700736f64e7e9b06934e14a5b8c98089e5a2a9981aeba3"
     },
     {
       "path": "th08-relocation-literal-content.json",
-      "sha256": "b89e2095418a2d25fca0edd8087336f34f6e5b3e2415f558d5d2b9d5d545858c"
+      "sha256": "f29edb4020d325df072240965f505bcf8e00b0d5137fbb321f0ec5c10fb7162e"
+    },
+    {
+      "path": "th08-source-name-cardinality.json",
+      "sha256": "7915f54495654555f0acf3a65741d2b46db869f7b198e9e19d3f43b093631a7b"
     },
     {
       "path": "th095-whole-build-open.json",
-      "sha256": "54b3fa857a1ac67487507112910c80513c74c0f0e5ca10708152761ee138f6a8"
+      "sha256": "7b00eeed89b1da670c4735015af00840a5840a09edbca52726d45cbaeebae49d"
+    },
+    {
+      "path": "th105-ltcg-context-mismatch.json",
+      "sha256": "80d0a8a016f4ac19c25c3c3f00a0011287097cf77981906f62910a44da62ace8"
     },
     {
       "path": "th105-reimu-owned-extents.json",
-      "sha256": "5fc1f9c4f791099a3a0e751b61bf4966c093dc06387105205d46123d9968e200"
+      "sha256": "f512dcf319210b58425af5eccdffe756a1e4e2cc8bb2fa275c439cac0f5b8b75"
     },
     {
       "path": "th105-sakuya-owned-extents.json",
-      "sha256": "32422d86817e40150344178782459a90edba5097d5f3a2f07dff14f224e34adc"
+      "sha256": "0deee8710bea1af10f9546cb96acd4ce0b0d972ff45bcb413e58564ba06eb8f1"
     },
     {
       "path": "th105-target-epoch-reset.json",
-      "sha256": "1ebc669c310ddfd5ef89c2fcb743415624e389db83a0d7a8d844a517defdf685"
+      "sha256": "eaec3604096f47c27fbf59c2f621ef025e29ba30ea460e59bb74105b598603fb"
     }
   ]
 }

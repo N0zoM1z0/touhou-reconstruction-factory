@@ -867,6 +867,45 @@ TH09 should be the first clean-room consumer of factory v0 rather than another s
 
 These questions do not block Phase 0 or the read-only portion of Phase 1.
 
+## 17. Implemented Foundation Checkpoint (2026-09-09)
+
+The first four requested layers are now executable rather than recommendations:
+
+- the versioned truth kernel and unified vocabulary;
+- compatible PC-98 MZ/OMF, Windows PE/COFF, Borland 16-bit, VC7, VC7.1, and
+  VC8 LTCG provider interfaces;
+- dedicated read-only adapters for TH04, TH08, and the TH095/TH105 ledger
+  family;
+- manifest-hashed historical regressions plus a scope-aware cross-game
+  knowledge catalog.
+
+TH08 required a separate adapter. Its headerless mapping, authored/library
+split, and source-name cardinality are materially different from the later
+Windows ledgers. Live parity exposed that 1,106 implemented names cover 1,107
+authored target addresses because `th08::Float3::Float3` names two constructor
+identities. That fact is now preserved as a fixture instead of hidden by a
+compatibility shim.
+
+The initial knowledge kernel contains eleven fixtures and ten verified rules
+covering target binding, boundary coverage, exact-evidence scope, relocation
+destination contents, source/function cardinality, whole-build closure,
+toolchain surfaces, concurrent workspace isolation, LTCG comparison context,
+and noncontiguous extent exactness. Two questions remain explicitly `unknown`:
+a unified cross-platform runtime-equivalence receipt and a general reproduction
+recipe for every VC8 linked-LTCG owner/layout decision.
+
+The checkpoint passes 31 local unit tests. Fixture JSON and the knowledge
+catalog also validate against their published JSON Schemas. Read-only native
+parity compares 36 TH04, 11 TH08, 10 TH095, and 12 TH105 metrics exactly, with
+Git working-tree state checked before and after each native report. A separate
+provenance command resolves every fixture's full commit, confirms the actual
+GitHub origin, and verifies all 29 cited evidence paths as committed blobs.
+
+This is still foundation infrastructure. Imported exact rows remain claims
+with zero factory `OracleResult(pass)` objects until a factory-controlled cold
+replay exists. Runtime equivalence, durable jobs, artifact storage, and write
+adapters remain future layers.
+
 ## Appendix A: Evidence Anchors
 
 This index is intentionally small. It identifies the sources that support the architectural conclusions without turning this document into a copy of every repository's history.
@@ -970,4 +1009,6 @@ Reviewed implementation root: `/home/pentester/coding/codex_ida/th04-reconstruct
 - Imported upstream history makes raw commit counts a scale indicator, not a direct measure of reconstruction labor.
 - This review did not launch games or perform new dynamic behavioral tests.
 - It inspected all commit subjects in the principal reconstruction ranges and selected high-impact diffs/documents, not every line of every commit.
-- Proposed contracts remain design recommendations until schemas and fixtures exercise them against at least the PC-98, VC7, and VC8 LTCG profiles.
+- Foundation contracts exercised by schemas, fixtures, and live parity are
+  implemented. Later runtime, job, artifact, and write-path proposals remain
+  design recommendations.

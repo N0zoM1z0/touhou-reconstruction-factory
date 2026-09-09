@@ -24,6 +24,8 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 PYTHONPATH=src python3 -m reconstruction_factory --help
 PYTHONPATH=src python3 -m reconstruction_factory inspect /path/to/repo --summary
 PYTHONPATH=src python3 -m reconstruction_factory fixtures
+PYTHONPATH=src python3 -m reconstruction_factory knowledge
+PYTHONPATH=src python3 -m reconstruction_factory verify-provenance --help
 ```
 
 Game repository adapters are read-only. They never run a compiler, mutate a
@@ -39,3 +41,5 @@ in [`docs/adapters.md`](docs/adapters.md).
 Cross-game lessons are retained as hash-pinned, executable counterexamples.
 Their evidence and verdict semantics are described in
 [`docs/regression-fixtures.md`](docs/regression-fixtures.md).
+Verified lessons and explicit unknowns are indexed by scope in the
+[`cross-game knowledge base`](docs/knowledge-base.md).

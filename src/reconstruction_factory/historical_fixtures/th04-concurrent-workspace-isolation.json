@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th04-concurrent-workspace-isolation",
+  "title": "Concurrent mutable tool invocations require isolated workspaces",
+  "project": "th04",
+  "contract": "workspace-isolation",
+  "provenance": {
+    "repository": "N0zoM1z0/th04",
+    "commit": "3a21f2942072c5eb22c659b28bf4ce7a54049cad",
+    "paths": ["scripts/attest_toolchain.py", "tests/test_toolchain.py"],
+    "observation": "The attestation probe replaced the shared TH04PROBE directory with per-process eight-character DOS-safe names. Tests prove two adjacent process IDs produce distinct workspace names and that linker paths use the selected workspace."
+  },
+  "input": {
+    "concurrent_invocation_ids": [74565, 74566],
+    "workspace_names": ["T4012345", "T4012346"],
+    "case_insensitive_namespace": true,
+    "max_component_length": 8,
+    "mutable_outputs": true
+  },
+  "expected": {
+    "verdict": "pass",
+    "diagnostics": []
+  }
+}

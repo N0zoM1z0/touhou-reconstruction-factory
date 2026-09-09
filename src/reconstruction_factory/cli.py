@@ -10,9 +10,10 @@ import sys
 from .adapters import inspect_repository
 from .errors import FactoryError
 from .factory import kit_for_snapshot
+from .knowledge import load_knowledge_catalog
 from .live_validation import validate_live_repository
 from .providers import builtin_registry
-from .regressions import run_fixture_suite
+from .regressions import run_fixture_suite, verify_fixture_provenance
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -41,6 +42,21 @@ def build_parser() -> argparse.ArgumentParser:
         "fixtures", help="run hash-pinned historical regression fixtures"
     )
     fixtures_parser.add_argument(
+        "--directory", type=Path, help="use an alternate fixture directory"
+    )
+    subparsers.add_parser("knowledge", help="print the scoped cross-game knowledge catalog")
+
+    provenance_parser = subparsers.add_parser(
+        "verify-provenance", help="verify fixture commits and paths in local repositories"
+    )
+    provenance_parser.add_argument(
+        "--repository",
+        action="append",
+        required=True,
+        metavar="PROJECT=PATH",
+        help="map a fixture project ID to a local Git repository",
+    )
+    provenance_parser.add_argument(
         "--directory", type=Path, help="use an alternate fixture directory"
     )
     return parser
@@ -93,6 +109,24 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "fixtures":
             report = run_fixture_suite(args.directory)
+            print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+            return 0 if report.passed else 1
+        if args.command == "knowledge":
+            catalog = load_knowledge_catalog()
+            print(json.dumps(catalog.to_dict(), indent=2, sort_keys=True))
+            return 0
+        if args.command == "verify-provenance":
+            repositories: dict[str, Path] = {}
+            for value in args.repository:
+                project, separator, raw_path = value.partition("=")
+                if not separator or not project or not raw_path:
+                    raise ValueError("--repository must use PROJECT=PATH")
+                if project in repositories:
+                    raise ValueError(f"duplicate --repository project: {project}")
+                repositories[project] = Path(raw_path)
+            report = verify_fixture_provenance(
+                repositories, directory=args.directory
+            )
             print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
             return 0 if report.passed else 1
     except (FactoryError, OSError, ValueError) as error:

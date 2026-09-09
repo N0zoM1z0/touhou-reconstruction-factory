@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th08-source-name-cardinality",
+  "title": "Source names are not necessarily target-function identities",
+  "project": "th08",
+  "contract": "source-presence-cardinality",
+  "provenance": {
+    "repository": "N0zoM1z0/th08",
+    "commit": "bd54d865ebbc9f7291b355d152b16cc4b7f5be59",
+    "paths": [
+      "config/implemented.csv",
+      "config/reccmp-functions.csv",
+      "scripts/analysis/report-reconstruction-status.py"
+    ],
+    "observation": "implemented.csv contains 1,106 unique authored names. th08::Float3::Float3 names distinct constructors at 0x00404720 and 0x0040B460, so those names cover 1,107 source-present authored target addresses."
+  },
+  "input": {
+    "coverage_complete": true,
+    "implemented_name_count": 1106,
+    "declared_source_present_functions": 1107,
+    "alias_groups": [
+      {
+        "name": "th08::Float3::Float3",
+        "addresses": ["0x00404720", "0x0040B460"]
+      }
+    ]
+  },
+  "expected": {
+    "verdict": "pass",
+    "diagnostics": []
+  }
+}

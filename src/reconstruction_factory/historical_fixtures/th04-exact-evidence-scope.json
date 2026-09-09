@@ -1,0 +1,70 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th04-exact-evidence-scope",
+  "title": "Passing evidence cannot be reused for another exact unit",
+  "project": "th04",
+  "contract": "exact-promotion-evidence",
+  "provenance": {
+    "repository": "N0zoM1z0/th04",
+    "commit": "7b2e66bddec143d4327d38467ed3d455c7074a8b",
+    "paths": [
+      "config/oracles.toml",
+      "scripts/validate_tracking.py",
+      "tests/test_tracking.py"
+    ],
+    "observation": "The adversarial exact-promotion tests rebind otherwise passing raw-byte evidence from unit-main-100 to unit-main-200 and require validation to fail closed."
+  },
+  "input": {
+    "claim_scope": {
+      "artifact": "th04-main",
+      "unit_id": "unit-main-100",
+      "extent_start": 256,
+      "extent_size": 16
+    },
+    "evidence_scope": {
+      "artifact": "th04-main",
+      "unit_id": "unit-main-200",
+      "extent_start": 256,
+      "extent_size": 16
+    },
+    "required_oracles": [
+      "target-identity",
+      "format-integrity",
+      "boundary-ownership",
+      "toolchain-identity",
+      "toolchain-replay",
+      "object-format-integrity",
+      "cold-build-determinism",
+      "layout-relocations",
+      "raw-bytes",
+      "ledger-consistency",
+      "cold-aggregate-replay"
+    ],
+    "passed_oracles": [
+      "target-identity",
+      "format-integrity",
+      "boundary-ownership",
+      "toolchain-identity",
+      "toolchain-replay",
+      "object-format-integrity",
+      "cold-build-determinism",
+      "layout-relocations",
+      "raw-bytes",
+      "ledger-consistency",
+      "cold-aggregate-replay"
+    ],
+    "boundary_reviewed": true,
+    "extent_within_artifact": true,
+    "source_checked_in": true,
+    "replay_metadata_complete": true,
+    "replay_driver_checked_in": true,
+    "replay_command_shell_free": true,
+    "hashes_valid": true,
+    "raw_hashes_equal": true
+  },
+  "expected": {
+    "verdict": "fail",
+    "diagnostics": ["exact-evidence-scope-mismatch"]
+  }
+}

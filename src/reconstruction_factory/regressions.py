@@ -14,6 +14,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 from typing import Any, Callable, Mapping
 
 from .errors import RegressionFixtureError
@@ -37,6 +38,11 @@ class RegressionContract(str, Enum):
     WHOLE_BUILD_CLOSURE = "whole-build-closure"
     TARGET_BINDING = "target-binding"
     OWNED_EXTENT_EXACTNESS = "owned-extent-exactness"
+    SOURCE_PRESENCE_CARDINALITY = "source-presence-cardinality"
+    TOOLCHAIN_SURFACE_COVERAGE = "toolchain-surface-coverage"
+    CODEGEN_CONTEXT_COMPARISON = "codegen-context-comparison"
+    EXACT_PROMOTION_EVIDENCE = "exact-promotion-evidence"
+    WORKSPACE_ISOLATION = "workspace-isolation"
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,6 +111,41 @@ class RegressionSuiteReport:
             "passed": self.passed,
             "fixture_count": len(self.evaluations),
             "evaluations": [item.to_dict() for item in self.evaluations],
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ProvenanceCheck:
+    fixture_id: str
+    project: str
+    repository: str
+    commit: str
+    verified_paths: tuple[str, ...]
+    diagnostics: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return not self.diagnostics
+
+    def to_dict(self) -> dict[str, Any]:
+        result = to_primitive(self)
+        result["passed"] = self.passed
+        return result
+
+
+@dataclass(frozen=True, slots=True)
+class ProvenanceReport:
+    checks: tuple[ProvenanceCheck, ...]
+
+    @property
+    def passed(self) -> bool:
+        return all(check.passed for check in self.checks)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "passed": self.passed,
+            "fixture_count": len(self.checks),
+            "checks": [check.to_dict() for check in self.checks],
         }
 
 
@@ -556,6 +597,265 @@ def _owned_extent_exactness(data: Mapping[str, Any]) -> RegressionOutcome:
     return RegressionOutcome(Verdict.PASS, (), facts)
 
 
+def _source_presence_cardinality(data: Mapping[str, Any]) -> RegressionOutcome:
+    _exact_keys(
+        data,
+        required={
+            "coverage_complete",
+            "implemented_name_count",
+            "declared_source_present_functions",
+            "alias_groups",
+        },
+        context="source-presence-cardinality input",
+    )
+    coverage_complete = _boolean(data["coverage_complete"], "coverage_complete")
+    name_count = _integer(data["implemented_name_count"], "implemented_name_count")
+    declared_functions = _integer(
+        data["declared_source_present_functions"], "declared_source_present_functions"
+    )
+    raw_groups = data["alias_groups"]
+    if not isinstance(raw_groups, list):
+        raise RegressionFixtureError("alias_groups must be a list")
+    names: set[str] = set()
+    addresses: set[int] = set()
+    alias_expansion = 0
+    for index, raw_group in enumerate(raw_groups):
+        group = _object(raw_group, f"alias_groups[{index}]")
+        _exact_keys(
+            group,
+            required={"name", "addresses"},
+            context=f"alias_groups[{index}]",
+        )
+        name = _string(group["name"], f"alias_groups[{index}].name")
+        if name in names:
+            raise RegressionFixtureError(f"duplicate alias group name: {name!r}")
+        names.add(name)
+        raw_addresses = group["addresses"]
+        if not isinstance(raw_addresses, list) or len(raw_addresses) < 2:
+            raise RegressionFixtureError("each alias group requires at least two addresses")
+        group_addresses: set[int] = set()
+        for item in raw_addresses:
+            address = int(_address(item, f"alias_groups[{index}].addresses"), 16)
+            if address in addresses or address in group_addresses:
+                raise RegressionFixtureError("alias group addresses must be globally unique")
+            group_addresses.add(address)
+        addresses.update(group_addresses)
+        alias_expansion += len(group_addresses) - 1
+    calculated_functions = name_count + alias_expansion
+    facts = {
+        "implemented_name_count": name_count,
+        "alias_group_count": len(raw_groups),
+        "alias_expansion": alias_expansion,
+        "calculated_source_present_functions": calculated_functions,
+    }
+    if not coverage_complete:
+        return RegressionOutcome(
+            Verdict.INCOMPLETE, ("source-presence-coverage-incomplete",), facts
+        )
+    if calculated_functions != declared_functions:
+        return RegressionOutcome(
+            Verdict.FAIL, ("source-presence-cardinality-mismatch",), facts
+        )
+    return RegressionOutcome(Verdict.PASS, (), facts)
+
+
+def _string_set(value: Any, context: str) -> set[str]:
+    if not isinstance(value, list):
+        raise RegressionFixtureError(f"{context} must be a list")
+    result = {_string(item, context) for item in value}
+    if len(result) != len(value):
+        raise RegressionFixtureError(f"{context} must not contain duplicates")
+    return result
+
+
+def _toolchain_surface_coverage(data: Mapping[str, Any]) -> RegressionOutcome:
+    _exact_keys(
+        data,
+        required={"required_surfaces", "fingerprinted_surfaces"},
+        context="toolchain-surface-coverage input",
+    )
+    required = _string_set(data["required_surfaces"], "required_surfaces")
+    fingerprinted = _string_set(data["fingerprinted_surfaces"], "fingerprinted_surfaces")
+    if not required:
+        raise RegressionFixtureError("required_surfaces must not be empty")
+    missing = sorted(required - fingerprinted)
+    facts = {
+        "required_surface_count": len(required),
+        "fingerprinted_surface_count": len(fingerprinted),
+        "missing_surfaces": missing,
+    }
+    if missing:
+        return RegressionOutcome(
+            Verdict.INCOMPLETE, ("toolchain-surface-coverage-incomplete",), facts
+        )
+    return RegressionOutcome(Verdict.PASS, (), facts)
+
+
+def _codegen_context_comparison(data: Mapping[str, Any]) -> RegressionOutcome:
+    _exact_keys(
+        data,
+        required={
+            "coverage_complete",
+            "target_codegen_context",
+            "candidate_codegen_context",
+            "differing_bytes",
+        },
+        context="codegen-context-comparison input",
+    )
+    coverage_complete = _boolean(data["coverage_complete"], "coverage_complete")
+    target_context = _string(data["target_codegen_context"], "target_codegen_context")
+    candidate_context = _string(
+        data["candidate_codegen_context"], "candidate_codegen_context"
+    )
+    differing_bytes = _integer(data["differing_bytes"], "differing_bytes")
+    facts = {
+        "target_codegen_context": target_context,
+        "candidate_codegen_context": candidate_context,
+        "contexts_equal": target_context == candidate_context,
+        "differing_bytes": differing_bytes,
+    }
+    if not coverage_complete:
+        return RegressionOutcome(
+            Verdict.INCOMPLETE, ("codegen-comparison-coverage-incomplete",), facts
+        )
+    if differing_bytes:
+        diagnostics = ["codegen-content-mismatch"]
+        if target_context != candidate_context:
+            diagnostics.append("codegen-context-not-equivalent")
+        return RegressionOutcome(Verdict.FAIL, tuple(diagnostics), facts)
+    return RegressionOutcome(Verdict.PASS, (), facts)
+
+
+def _scope(value: Any, context: str) -> dict[str, Any]:
+    result = _object(value, context)
+    _exact_keys(
+        result,
+        required={"artifact", "unit_id", "extent_start", "extent_size"},
+        context=context,
+    )
+    return {
+        "artifact": _string(result["artifact"], f"{context}.artifact"),
+        "unit_id": _string(result["unit_id"], f"{context}.unit_id"),
+        "extent_start": _integer(result["extent_start"], f"{context}.extent_start"),
+        "extent_size": _integer(
+            result["extent_size"], f"{context}.extent_size", minimum=1
+        ),
+    }
+
+
+def _exact_promotion_evidence(data: Mapping[str, Any]) -> RegressionOutcome:
+    _exact_keys(
+        data,
+        required={
+            "claim_scope",
+            "evidence_scope",
+            "required_oracles",
+            "passed_oracles",
+            "boundary_reviewed",
+            "extent_within_artifact",
+            "source_checked_in",
+            "replay_metadata_complete",
+            "replay_driver_checked_in",
+            "replay_command_shell_free",
+            "hashes_valid",
+            "raw_hashes_equal",
+        },
+        context="exact-promotion-evidence input",
+    )
+    claim_scope = _scope(data["claim_scope"], "claim_scope")
+    evidence_scope = _scope(data["evidence_scope"], "evidence_scope")
+    required = _string_set(data["required_oracles"], "required_oracles")
+    passed = _string_set(data["passed_oracles"], "passed_oracles")
+    if not required:
+        raise RegressionFixtureError("required_oracles must not be empty")
+    checks = {
+        name: _boolean(data[name], name)
+        for name in (
+            "boundary_reviewed",
+            "extent_within_artifact",
+            "source_checked_in",
+            "replay_metadata_complete",
+            "replay_driver_checked_in",
+            "replay_command_shell_free",
+            "hashes_valid",
+            "raw_hashes_equal",
+        )
+    }
+    facts = {
+        "claim_scope": claim_scope,
+        "evidence_scope": evidence_scope,
+        "missing_oracles": sorted(required - passed),
+    }
+    if claim_scope != evidence_scope:
+        return RegressionOutcome(Verdict.FAIL, ("exact-evidence-scope-mismatch",), facts)
+    if not checks["extent_within_artifact"]:
+        return RegressionOutcome(Verdict.FAIL, ("exact-extent-outside-artifact",), facts)
+    if not checks["hashes_valid"]:
+        return RegressionOutcome(Verdict.FAIL, ("exact-evidence-hash-invalid",), facts)
+    if not checks["raw_hashes_equal"]:
+        return RegressionOutcome(Verdict.FAIL, ("exact-raw-content-mismatch",), facts)
+    if not checks["replay_driver_checked_in"] or not checks["replay_command_shell_free"]:
+        return RegressionOutcome(Verdict.FAIL, ("exact-replay-driver-invalid",), facts)
+    incomplete = []
+    if not checks["boundary_reviewed"]:
+        incomplete.append("exact-boundary-coverage-incomplete")
+    if not checks["source_checked_in"]:
+        incomplete.append("exact-source-coverage-incomplete")
+    if not checks["replay_metadata_complete"]:
+        incomplete.append("exact-replay-metadata-incomplete")
+    if required - passed:
+        incomplete.append("exact-required-oracles-incomplete")
+    if incomplete:
+        return RegressionOutcome(Verdict.INCOMPLETE, tuple(incomplete), facts)
+    return RegressionOutcome(Verdict.PASS, (), facts)
+
+
+def _workspace_isolation(data: Mapping[str, Any]) -> RegressionOutcome:
+    _exact_keys(
+        data,
+        required={
+            "concurrent_invocation_ids",
+            "workspace_names",
+            "case_insensitive_namespace",
+            "max_component_length",
+            "mutable_outputs",
+        },
+        context="workspace-isolation input",
+    )
+    raw_ids = data["concurrent_invocation_ids"]
+    raw_names = data["workspace_names"]
+    if not isinstance(raw_ids, list) or len(raw_ids) < 2:
+        raise RegressionFixtureError("concurrent_invocation_ids requires at least two entries")
+    if not isinstance(raw_names, list):
+        raise RegressionFixtureError("workspace_names must be a list")
+    invocation_ids = [
+        _integer(item, "concurrent_invocation_ids", minimum=1) for item in raw_ids
+    ]
+    if len(invocation_ids) != len(set(invocation_ids)):
+        raise RegressionFixtureError("concurrent_invocation_ids must be unique")
+    names = [_string(item, "workspace_names") for item in raw_names]
+    case_insensitive = _boolean(
+        data["case_insensitive_namespace"], "case_insensitive_namespace"
+    )
+    max_length = _integer(data["max_component_length"], "max_component_length", minimum=1)
+    mutable_outputs = _boolean(data["mutable_outputs"], "mutable_outputs")
+    normalized = [name.casefold() if case_insensitive else name for name in names]
+    facts = {
+        "invocation_count": len(invocation_ids),
+        "workspace_count": len(names),
+        "unique_workspace_count": len(set(normalized)),
+    }
+    if len(names) != len(invocation_ids):
+        return RegressionOutcome(
+            Verdict.INCOMPLETE, ("workspace-assignment-incomplete",), facts
+        )
+    if any(len(name) > max_length or not re.fullmatch(r"[A-Z0-9]+", name) for name in names):
+        return RegressionOutcome(Verdict.FAIL, ("workspace-name-invalid",), facts)
+    if mutable_outputs and len(set(normalized)) != len(names):
+        return RegressionOutcome(Verdict.FAIL, ("workspace-collision",), facts)
+    return RegressionOutcome(Verdict.PASS, (), facts)
+
+
 _EVALUATORS: Mapping[
     RegressionContract, Callable[[Mapping[str, Any]], RegressionOutcome]
 ] = {
@@ -564,6 +864,11 @@ _EVALUATORS: Mapping[
     RegressionContract.WHOLE_BUILD_CLOSURE: _whole_build_closure,
     RegressionContract.TARGET_BINDING: _target_binding,
     RegressionContract.OWNED_EXTENT_EXACTNESS: _owned_extent_exactness,
+    RegressionContract.SOURCE_PRESENCE_CARDINALITY: _source_presence_cardinality,
+    RegressionContract.TOOLCHAIN_SURFACE_COVERAGE: _toolchain_surface_coverage,
+    RegressionContract.CODEGEN_CONTEXT_COMPARISON: _codegen_context_comparison,
+    RegressionContract.EXACT_PROMOTION_EVIDENCE: _exact_promotion_evidence,
+    RegressionContract.WORKSPACE_ISOLATION: _workspace_isolation,
 }
 
 
@@ -582,3 +887,100 @@ def evaluate_fixture(fixture: HistoricalFixture) -> FixtureEvaluation:
 def run_fixture_suite(directory: Path | None = None) -> RegressionSuiteReport:
     fixtures = load_fixture_suite(directory)
     return RegressionSuiteReport(tuple(evaluate_fixture(item) for item in fixtures))
+
+
+def verify_fixture_provenance(
+    repository_roots: Mapping[str, Path],
+    *,
+    directory: Path | None = None,
+    fixtures: tuple[HistoricalFixture, ...] | None = None,
+) -> ProvenanceReport:
+    """Verify fixture commits and blobs against explicitly selected local clones."""
+
+    selected = fixtures if fixtures is not None else load_fixture_suite(directory)
+    checks: list[ProvenanceCheck] = []
+    repository_cache: dict[tuple[str, str], tuple[Path | None, tuple[str, ...]]] = {}
+    for fixture in selected:
+        repository_key = (fixture.project, fixture.provenance.repository)
+        cached = repository_cache.get(repository_key)
+        if cached is None:
+            configured = repository_roots.get(fixture.project)
+            diagnostics: list[str] = []
+            root: Path | None = None
+            if configured is None:
+                diagnostics.append("repository-root-missing")
+            else:
+                try:
+                    root = Path(configured).resolve(strict=True)
+                except OSError:
+                    diagnostics.append("repository-root-unreadable")
+                if root is not None:
+                    top = _git(root, "rev-parse", "--show-toplevel")
+                    if top is None or Path(top).resolve() != root:
+                        diagnostics.append("repository-root-invalid")
+                    remote = _git(root, "remote", "get-url", "origin")
+                    if remote is None:
+                        diagnostics.append("repository-origin-missing")
+                    elif _remote_repository_id(remote) != fixture.provenance.repository.lower():
+                        diagnostics.append("repository-origin-mismatch")
+            cached = (root, tuple(diagnostics))
+            repository_cache[repository_key] = cached
+        root, repository_diagnostics = cached
+        diagnostics = list(repository_diagnostics)
+        verified_paths: list[str] = []
+        if root is not None and not repository_diagnostics:
+            commit_spec = f"{fixture.provenance.commit}^{{commit}}"
+            if _git(root, "cat-file", "-e", commit_spec, capture=False) is None:
+                diagnostics.append("provenance-commit-missing")
+            else:
+                for source_path in fixture.provenance.paths:
+                    object_type = _git(
+                        root,
+                        "cat-file",
+                        "-t",
+                        f"{fixture.provenance.commit}:{source_path}",
+                    )
+                    if object_type != "blob":
+                        diagnostics.append(f"provenance-path-missing:{source_path}")
+                    else:
+                        verified_paths.append(source_path)
+        checks.append(
+            ProvenanceCheck(
+                fixture_id=fixture.id,
+                project=fixture.project,
+                repository=fixture.provenance.repository,
+                commit=fixture.provenance.commit,
+                verified_paths=tuple(verified_paths),
+                diagnostics=tuple(diagnostics),
+            )
+        )
+    return ProvenanceReport(tuple(checks))
+
+
+def _git(root: Path, *arguments: str, capture: bool = True) -> str | None:
+    try:
+        completed = subprocess.run(
+            ("git", *arguments),
+            cwd=root,
+            check=False,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0:
+        return None
+    return completed.stdout.strip() if capture else "ok"
+
+
+def _remote_repository_id(url: str) -> str:
+    value = url.strip().removesuffix(".git").rstrip("/")
+    if value.startswith("git@") and ":" in value:
+        value = value.split(":", 1)[1]
+    elif "://" in value:
+        value = value.split("://", 1)[1].split("/", 1)[-1]
+    parts = value.split("/")
+    return "/".join(parts[-2:]).lower() if len(parts) >= 2 else value.lower()

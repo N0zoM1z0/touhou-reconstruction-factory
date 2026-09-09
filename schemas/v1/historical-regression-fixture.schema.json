@@ -26,7 +26,12 @@
         "relocation-destination-content",
         "whole-build-closure",
         "target-binding",
-        "owned-extent-exactness"
+        "owned-extent-exactness",
+        "source-presence-cardinality",
+        "toolchain-surface-coverage",
+        "codegen-context-comparison",
+        "exact-promotion-evidence",
+        "workspace-isolation"
       ]
     },
     "provenance": {"$ref": "#/$defs/provenance"},

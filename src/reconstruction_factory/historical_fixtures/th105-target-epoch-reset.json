@@ -6,7 +6,7 @@
   "project": "th105",
   "contract": "target-binding",
   "provenance": {
-    "repository": "N0zoM1z0/th105-reconstruction",
+    "repository": "N0zoM1z0/th105",
     "commit": "c10b80aeae04b9fbdf6a89830abea3fe8989dfd5",
     "paths": ["config/target.toml", "config/functions.csv", "config/matches.csv"],
     "observation": "The reconstruction state was reset from a 3,039,232-byte retained executable to the 3,129,344-byte official updater executable. Both manifests called the target 1.06a, but their SHA-256 identities differ."

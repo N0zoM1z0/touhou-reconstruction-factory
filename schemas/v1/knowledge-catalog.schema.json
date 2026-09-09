@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/N0zoM1z0/touhou-reconstruction-factory/schemas/v1/knowledge-catalog.schema.json",
+  "title": "Touhou Reconstruction Cross-Game Knowledge Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "entries"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/entry"}
+    }
+  },
+  "$defs": {
+    "nonEmptyUniqueStrings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "uniqueStrings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "status",
+        "statement",
+        "scopes",
+        "evidence_fixture_ids",
+        "consequences",
+        "limitations"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+        "title": {"type": "string", "minLength": 1},
+        "status": {"enum": ["verified", "provisional", "unknown", "superseded"]},
+        "statement": {"type": "string", "minLength": 1},
+        "scopes": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+        "evidence_fixture_ids": {"$ref": "#/$defs/uniqueStrings"},
+        "consequences": {"$ref": "#/$defs/uniqueStrings"},
+        "limitations": {"$ref": "#/$defs/nonEmptyUniqueStrings"}
+      }
+    }
+  }
+}

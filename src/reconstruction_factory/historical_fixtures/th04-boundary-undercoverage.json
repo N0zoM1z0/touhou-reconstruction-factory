@@ -6,7 +6,7 @@
   "project": "th04",
   "contract": "boundary-coverage",
   "provenance": {
-    "repository": "N0zoM1z0/th04-reconstruction",
+    "repository": "N0zoM1z0/th04",
     "commit": "13abf3647902ad6f7e79c7f2b993ea90152680e6",
     "paths": [
       "config/units.csv",
