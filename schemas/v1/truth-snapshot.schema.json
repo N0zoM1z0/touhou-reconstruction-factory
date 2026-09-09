@@ -123,7 +123,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "subject_id": { "$ref": "#/$defs/id" },
-        "type": { "enum": ["target_attested", "boundary_reviewed", "origin_classified", "source_present", "compile_succeeded", "codegen_exact", "owned_extent_exact", "relocation_data_exact", "source_ownership", "object_ownership", "physical_ownership", "semantic_ownership", "whole_build_closed", "whole_image_exact", "semantic_evidence", "portable_runtime_validated"] },
+        "type": { "enum": ["target_attested", "boundary_extent", "origin_classified", "source_present", "compile_succeeded", "codegen_exact", "owned_extent_exact", "relocation_data_exact", "source_ownership", "object_ownership", "physical_ownership", "semantic_ownership", "whole_build_closed", "whole_image_exact", "semantic_evidence", "portable_runtime_validated"] },
         "target_identity_id": { "$ref": "#/$defs/id" },
         "value": { "type": "object" },
         "evidence_class": { "enum": ["observed", "corroborated", "inferred", "unknown"] },
@@ -207,4 +207,3 @@
     }
   }
 }
-

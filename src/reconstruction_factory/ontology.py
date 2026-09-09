@@ -57,7 +57,7 @@ class ExtentRole(StringEnum):
 
 class ClaimType(StringEnum):
     TARGET_ATTESTED = "target_attested"
-    BOUNDARY_REVIEWED = "boundary_reviewed"
+    BOUNDARY_EXTENT = "boundary_extent"
     ORIGIN_CLASSIFIED = "origin_classified"
     SOURCE_PRESENT = "source_present"
     COMPILE_SUCCEEDED = "compile_succeeded"
@@ -236,7 +236,7 @@ class Subject:
         _require_id(self.target_identity_id, "target_identity_id")
         if not self.name.strip():
             raise ValidationError("subject name must not be empty")
-        if self.kind in {SubjectKind.FUNCTION, SubjectKind.EXTENT, SubjectKind.DATA} and not self.extents:
+        if self.kind in {SubjectKind.EXTENT, SubjectKind.DATA} and not self.extents:
             raise ValidationError(f"{self.kind.value} subject requires at least one extent")
 
 
@@ -482,4 +482,3 @@ def to_primitive(value: Any) -> Any:
     if isinstance(value, (tuple, list)):
         return [to_primitive(item) for item in value]
     return value
-

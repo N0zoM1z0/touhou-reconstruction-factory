@@ -7,8 +7,10 @@ reconstruction instance. It makes target binding, subject scope, evidence,
 coverage, and oracle verdicts explicit. It does not prescribe PE, MZ, COFF,
 OMF, compiler, disassembler, or runtime implementations.
 
-The kernel follows one rule: a convenient workflow state must never imply a
-stronger truth claim than its evidence proves.
+The kernel follows two equivalent rules: a convenient workflow state must never
+imply a stronger truth claim than its evidence proves, and incomplete knowledge
+is preferable to incorrect knowledge. `unknown` and `incomplete` are valid,
+actionable outputs rather than failures to be hidden.
 
 ## Identity hierarchy
 
@@ -33,9 +35,13 @@ Addresses are never globally meaningful. Every subject is target-qualified,
 and every extent names its address space. Non-contiguous physical ownership is
 represented by multiple extents with explicit roles.
 
+A provisional function candidate may have no accepted extent. Such a subject
+is representable, but it cannot receive a passing exact claim. This is required
+for TH04 map-public observations whose current body size is zero.
+
 ## Claims and verdicts
 
-A **claim** is a typed assertion. Examples include `source_present`,
+A **claim** is a typed assertion. Examples include `boundary_extent`, `source_present`,
 `codegen_exact`, `physical_ownership`, and `whole_build_closed`. Claims bind to
 one subject and one target identity. Toolchain-dependent claims also bind to a
 toolchain identity.
@@ -106,4 +112,3 @@ not invalidate evidence, and holding a lease proves nothing about a subject.
 The Python dataclasses in `reconstruction_factory.ontology` enforce graph and
 fail-closed invariants. `schemas/v1/truth-snapshot.schema.json` is the
 language-neutral interchange contract. Both use schema version 1.
-

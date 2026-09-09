@@ -22,8 +22,15 @@ The v0 foundation has no runtime dependencies outside Python 3.11 or newer.
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 PYTHONPATH=src python3 -m reconstruction_factory --help
+PYTHONPATH=src python3 -m reconstruction_factory inspect /path/to/repo --summary
 ```
 
 Game repository adapters are read-only. They never run a compiler, mutate a
 ledger, or infer an exact claim from a progress percentage.
 
+The governing principle is **accuracy before completeness**. Unknown or
+incomplete state is valid output. Guessed identity, extent, origin, ownership,
+or exactness is not.
+
+The existing-repository import contract and live parity procedure are described
+in [`docs/adapters.md`](docs/adapters.md).
