@@ -917,6 +917,23 @@ does not imply LTCG owner or image closure. Exact receipt IDs, repository
 commits, dirty-tree caveats, and reproduction commands are recorded in
 [`replay-validation.md`](replay-validation.md).
 
+The next acceptance layer is also executable. A content-addressed registry now
+classifies every stored candidate as `invalid`, `rejected`, or `accepted`
+through an explicit, hash-bound live policy. Accepted snapshot materialization
+drops any imported oracle results and adds only receipt-backed results after
+claim, subject, artifact, and freshness revalidation. Receipt-backed knowledge
+queries use the same boundary and remain separate from reviewed cross-game
+rules backed by historical fixtures.
+
+The final acceptance checkpoint passes 63 unit tests. A fresh four-receipt
+store admitted one bounded exact result for each of TH04, TH08, TH095, and
+TH105 with zero rejected or invalid candidates; the policy, registry, all
+receipts, and all materialized snapshots also passed their JSON Schemas.
+Re-evaluating older receipts after a runner change admitted none, and mapping
+the isolated TH095 receipt to a different live worktree rejected it as stale.
+Exact IDs and limitations are recorded in
+[`replay-validation.md`](replay-validation.md).
+
 Durable asynchronous jobs, pagination, retention enforcement, signatures,
 named CI tiers, runtime equivalence, and write adapters remain future layers.
 

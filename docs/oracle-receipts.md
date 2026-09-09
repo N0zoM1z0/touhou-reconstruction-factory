@@ -131,3 +131,7 @@ Content addressing is integrity, not authorship. A hostile writer capable of
 replacing an entire store can manufacture a different internally consistent
 store. Signed receipts and remote transparency are separate future contracts;
 the current store is suitable for a trusted local or CI execution boundary.
+
+A valid receipt is not automatically accepted truth. Promotion into snapshots
+and receipt-backed queries is governed by the separate
+[`verified receipt acceptance registry`](acceptance-registry.md).

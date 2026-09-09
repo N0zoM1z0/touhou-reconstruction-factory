@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://touhou-reconstruction.invalid/schemas/v1/acceptance-policy.schema.json",
+  "title": "Touhou Reconstruction Factory Acceptance Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "description", "allowed_adapter_ids", "allowed_claim_types",
+    "allowed_oracle_ids", "allowed_driver_ids", "allowed_coldness",
+    "minimum_attestation", "driver_attestation_minimums",
+    "allow_dirty_source", "require_live_freshness",
+    "require_complete_coverage", "require_empty_acceptance_errors",
+    "schema_version"
+  ],
+  "properties": {
+    "id": { "$ref": "truth-snapshot.schema.json#/$defs/id" },
+    "description": { "type": "string", "minLength": 1 },
+    "allowed_adapter_ids": { "$ref": "#/$defs/nonemptyIds" },
+    "allowed_claim_types": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "truth-snapshot.schema.json#/$defs/claim/properties/type" }
+    },
+    "allowed_oracle_ids": { "$ref": "#/$defs/nonemptyIds" },
+    "allowed_driver_ids": { "$ref": "#/$defs/nonemptyIds" },
+    "allowed_coldness": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "isolated-double-build", "clean-output-graph", "forced-recompile"
+        ]
+      }
+    },
+    "minimum_attestation": {
+      "enum": ["observed", "verified"]
+    },
+    "driver_attestation_minimums": {
+      "type": "object",
+      "propertyNames": { "$ref": "truth-snapshot.schema.json#/$defs/id" },
+      "additionalProperties": { "enum": ["observed", "verified"] }
+    },
+    "allow_dirty_source": { "type": "boolean" },
+    "require_live_freshness": { "const": true },
+    "require_complete_coverage": { "const": true },
+    "require_empty_acceptance_errors": { "const": true },
+    "schema_version": { "const": 1 }
+  },
+  "$defs": {
+    "nonemptyIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "truth-snapshot.schema.json#/$defs/id" }
+    }
+  }
+}

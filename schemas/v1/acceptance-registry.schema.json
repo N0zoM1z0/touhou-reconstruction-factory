@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://touhou-reconstruction.invalid/schemas/v1/acceptance-registry.schema.json",
+  "title": "Touhou Reconstruction Factory Acceptance Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registry_id", "policy_id", "policy_sha256", "counts", "entries",
+    "schema_version"
+  ],
+  "properties": {
+    "registry_id": {
+      "type": "string",
+      "pattern": "^registry:[0-9a-f]{64}$"
+    },
+    "policy_id": { "$ref": "truth-snapshot.schema.json#/$defs/id" },
+    "policy_sha256": { "$ref": "truth-snapshot.schema.json#/$defs/sha256" },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidates", "accepted", "rejected", "invalid"],
+      "properties": {
+        "candidates": { "type": "integer", "minimum": 0 },
+        "accepted": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 },
+        "invalid": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    },
+    "schema_version": { "const": 1 }
+  },
+  "$defs": {
+    "nullableString": {
+      "type": ["string", "null"]
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_path", "candidate_sha256", "candidate_size", "decision",
+        "reasons", "receipt_id", "claim_id", "claim_type",
+        "target_identity_id", "oracle_id", "oracle_version", "result_id",
+        "verdict"
+      ],
+      "properties": {
+        "candidate_path": {
+          "type": "string",
+          "minLength": 1,
+          "not": { "pattern": "(^/|(^|/)\\.\\.(/|$))" }
+        },
+        "candidate_sha256": {
+          "anyOf": [
+            { "$ref": "truth-snapshot.schema.json#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "candidate_size": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "decision": { "enum": ["accepted", "rejected", "invalid"] },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "receipt_id": { "$ref": "#/$defs/nullableString" },
+        "claim_id": { "$ref": "#/$defs/nullableString" },
+        "claim_type": { "$ref": "#/$defs/nullableString" },
+        "target_identity_id": { "$ref": "#/$defs/nullableString" },
+        "oracle_id": { "$ref": "#/$defs/nullableString" },
+        "oracle_version": { "$ref": "#/$defs/nullableString" },
+        "result_id": { "$ref": "#/$defs/nullableString" },
+        "verdict": { "$ref": "#/$defs/nullableString" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "candidate_sha256": { "type": "null" } },
+            "required": ["candidate_sha256"]
+          },
+          "then": { "properties": { "candidate_size": { "type": "null" } } },
+          "else": { "properties": { "candidate_size": { "type": "integer" } } }
+        },
+        {
+          "if": {
+            "properties": { "decision": { "const": "accepted" } },
+            "required": ["decision"]
+          },
+          "then": {
+            "properties": {
+              "candidate_sha256": { "$ref": "truth-snapshot.schema.json#/$defs/sha256" },
+              "candidate_size": { "type": "integer", "minimum": 0 },
+              "reasons": { "maxItems": 0 },
+              "receipt_id": {
+                "type": "string",
+                "pattern": "^receipt:[0-9a-f]{64}$"
+              },
+              "claim_id": { "$ref": "truth-snapshot.schema.json#/$defs/id" },
+              "claim_type": { "$ref": "truth-snapshot.schema.json#/$defs/claim/properties/type" },
+              "target_identity_id": { "$ref": "truth-snapshot.schema.json#/$defs/id" },
+              "oracle_id": { "$ref": "truth-snapshot.schema.json#/$defs/id" },
+              "oracle_version": { "$ref": "truth-snapshot.schema.json#/$defs/sha256" },
+              "result_id": { "$ref": "truth-snapshot.schema.json#/$defs/id" },
+              "verdict": { "const": "pass" }
+            }
+          },
+          "else": {
+            "properties": { "reasons": { "minItems": 1 } }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -7,12 +7,14 @@ import json
 from pathlib import Path
 import sys
 
+from .acceptance import build_acceptance_registry, load_acceptance_policy
 from .adapters import inspect_repository
 from .artifact_store import ArtifactStore
 from .errors import FactoryError
 from .factory import kit_for_snapshot
 from .knowledge import load_knowledge_catalog
 from .live_validation import validate_live_repository
+from .ontology import ClaimType
 from .providers import builtin_registry
 from .regressions import run_fixture_suite, verify_fixture_provenance
 from .replay_runner import ReplayRunner, verify_live_freshness
@@ -47,6 +49,35 @@ def build_parser() -> argparse.ArgumentParser:
         "--directory", type=Path, help="use an alternate fixture directory"
     )
     subparsers.add_parser("knowledge", help="print the scoped cross-game knowledge catalog")
+
+    registry_parser = subparsers.add_parser(
+        "acceptance-registry",
+        help="classify receipt candidates through an explicit live policy",
+    )
+    _add_registry_arguments(registry_parser)
+
+    accepted_inspect_parser = subparsers.add_parser(
+        "inspect-accepted",
+        help="materialize a snapshot using only registry-accepted oracle results",
+    )
+    accepted_inspect_parser.add_argument("repository", type=Path)
+    accepted_inspect_parser.add_argument("--store", type=Path, required=True)
+    accepted_inspect_parser.add_argument("--policy", type=Path, required=True)
+    accepted_inspect_parser.add_argument(
+        "--summary", action="store_true", help="omit subjects and claims from output"
+    )
+
+    accepted_knowledge_parser = subparsers.add_parser(
+        "accepted-knowledge",
+        help="query only facts backed by registry-accepted receipts",
+    )
+    _add_registry_arguments(accepted_knowledge_parser)
+    accepted_knowledge_parser.add_argument("--target")
+    accepted_knowledge_parser.add_argument(
+        "--claim-type",
+        choices=sorted(item.value for item in ClaimType),
+    )
+    accepted_knowledge_parser.add_argument("--oracle")
 
     provenance_parser = subparsers.add_parser(
         "verify-provenance", help="verify fixture commits and paths in local repositories"
@@ -138,6 +169,58 @@ def main(argv: list[str] | None = None) -> int:
             catalog = load_knowledge_catalog()
             print(json.dumps(catalog.to_dict(), indent=2, sort_keys=True))
             return 0
+        if args.command == "acceptance-registry":
+            registry = build_acceptance_registry(
+                ArtifactStore(args.store),
+                load_acceptance_policy(args.policy),
+                _repository_map(args.repository),
+            )
+            print(json.dumps(registry.to_dict(), indent=2, sort_keys=True))
+            return 1 if registry.invalid_count else 0
+        if args.command == "inspect-accepted":
+            initial = inspect_repository(args.repository)
+            repository_map = {
+                target.id: args.repository for target in initial.targets
+            }
+            registry = build_acceptance_registry(
+                ArtifactStore(args.store),
+                load_acceptance_policy(args.policy),
+                repository_map,
+            )
+            snapshot = registry.materialize_live_snapshot(args.repository)
+            payload = snapshot.to_dict()
+            payload["acceptance_registry"] = registry.to_dict()
+            if args.summary:
+                payload["counts"] = {
+                    "products": len(snapshot.products),
+                    "subjects": len(snapshot.subjects),
+                    "claims": len(snapshot.claims),
+                    "oracle_results": len(snapshot.oracle_results),
+                }
+                for key in ("subjects", "claims", "oracle_results", "artifacts"):
+                    payload.pop(key, None)
+            print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+            return 1 if registry.invalid_count else 0
+        if args.command == "accepted-knowledge":
+            registry = build_acceptance_registry(
+                ArtifactStore(args.store),
+                load_acceptance_policy(args.policy),
+                _repository_map(args.repository),
+            )
+            facts = registry.accepted_facts(
+                target_identity_id=args.target,
+                claim_type=ClaimType(args.claim_type) if args.claim_type else None,
+                oracle_id=args.oracle,
+            )
+            print(
+                json.dumps(
+                    {"registry": registry.to_dict(), "facts": facts},
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 1 if registry.invalid_count else 0
         if args.command == "verify-provenance":
             repositories: dict[str, Path] = {}
             for value in args.repository:
@@ -200,3 +283,27 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {error}", file=sys.stderr)
         return 1
     return 2
+
+
+def _add_registry_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--store", type=Path, required=True)
+    parser.add_argument("--policy", type=Path, required=True)
+    parser.add_argument(
+        "--repository",
+        action="append",
+        default=[],
+        metavar="TARGET_ID=PATH",
+        help="bind a receipt target identity to a live repository",
+    )
+
+
+def _repository_map(values: list[str]) -> dict[str, Path]:
+    repositories: dict[str, Path] = {}
+    for value in values:
+        target_id, separator, raw_path = value.partition("=")
+        if not separator or not target_id or not raw_path:
+            raise ValueError("--repository must use TARGET_ID=PATH")
+        if target_id in repositories:
+            raise ValueError(f"duplicate --repository target identity: {target_id}")
+        repositories[target_id] = Path(raw_path)
+    return repositories

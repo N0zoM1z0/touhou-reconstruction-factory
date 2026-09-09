@@ -23,3 +23,7 @@ class RegressionFixtureError(ValidationError):
 
 class ReplayError(FactoryError):
     """Raised when a controlled replay cannot satisfy its execution contract."""
+
+
+class AcceptanceError(FactoryError):
+    """Raised when receipts cannot satisfy an acceptance registry contract."""

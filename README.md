@@ -28,6 +28,9 @@ PYTHONPATH=src python3 -m reconstruction_factory knowledge
 PYTHONPATH=src python3 -m reconstruction_factory verify-provenance --help
 PYTHONPATH=src python3 -m reconstruction_factory replay --help
 PYTHONPATH=src python3 -m reconstruction_factory verify-receipt --help
+PYTHONPATH=src python3 -m reconstruction_factory acceptance-registry --help
+PYTHONPATH=src python3 -m reconstruction_factory inspect-accepted --help
+PYTHONPATH=src python3 -m reconstruction_factory accepted-knowledge --help
 ```
 
 Game repository adapters are read-only. They never run a compiler, mutate a
@@ -52,3 +55,6 @@ Factory-controlled replay and content-addressed evidence are specified in
 [`docs/oracle-receipts.md`](docs/oracle-receipts.md).
 The first live TH04/TH08/TH095/TH105 replay matrix and its exact limitations
 are recorded in [`docs/replay-validation.md`](docs/replay-validation.md).
+Only receipts admitted by an explicit live policy can enter accepted snapshots
+or receipt-backed knowledge queries; see the
+[`acceptance registry contract`](docs/acceptance-registry.md).

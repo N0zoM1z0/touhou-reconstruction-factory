@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import fcntl
 import os
 from pathlib import Path
 import re
@@ -58,6 +56,7 @@ from .replay_identity import (
     environment_binding,
     file_sha256,
     observe_component,
+    repository_lock,
 )
 
 
@@ -76,7 +75,7 @@ class ReplayRunner:
 
     def run(self, repository: str | Path, claim_id: str) -> ReplayRun:
         root = Path(repository).expanduser().resolve(strict=True)
-        with self._repository_lock(root):
+        with repository_lock(root, exclusive=True):
             snapshot = inspect_repository(root)
             claim = _one(snapshot.claims, claim_id, "claim")
             subject = _one(snapshot.subjects, claim.subject_id, "subject")
@@ -390,39 +389,6 @@ class ReplayRunner:
                 stdout.read(),
                 stderr.read(),
             )
-
-    @contextmanager
-    def _repository_lock(self, repository: Path) -> Iterator[None]:
-        try:
-            raw_path = subprocess.check_output(
-                [
-                    "git",
-                    "-C",
-                    str(repository),
-                    "rev-parse",
-                    "--git-path",
-                    "reconstruction-factory-replay.lock",
-                ],
-                stderr=subprocess.PIPE,
-                text=True,
-            ).strip()
-        except subprocess.CalledProcessError as error:
-            detail = error.stderr.strip()
-            raise ReplayError(f"cannot resolve repository replay lock: {detail}") from error
-        path = Path(raw_path)
-        if not path.is_absolute():
-            path = repository / path
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a+b") as stream:
-            try:
-                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError as error:
-                raise ReplayError(f"another factory replay owns {repository}") from error
-            try:
-                yield
-            finally:
-                fcntl.flock(stream, fcntl.LOCK_UN)
-
 
 def verify_live_freshness(
     document: Mapping[str, object], repository: str | Path

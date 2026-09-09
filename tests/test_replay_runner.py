@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from reconstruction_factory.artifact_store import ArtifactStore
+from reconstruction_factory.errors import ReplayError
 from reconstruction_factory.ontology import (
     Claim,
     ClaimType,
@@ -30,7 +31,7 @@ from reconstruction_factory.replay_drivers import (
     ReplayPlan,
     ReplayStagePlan,
 )
-from reconstruction_factory.replay_identity import file_sha256
+from reconstruction_factory.replay_identity import file_sha256, repository_lock
 from reconstruction_factory.replay_runner import ReplayRunner, verify_live_freshness
 
 
@@ -203,6 +204,12 @@ print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
         run = self.run_with(FakeDriver(coldness=Coldness.INCREMENTAL))
         self.assertEqual(run.receipt.result.verdict, Verdict.INCOMPLETE)
         self.assertIn("replay-coldness-insufficient", run.receipt.acceptance_errors)
+
+    def test_shared_registry_lock_cannot_overlap_exclusive_replay(self) -> None:
+        with repository_lock(self.root, exclusive=True):
+            with self.assertRaisesRegex(ReplayError, "another factory operation"):
+                with repository_lock(self.root, exclusive=False):
+                    self.fail("shared lock unexpectedly overlapped replay lock")
 
 
 if __name__ == "__main__":

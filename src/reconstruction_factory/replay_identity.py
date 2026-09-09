@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import os
 from pathlib import Path
 import stat
 import subprocess
-from typing import Iterable
+from typing import Iterable, Iterator
 
 from .errors import ReplayError
 from .oracle_receipts import ComponentObservation, SourceBinding, canonical_sha256
@@ -177,6 +179,47 @@ def component_set_sha256(components: Iterable[ComponentObservation]) -> str:
     from .ontology import to_primitive
 
     return canonical_sha256(to_primitive(tuple(components)))
+
+
+@contextmanager
+def repository_lock(
+    repository: Path,
+    *,
+    exclusive: bool,
+) -> Iterator[None]:
+    """Coordinate factory readers and replay writers through the Git directory."""
+
+    root = repository.resolve(strict=True)
+    try:
+        raw_path = subprocess.check_output(
+            [
+                "git",
+                "-C",
+                str(root),
+                "rev-parse",
+                "--git-path",
+                "reconstruction-factory-replay.lock",
+            ],
+            stderr=subprocess.PIPE,
+            text=True,
+        ).strip()
+    except subprocess.CalledProcessError as error:
+        detail = error.stderr.strip()
+        raise ReplayError(f"cannot resolve repository replay lock: {detail}") from error
+    path = Path(raw_path)
+    if not path.is_absolute():
+        path = root / path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    operation = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+    with path.open("a+b") as stream:
+        try:
+            fcntl.flock(stream, operation | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise ReplayError(f"another factory operation owns {root}") from error
+        try:
+            yield
+        finally:
+            fcntl.flock(stream, fcntl.LOCK_UN)
 
 
 def _directory_digest(

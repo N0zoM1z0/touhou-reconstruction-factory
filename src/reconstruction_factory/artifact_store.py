@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import stat
 import tempfile
 from typing import Any, Mapping
 
@@ -123,26 +124,32 @@ class ArtifactStore:
         if not isinstance(document, dict):
             raise ValidationError("receipt document must be an object")
         verify_receipt_integrity(document)
-        oracle_receipt_from_dict(document)
-        artifacts = document.get("artifacts")
-        if not isinstance(artifacts, list):
-            raise ValidationError("receipt artifacts must be an array")
-        for raw in artifacts:
-            if not isinstance(raw, dict):
-                raise ValidationError("receipt artifact entry must be an object")
-            digest = raw.get("sha256")
-            size = raw.get("size")
-            if not isinstance(digest, str) or not isinstance(size, int):
-                raise ValidationError("receipt artifact identity is malformed")
-            self._verify_object(self.object_path(digest), digest, size)
+        receipt = oracle_receipt_from_dict(document)
+        self.verify_receipt_artifacts(receipt)
         return document
+
+    def verify_receipt_artifacts(self, receipt: OracleReceipt) -> None:
+        """Require every artifact named by a semantically valid receipt."""
+
+        for artifact in receipt.artifacts:
+            self._verify_object(
+                self.object_path(artifact.sha256),
+                artifact.sha256,
+                artifact.size,
+            )
 
     @staticmethod
     def _verify_object(path: Path, expected_sha256: str, expected_size: int) -> None:
         try:
-            payload = path.read_bytes()
+            descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
         except FileNotFoundError as error:
             raise ReplayError(f"artifact object is missing: {path}") from error
+        except OSError as error:
+            raise ReplayError(f"artifact object cannot be opened safely: {path}") from error
+        with os.fdopen(descriptor, "rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ReplayError(f"artifact object is not a regular file: {path}")
+            payload = stream.read()
         actual = hashlib.sha256(payload).hexdigest()
         if len(payload) != expected_size or actual != expected_sha256:
             raise ReplayError(f"artifact object failed integrity verification: {path}")
