@@ -8,8 +8,9 @@ description: Operate verified Touhou reconstruction replays through the factory 
 Treat the factory as an evidence service, not as a claim generator. Imported
 claims are candidates. A completed job is only execution state. Only a current
 acceptance decision can promote a passing receipt into the Truth Kernel.
-Disposable workspace commands and diffs are development candidates, never
-receipts; use the `factory-workspace` skill for source work.
+Live-repository commands, builds, and Git commits are development candidates,
+never receipts; use `factory-reconstruction` for source work. Disposable
+workspace results have the same evidence limitation.
 
 ## Operate
 

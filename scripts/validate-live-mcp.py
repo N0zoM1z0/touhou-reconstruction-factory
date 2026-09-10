@@ -35,6 +35,8 @@ EXPECTED_TOOLS = {
     "factory_get_job",
     "factory_get_job_events",
     "factory_get_job_output_page",
+    "factory_get_repository_command_output",
+    "factory_get_repository_status",
     "factory_get_workspace",
     "factory_get_workspace_command_output",
     "factory_get_workspace_diff",
@@ -48,6 +50,7 @@ EXPECTED_TOOLS = {
     "factory_list_repositories",
     "factory_query_accepted_facts",
     "factory_query_knowledge",
+    "factory_repository_run_shell",
     "factory_submit_replay",
     "factory_workspace_apply_patch",
     "factory_workspace_list_files",
@@ -59,12 +62,14 @@ MUTATING_ANNOTATIONS = {
     "factory_create_workspace": (False, False, True),
     "factory_workspace_apply_patch": (False, False, False),
     "factory_workspace_run_shell": (False, True, False),
+    "factory_repository_run_shell": (False, True, False),
     "factory_discard_workspace": (False, True, True),
     "factory_submit_replay": (False, False, True),
     "factory_cancel_job": (False, True, True),
 }
 CAPABILITY = re.compile(r"^workspace:[0-9a-f]{32}$")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
+GIT_OBJECT = re.compile(r"^[0-9a-f]{40,64}$")
 TERMINAL_JOBS = {"completed", "failed", "cancelled"}
 
 
@@ -74,9 +79,17 @@ def _check(condition: bool, message: str) -> None:
 
 
 async def _call(
-    client: Client, name: str, arguments: dict[str, Any] | None = None
+    client: Client,
+    name: str,
+    arguments: dict[str, Any] | None = None,
+    *,
+    read_timeout_seconds: int = 120,
 ) -> dict[str, Any]:
-    result = await client.call_tool(name, arguments or {}, read_timeout_seconds=120)
+    result = await client.call_tool(
+        name,
+        arguments or {},
+        read_timeout_seconds=read_timeout_seconds,
+    )
     if result.is_error:
         detail = "\n".join(
             block.text
@@ -117,9 +130,32 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
         described = {item["id"] for item in description["repositories"]}
         _check(described == set(REPOSITORIES), "repository inventory drifted")
         _check(description["workspace"]["enabled"] is True, "workspace is disabled")
+        _check(
+            description["repository_work"]["enabled"] is True,
+            "live repository work is disabled",
+        )
+        _check(
+            description["repository_work"]["git_commit"] == "available"
+            and description["repository_work"]["git_push"] == "unavailable",
+            "live repository Git boundary drifted",
+        )
 
         repository_report: dict[str, Any] = {}
         for repository_id, adapter_id in REPOSITORIES.items():
+            worktree = await _call(
+                client,
+                "factory_get_repository_status",
+                {"repository_id": repository_id},
+            )
+            _check(
+                worktree["repository_id"] == repository_id,
+                "live repository status identity mismatch",
+            )
+            _check(
+                GIT_OBJECT.fullmatch(worktree["head_commit"]) is not None
+                and DIGEST.fullmatch(worktree["status_sha256"]) is not None,
+                "live repository status has an invalid identity",
+            )
             inspected = await _call(
                 client,
                 "factory_inspect_repository",
@@ -153,6 +189,15 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
                 "targets": inspected["target_identity_ids"],
                 "accepted_oracle_results": len(snapshot["oracle_results"]),
                 "input_fingerprint_sha256": inspected["input_fingerprint_sha256"],
+                "live_worktree": {
+                    "head_commit": worktree["head_commit"],
+                    "branch": worktree["branch"],
+                    "dirty": worktree["dirty"],
+                    "staged_changes": worktree["staged_changes"],
+                    "unstaged_changes": worktree["unstaged_changes"],
+                    "untracked_files": worktree["untracked_files"],
+                    "status_sha256": worktree["status_sha256"],
+                },
             }
 
         registry = await _call(client, "factory_get_acceptance_registry")
@@ -250,12 +295,133 @@ async def _analysis(url: str, report: dict[str, Any]) -> None:
                 payload["authority"] == "provisional-semantic-analysis",
                 "analysis authority drifted",
             )
+            bounded_query = None
+            if provider_id.endswith("-ghidra"):
+                query = await _call(
+                    client,
+                    "factory_analysis_call",
+                    {
+                        "analysis_provider_id": provider_id,
+                        "operation": "list_functions",
+                        "arguments_json": '{"limit":1,"offset":0}',
+                    },
+                    read_timeout_seconds=300,
+                )
+                _check(
+                    query["target"]["id"] == target_id
+                    and query["exactness_credit"] == "none",
+                    f"bounded Ghidra query escaped its target for {provider_id}",
+                )
+                _check(
+                    "returned: 1" in query["output"]["text"],
+                    f"bounded Ghidra query failed for {provider_id}",
+                )
+                bounded_query = "list_functions(limit=1)"
             outcomes[provider_id] = {
                 "status": "attested-success",
                 "target_identity_id": target_id,
                 "provider_binding_sha256": payload["provider_binding_sha256"],
+                "bounded_query": bounded_query,
             }
     report["analysis"] = outcomes
+
+
+async def _repository_toolchains(url: str, report: dict[str, Any]) -> None:
+    """Exercise every registered legacy toolchain through live-repository Bash.
+
+    These probes prove only that Factory exposes the selected repository's current
+    tool environment.  They deliberately do not create Oracle receipts or grant
+    exactness credit.
+    """
+
+    probes = {
+        "th04": (
+            "set -euo pipefail\n"
+            "probe_dir=$(mktemp -d)\n"
+            "trap 'rm -rf -- \"$probe_dir\"' EXIT\n"
+            "python3 scripts/attest_toolchain.py --json "
+            "--output \"$probe_dir/attestation.json\" >/dev/null\n"
+            "python3 - \"$probe_dir/attestation.json\" <<'PY'\n"
+            "import json, pathlib, sys\n"
+            "report = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+            "assert report['ready'] is True\n"
+            "assert report['identity_pass'] is True\n"
+            "assert report['execution_pass'] is True\n"
+            "PY\n"
+            "printf 'th04 Borland/Wine attestation passed\\n'\n"
+        ),
+        "th08": (
+            "set -euo pipefail\n"
+            "test \"$HOME\" = /home/pentester\n"
+            "test -d \"$HOME/.wineth08\"\n"
+            "output=$(./scripts/wineth08 ./scripts/th08run.bat cl 2>&1)\n"
+            "printf '%s\\n' \"$output\" | grep -F 'Microsoft (R)' >/dev/null\n"
+            "printf 'th08 VC7/Wine prefix passed\\n'\n"
+        ),
+        "th095": (
+            "set -euo pipefail\n"
+            "test \"$WINEPREFIX\" = /home/pentester/.wine\n"
+            "probe_dir=$(mktemp -d)\n"
+            "trap 'rm -rf -- \"$probe_dir\"' EXIT\n"
+            "printf 'extern \"C\" int factory_probe(void) { return 95; }\\n' "
+            "> \"$probe_dir/probe.cpp\"\n"
+            "scripts/compile-probe.sh \"$probe_dir/probe.cpp\" "
+            "\"$probe_dir/probe.obj\" /O2 /GR /EHsc /MT\n"
+            "test -s \"$probe_dir/probe.obj\"\n"
+            "printf 'th095 VC7.1/Wine probe passed\\n'\n"
+        ),
+        "th105": (
+            "set -euo pipefail\n"
+            "probe_dir=$(mktemp -d)\n"
+            "trap 'rm -rf -- \"$probe_dir\"' EXIT\n"
+            "printf 'extern \"C\" int factory_probe(void) { return 105; }\\n' "
+            "> \"$probe_dir/probe.cpp\"\n"
+            "scripts/compile-unit.sh \"$probe_dir/probe.cpp\" "
+            "\"$probe_dir/probe.obj\"\n"
+            "test -s \"$probe_dir/probe.obj\"\n"
+            "printf 'th105 VC8 SP1/Wine probe passed\\n'\n"
+        ),
+    }
+    outcomes: dict[str, Any] = {}
+    async with Client(url, read_timeout_seconds=900) as client:
+        for repository_id, script in probes.items():
+            before = await _call(
+                client,
+                "factory_get_repository_status",
+                {"repository_id": repository_id},
+            )
+            command = await _call(
+                client,
+                "factory_repository_run_shell",
+                {
+                    "repository_id": repository_id,
+                    "relative_cwd": ".",
+                    "timeout_seconds": 600,
+                    "script": script,
+                },
+                read_timeout_seconds=900,
+            )
+            _check(command["exit_code"] == 0, f"toolchain probe failed for {repository_id}")
+            _check(command["timed_out"] is False, f"toolchain probe timed out for {repository_id}")
+            _check(
+                command["before"]["head_commit"] == command["after"]["head_commit"],
+                f"toolchain probe changed HEAD for {repository_id}",
+            )
+            _check(
+                command["before"]["status_sha256"]
+                == command["after"]["status_sha256"]
+                == before["status_sha256"],
+                f"toolchain probe changed tracked or visible untracked state for {repository_id}",
+            )
+            _check(command["created_commits"] == [], "probe unexpectedly committed")
+            outcomes[repository_id] = {
+                "status": "passed",
+                "command_id": command["command_id"],
+                "head_commit": command["after"]["head_commit"],
+                "status_sha256": command["after"]["status_sha256"],
+                "exactness_credit": "none",
+            }
+    report["repository_toolchains"] = outcomes
 
 
 async def _workspace(url: str, report: dict[str, Any]) -> None:
@@ -480,6 +646,8 @@ async def _main(arguments: argparse.Namespace) -> dict[str, Any]:
     await _discovery_and_read_only(arguments.url, report)
     if arguments.analysis or arguments.all:
         await _analysis(arguments.url, report)
+    if arguments.repository_toolchains or arguments.all:
+        await _repository_toolchains(arguments.url, report)
     if arguments.workspace or arguments.all:
         await _workspace(arguments.url, report)
     if arguments.replay_th105 or arguments.all:
@@ -498,6 +666,11 @@ def main() -> int:
     )
     parser.add_argument("--url", default=DEFAULT_URL)
     parser.add_argument("--analysis", action="store_true")
+    parser.add_argument(
+        "--repository-toolchains",
+        action="store_true",
+        help="run non-committing Wine/toolchain probes in all live repositories",
+    )
     parser.add_argument("--workspace", action="store_true")
     parser.add_argument("--replay-th105", action="store_true")
     parser.add_argument(
@@ -507,7 +680,10 @@ def main() -> int:
     parser.add_argument(
         "--all",
         action="store_true",
-        help="run analysis, disposable workspace, and TH105 replay checks",
+        help=(
+            "run analysis, live toolchain, disposable workspace, and TH105 "
+            "replay checks"
+        ),
     )
     arguments = parser.parse_args()
     report = asyncio.run(_main(arguments))

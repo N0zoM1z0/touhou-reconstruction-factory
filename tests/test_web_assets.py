@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ElementTree
 
 
 ROOT = Path(__file__).parents[1]
-CONTRACT_ID = "gpt-web-reconstruction-session-v2"
+CONTRACT_ID = "gpt-web-reconstruction-session-v3"
 PLUGIN_ROOT = ROOT / "plugins" / "touhou-reconstruction-factory"
 FACTORY_APP_ID = "asdk_app_6aa21bec66888191bd24c118e47ddee6"
 
@@ -19,7 +19,7 @@ class WebWorkflowAssetTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(contract["schema_version"], 2)
+        self.assertEqual(contract["schema_version"], 3)
         self.assertEqual(contract["id"], CONTRACT_ID)
         self.assertEqual(
             set(contract["required_inputs"]),
@@ -28,8 +28,21 @@ class WebWorkflowAssetTests(unittest.TestCase):
         self.assertEqual(
             contract["authorities"]["analysis"]["exactness_credit"], "none"
         )
-        self.assertFalse(contract["authorities"]["workspace"]["canonical_write"])
-        self.assertFalse(contract["authorities"]["workspace"]["truth_promotion"])
+        self.assertTrue(
+            contract["authorities"]["repository_work"]["game_repository_write"]
+        )
+        self.assertTrue(
+            contract["authorities"]["repository_work"]["local_git_commit"]
+        )
+        self.assertFalse(contract["authorities"]["repository_work"]["git_push"])
+        self.assertFalse(
+            contract["authorities"]["repository_work"]["truth_promotion"]
+        )
+        self.assertFalse(
+            contract["authorities"]["disposable_workspace"][
+                "default_for_reconstruction"
+            ]
+        )
         self.assertEqual(
             contract["authorities"]["game_knowledge"]["canonical_path"],
             ".reconstruction/game-knowledge.json",
@@ -42,9 +55,7 @@ class WebWorkflowAssetTests(unittest.TestCase):
         self.assertFalse(
             contract["authorities"]["factory_knowledge"]["mcp_promotion"]
         )
-        self.assertFalse(
-            contract["authorities"]["replay"]["workspace_diff_eligible"]
-        )
+        self.assertFalse(contract["authorities"]["replay"]["dirty_source_eligible"])
         self.assertEqual(
             contract["authorities"]["acceptance_registry"]["role"],
             "sole live Truth Kernel admission authority",
@@ -53,17 +64,20 @@ class WebWorkflowAssetTests(unittest.TestCase):
             len(contract["workflow_phases"]), len(set(contract["workflow_phases"]))
         )
         self.assertIn(
-            "discard-a-resumable-workspace-without-instruction",
+            "git-push",
             contract["prohibitions"],
         )
         self.assertIn(
-            "run-the-game-or-start-portability-work", contract["prohibitions"]
+            "claim-exactness-from-build-or-git-commit", contract["prohibitions"]
         )
         self.assertIn(
             "publish-or-promote-game-local-knowledge", contract["prohibitions"]
         )
         self.assertIn("game_knowledge_changes", contract["handoff_fields"])
+        self.assertIn("created_checkpoint_commits", contract["handoff_fields"])
         self.assertIn("unknowns_and_blockers", contract["handoff_fields"])
+        self.assertIn("agent-autonomy-first", contract["design_principles"])
+        self.assertFalse(contract["checkpoint_rules"]["commit_is_exactness_evidence"])
 
     def test_prompt_skill_and_manifest_publish_the_same_workflow(self) -> None:
         prompt = (ROOT / "prompts" / "gpt-web-reconstruction.md").read_text(
@@ -93,6 +107,9 @@ class WebWorkflowAssetTests(unittest.TestCase):
         for document in (prompt, skill):
             self.assertIn(".reconstruction/game-knowledge.json", document)
             self.assertIn("factory_publication", document)
+            self.assertIn("factory_repository_run_shell", document)
+            self.assertIn("gpt-web:", document)
+            self.assertIn("Git push", document)
         self.assertIn("name: factory-reconstruction", skill)
         defaults = "\n".join(manifest["interface"]["defaultPrompt"])
         self.assertIn("reconstruction", defaults.lower())

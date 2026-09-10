@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -72,6 +73,15 @@ command_timeout_seconds = 5
 max_command_output_bytes = 1024
 max_patch_bytes = 65536
 
+[repository_work]
+enabled = true
+root = "state/repository-work"
+command_timeout_seconds = 10
+max_command_output_bytes = 65536
+git_author_name = "gpt-web"
+git_author_email = "gpt-web@example.invalid"
+shared_tool_roots = []
+
 [[repositories]]
 id = "th08"
 path = "repository"
@@ -102,6 +112,8 @@ target_identity_ids = ["target:th08-v1.00d-original"]
                 "factory_get_job",
                 "factory_get_job_events",
                 "factory_get_job_output_page",
+                "factory_get_repository_command_output",
+                "factory_get_repository_status",
                 "factory_get_workspace",
                 "factory_get_workspace_command_output",
                 "factory_get_workspace_diff",
@@ -115,6 +127,7 @@ target_identity_ids = ["target:th08-v1.00d-original"]
                 "factory_list_repositories",
                 "factory_query_accepted_facts",
                 "factory_query_knowledge",
+                "factory_repository_run_shell",
                 "factory_submit_replay",
                 "factory_workspace_apply_patch",
                 "factory_workspace_list_files",
@@ -143,11 +156,22 @@ target_identity_ids = ["target:th08-v1.00d-original"]
         )
         self.assertEqual(shell.input_schema["properties"]["script"]["maxLength"], 65536)
         self.assertTrue(shell.annotations.destructive_hint)
+        repository_shell = next(
+            tool
+            for tool in discovered.tools
+            if tool.name == "factory_repository_run_shell"
+        )
+        self.assertEqual(
+            repository_shell.input_schema["properties"]["script"]["maxLength"],
+            65536,
+        )
+        self.assertTrue(repository_shell.annotations.destructive_hint)
 
         mutating = {
             "factory_create_workspace": (False, False, True),
             "factory_workspace_apply_patch": (False, False, False),
             "factory_workspace_run_shell": (False, True, False),
+            "factory_repository_run_shell": (False, True, False),
             "factory_discard_workspace": (False, True, True),
             "factory_submit_replay": (False, False, True),
             "factory_cancel_job": (False, True, True),
@@ -181,6 +205,11 @@ target_identity_ids = ["target:th08-v1.00d-original"]
         self.assertFalse(description.is_error)
         self.assertEqual(description.structured_content["policy_id"], "strict-live-v1")
         self.assertTrue(description.structured_content["workspace"]["enabled"])
+        self.assertTrue(description.structured_content["repository_work"]["enabled"])
+        self.assertEqual(
+            description.structured_content["repository_work"]["git_push"],
+            "unavailable",
+        )
         self.assertEqual(
             knowledge.structured_content["authority"],
             "factory-published-cross-game",
@@ -196,6 +225,43 @@ target_identity_ids = ["target:th08-v1.00d-original"]
         self.assertTrue(repository_failure.is_error)
         self.assertNotIn(str(self.root), repository_failure.content[0].text)
         self.assertIn("<operator-path>", repository_failure.content[0].text)
+
+    @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
+    async def test_live_repository_shell_creates_a_reviewable_git_checkpoint(self) -> None:
+        async with Client(build_mcp_server(self.config)) as client:
+            before = await client.call_tool(
+                "factory_get_repository_status", {"repository_id": "th08"}
+            )
+            command = await client.call_tool(
+                "factory_repository_run_shell",
+                {
+                    "repository_id": "th08",
+                    "script": (
+                        "printf 'web checkpoint\\n' > checkpoint.txt\n"
+                        "git add checkpoint.txt\n"
+                        "git commit -m 'gpt-web: checkpoint through MCP'\n"
+                    ),
+                    "relative_cwd": ".",
+                    "timeout_seconds": 5,
+                },
+            )
+            after = await client.call_tool(
+                "factory_get_repository_status", {"repository_id": "th08"}
+            )
+        self.assertFalse(before.is_error)
+        self.assertFalse(command.is_error)
+        self.assertFalse(after.is_error)
+        result = command.structured_content
+        self.assertEqual(result["head_relation"], "advanced")
+        self.assertEqual(
+            result["created_commits"][0]["subject"],
+            "gpt-web: checkpoint through MCP",
+        )
+        self.assertNotEqual(
+            before.structured_content["head_commit"],
+            after.structured_content["head_commit"],
+        )
+        self.assertTrue(result["after"]["git_commit_is_checkpoint_only"])
 
     def test_bearer_token_has_minimum_length_floor(self) -> None:
         with self.assertRaisesRegex(ValueError, "at least 32"):

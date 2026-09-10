@@ -26,16 +26,16 @@ credit until a separate canonical replay receipt is accepted.
    decompilation, and disassembly as provisional evidence. Preserve
    `output_completeness`, `factory_output_truncated`,
    `factory_structured_output_omitted`, and any provider error.
-6. Correlate the result with committed source through the separate
-   `factory-workspace` skill. Do not claim that analysis changed source or that
-   workspace tests changed the analysis database.
-7. If exactness is requested, switch to `factory-replay` only after a reviewed
-   diff exists in the canonical repository and a matching claim is discoverable.
+6. Correlate the result with current source through the live-repository workflow
+   in `factory-reconstruction`. Do not claim that analysis changed source or
+   that repository tests changed the analysis database.
+7. If exactness is requested, switch to `factory-replay` only after the source
+   state is committed and a matching claim is discoverable.
    If no supported receipt covers the requested extent, report `unknown`.
 
-Do not seek rename, type-setting, comment-setting, patching, Python execution,
-file access, or bridge Bash operations. They are intentionally outside the
-factory allowlist.
+Do not seek native database mutation or bridge Bash through the analysis tool;
+they are outside its target-attested read surface. This does not restrict
+Python, file access, or Bash inside the separately registered game repository.
 
 ## TH105 example
 

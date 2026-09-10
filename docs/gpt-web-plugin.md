@@ -2,12 +2,12 @@
 
 ## Scope
 
-This is a deliberately small, single-operator integration. It packages separate
-source-workspace and evidence-replay skills with the factory MCP and exposes
-them, plus a target-attested analysis skill, through a fixed Tailscale Funnel
-URL. It does not automate repository
-creation, grant remote writes to canonical game repositories, require GitHub
-access, or introduce another verification path.
+This is a deliberately small, single-operator integration. It packages an
+autonomous live-repository reconstruction skill, an optional isolated-workspace
+skill, and separate analysis/replay skills with the Factory MCP through one
+fixed Tailscale Funnel URL. It does not automate repository creation, require
+GitHub access for reconstruction, provide Git push, or introduce another
+verification path.
 
 The committed endpoint is:
 
@@ -15,15 +15,13 @@ The committed endpoint is:
 https://laptop-9d3a7045.taile42c02.ts.net/touhou-reconstruction-factory-mcp
 ```
 
-It uses no token or login. Possession is not authorization: the URL is a public
-endpoint. Anyone who discovers it can inspect factory metadata and committed
-registered source, queue supported replays, request cancellation, and consume
-bounded source-only sandbox compute. Registered IDA/Ghidra providers also expose
-bounded read-only semantic queries. Arbitrary Bash exists only inside an
-expiring workspace with no network, host path, dirty/untracked/ignored source,
-canonical write, or fact-promotion authority. Keep registered source and
-artifacts non-sensitive, monitor capacity, and disable the Funnel route when it
-is not wanted.
+It uses no token or login in the operator's chosen one-user development setup.
+With the live-repository provider enabled, GPT-web can inspect dirty, untracked,
+and ignored game state; run broad Bash, Wine, and repo-local tools; modify source;
+and create local Git commits in every registered game repository. The runner has
+no network, so Git push is unavailable. Registered IDA/Ghidra providers expose
+target-attested semantic queries. None of these actions can publish cross-game
+knowledge or bypass replay-receipt acceptance.
 
 ## Components
 
@@ -34,20 +32,19 @@ is not wanted.
 - [`factory-replay/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-replay/SKILL.md)
   teaches the model the factory's trust states and resume workflow.
 - [`factory-workspace/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-workspace/SKILL.md)
-  teaches source exploration, transactional Bash, diff handoff, and the evidence
-  boundary.
+  teaches intentionally isolated committed-HEAD experiments; it is not the
+  default source workflow.
 - [`factory-analysis/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-analysis/SKILL.md)
   teaches target-attested semantic queries without native database writes or
   exactness inflation.
 - [`factory-reconstruction/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-reconstruction/SKILL.md)
-  coordinates a bounded, resumable source session while preserving the three
-  authority boundaries above and permits only schema-bound game-local
-  knowledge input, never Factory publication.
+  coordinates autonomous live source work, Bash/analysis/toolchain composition,
+  local `gpt-web:` checkpoints, and evidence boundaries.
 - [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md) provides a
   short installed-plugin invocation and a complete standalone prompt under the
-  machine-readable `gpt-web-reconstruction-session-v2` contract. Version 2
-  adds the fail-closed game-local knowledge input boundary; version 1 remains
-  committed only as an immutable historical contract.
+  machine-readable `gpt-web-reconstruction-session-v3` contract. Version 3
+  restores live-repository autonomy and Git checkpoints; versions 1 and 2 remain
+  committed as historical contracts.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
@@ -153,9 +150,13 @@ repository path. Copy `config/factory-mcp.env.example` to
 service-config, hostname, port, and path values. Do not put shell quoting around
 values in this systemd environment file.
 
-To enable source work, configure `[workspace]` with a root that is a strict
-child of `state_directory`. The MCP host must provide `bwrap`, `prlimit`,
-`nice`, Git, and ripgrep. Omit the table to disable every workspace operation.
+To enable normal source work, configure `[repository_work]` with a root that is
+a strict child of `state_directory`, a Git identity, output/time bounds, and any
+immutable `shared_tool_roots`. The MCP host must provide `bwrap`, `nice`, Git,
+Wine and the system dependencies required by the game scripts. Omit the table
+to disable live-repository operations. Configure `[workspace]` separately only
+when disposable committed-HEAD experiments are wanted; that provider also needs
+`prlimit` and ripgrep.
 The committed systemd unit applies a private umask, no-new-privileges, task,
 memory, swap, and core-dump limits to the whole MCP service cgroup.
 
@@ -242,15 +243,15 @@ and [Build skills](https://learn.chatgpt.com/docs/build-skills).
 Use the maintained prompt in
 [`prompts/gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md).
 With the plugin installed, select **@Touhou Reconstruction Factory** and fill in
-only the game ID, objective, optional scope hint, measurable stop condition, and
-an existing workspace ID when resuming. The longer standalone form repeats all
-authority and handoff rules for testing without automatic skill selection.
+the game ID, objective, optional scope hint, measurable stop condition, and an
+optional prior `gpt-web:` commit for orientation. The longer standalone form
+repeats all authority and handoff rules for testing without automatic skill
+selection.
 
-The prompt deliberately does not ask GPT-web to commit or push. The remote
-workspace is a committed-HEAD snapshot and exports a candidate diff. A local
-Codex session reviews and applies that diff to the canonical game repository;
-only then can a discovered canonical claim be replayed and considered by the
-acceptance registry.
+The prompt tells GPT-web to work directly in the registered live repository,
+compose Bash with IDA/Ghidra/Wine/toolchains, and create local English
+`gpt-web:` checkpoints after coherent tested units. It explicitly forbids Git
+push and keeps commits/builds separate from replay and Truth Kernel acceptance.
 
 ## TH105 acceptance smoke test
 
@@ -286,8 +287,25 @@ If any discovery result, target binding, replay output, freshness check, or
 policy decision differs, the correct smoke-test result is rejected, failed, or
 unknown—not a remembered success from an earlier receipt.
 
+## Live-repository capability smoke test
+
+Use a temporary registered Git repository for mutating release tests. Confirm
+that `factory_get_repository_status` reports its actual dirty/untracked state,
+then use `factory_repository_run_shell` to read an ignored fake toolchain, run a
+configured shared tool, edit a tracked source file, and create a local
+`gpt-web:` commit. Verify the returned before/after HEADs and created-commit
+subject, reconnect, and page the command output. Also verify that a timeout
+leaves its partial file visible and that output truncation does not abort the
+remaining script.
+
+Do not create and revert junk smoke commits in TH04, TH08, TH095, or TH105.
+Against those real registrations, use status and non-mutating tool/provider
+probes. Run real game build/replay scripts only when their documented ignored
+outputs and current dirty state have been reviewed.
+
 ## TH105 workspace smoke test
 
+This is now the optional isolation test, not the default reconstruction path.
 After installing a plugin version that includes `factory-workspace`, start a
 new conversation and use:
 
@@ -313,7 +331,59 @@ Then create a separate TH105 workspace and inspect the corresponding committed
 source. The analysis result guides the hypothesis; only a later replay can
 verify it.
 
-## Live deployment checkpoint
+## Current live autonomy checkpoint
+
+The fixed public URL was revalidated after enabling live repository work on
+2026-09-10. Discovery returned exactly 32 tools: the previous 29 plus live Git
+status, live repository Bash, and durable repository-command output. The public
+description reports `execution_mode="registered-live-worktree-v1"`, source mode
+`live-including-ignored`, local commit availability, no network, and no remote
+Git push. The replay-configuration digest remained
+`f3b26f68e0bf0fd12c7d29dca3c85e8070aea082839b106586ea317003361f89`;
+Web-only execution mounts did not change replay identity.
+
+The same public endpoint ran non-committing native toolchain probes for all four
+registrations:
+
+| Game | Actual path exercised | Result |
+| --- | --- | --- |
+| TH04 | Wine plus two deterministic Borland/TASM/TLINK compile/link/run rounds | Passed |
+| TH08 | VC7 through `scripts/wineth08` and the existing `~/.wineth08` prefix | Passed |
+| TH095 | VC7.1 compiled a fresh temporary C++ object through the existing `~/.wine` prefix | Passed |
+| TH105 | VC8 SP1 compiled a fresh temporary C++ object through its repo-local prefix | Passed |
+
+Each durable command recorded identical before/after HEAD and status digests and
+created no commit. The probes confirm current operational reachability only;
+all report zero exactness credit and do not create receipts.
+
+Analysis validation independently attested TH04 and TH095 Ghidra plus TH105 IDA.
+Bounded `list_functions(limit=1)` queries returned the expected target-bound
+entries for both Ghidra projects. TH08 IDA remained accurately unavailable
+because the active database was not the registered TH08 target. This proves the
+important distinction: one immutable Ghidra installation may later be shared,
+but project state and target attestation remain per-game.
+
+At observation time TH04 and TH08 were clean, while TH095 and TH105 contained
+existing local work. The concurrently active TH095 repository advanced
+externally through `2079327` and `b2f2435` during validation; each toolchain
+command itself began and ended on its freshly observed HEAD with
+`created_commits=[]`. The Factory exposed rather than erased or
+misattributed that state. Factory-owned repository work now shares the replay
+advisory lock, while ordinary local-terminal changes remain observable external
+events. No real-game smoke commit was created. Mutating Git checkpoint behavior
+is covered in temporary repositories by the release suite, including a
+`gpt-web:` commit after a nonzero command, durable output recovery, timeout
+persistence, and output truncation that does not abort later work.
+
+The final current-run TH105 replay completed as job
+`job:6206df3280854c9e968254b615b3daf7`, produced passing receipt
+`receipt:72e09c88ba2379229e29f80cf5bbee1eb3478ae49f632a04c0020033b5a0e24e`,
+and was accepted by registry
+`registry:fba55dacfee8a58501584fc87c1d3a09990f0cbb4f53819cdf58dae265fb8395`.
+A subsequent read reported 17 candidates, one current accepted TH105 result,
+16 rejected candidates, and zero invalid candidates.
+
+## Initial isolated-provider checkpoint
 
 The fixed public URL was exercised without credentials on 2026-09-10. Remote
 discovery returned exactly 29 factory tools: 15 replay/registry tools, 11

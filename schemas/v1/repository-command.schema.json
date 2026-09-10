@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/touhou-reconstruction-factory/schemas/v1/repository-command.schema.json",
+  "title": "Live repository command record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command_id",
+    "repository_id",
+    "script_sha256",
+    "relative_cwd",
+    "timeout_seconds",
+    "started_at",
+    "finished_at",
+    "state",
+    "exit_code",
+    "timed_out",
+    "filesystem_persisted",
+    "stdout_captured_bytes",
+    "stdout_observed_bytes",
+    "stderr_captured_bytes",
+    "stderr_observed_bytes",
+    "output_truncated",
+    "before",
+    "after",
+    "head_relation",
+    "created_commits"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "command_id": {"type": "string", "pattern": "^repository-command:[0-9a-f]{32}$"},
+    "repository_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$"},
+    "script_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relative_cwd": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "timeout_seconds": {"type": "integer", "minimum": 1},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": ["string", "null"], "format": "date-time"},
+    "state": {"enum": ["running", "completed", "timed-out", "interrupted"]},
+    "exit_code": {"type": ["integer", "null"]},
+    "timed_out": {"type": "boolean"},
+    "filesystem_persisted": {"const": true},
+    "stdout_captured_bytes": {"type": "integer", "minimum": 0},
+    "stdout_observed_bytes": {"type": "integer", "minimum": 0},
+    "stderr_captured_bytes": {"type": "integer", "minimum": 0},
+    "stderr_observed_bytes": {"type": "integer", "minimum": 0},
+    "output_truncated": {"type": "boolean"},
+    "before": {"$ref": "#/$defs/repository_status"},
+    "after": {
+      "oneOf": [
+        {"$ref": "#/$defs/repository_status"},
+        {"type": "null"}
+      ]
+    },
+    "head_relation": {
+      "enum": ["unchanged", "advanced", "rewritten-or-diverged", null]
+    },
+    "created_commits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["commit", "subject"],
+        "properties": {
+          "commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+          "subject": {"type": "string"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "repository_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository_id",
+        "source_mode",
+        "head_commit",
+        "branch",
+        "detached_head",
+        "upstream_branch",
+        "ahead",
+        "behind",
+        "dirty",
+        "staged_changes",
+        "unstaged_changes",
+        "untracked_files",
+        "conflicted_entries",
+        "status_sha256",
+        "git_commit_is_checkpoint_only",
+        "oracle_verification_required_for_exactness"
+      ],
+      "properties": {
+        "repository_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$"},
+        "source_mode": {"const": "live-including-ignored"},
+        "head_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "branch": {"type": ["string", "null"]},
+        "detached_head": {"type": "boolean"},
+        "upstream_branch": {"type": ["string", "null"]},
+        "ahead": {"type": "integer", "minimum": 0},
+        "behind": {"type": "integer", "minimum": 0},
+        "dirty": {"type": "boolean"},
+        "staged_changes": {"type": "integer", "minimum": 0},
+        "unstaged_changes": {"type": "integer", "minimum": 0},
+        "untracked_files": {"type": "integer", "minimum": 0},
+        "conflicted_entries": {"type": "integer", "minimum": 0},
+        "status_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "git_commit_is_checkpoint_only": {"const": true},
+        "oracle_verification_required_for_exactness": {"const": true}
+      }
+    }
+  }
+}

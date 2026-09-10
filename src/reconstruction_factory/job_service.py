@@ -28,6 +28,7 @@ from .oracle_receipts import SourceBinding, oracle_receipt_from_dict
 from .regressions import load_fixture_suite
 from .replay_drivers import ReplayPlan, driver_version, select_driver
 from .replay_identity import capture_source_binding, repository_lock
+from .repository_work import RepositoryWorkStore
 from .replay_runner import (
     ReplayExpectation,
     ReplayRunner,
@@ -69,6 +70,7 @@ class FactoryService:
         self.store = ArtifactStore(config.evidence_store)
         self.jobs = JobStore(config.database_path)
         self.workspaces = WorkspaceStore(config)
+        self.repository_work = RepositoryWorkStore(config)
 
     @classmethod
     def from_path(cls, path: str | Path) -> FactoryService:
@@ -79,6 +81,41 @@ class FactoryService:
 
     def list_repositories(self) -> tuple[dict[str, Any], ...]:
         return tuple(item.public_dict() for item in self.config.repositories)
+
+    def repository_status(self, repository_id: str) -> dict[str, Any]:
+        return self.repository_work.status(repository_id)
+
+    def repository_run_shell(
+        self,
+        repository_id: str,
+        script: str,
+        *,
+        relative_cwd: str,
+        timeout_seconds: int,
+    ) -> dict[str, Any]:
+        return self.repository_work.run_shell(
+            repository_id,
+            script,
+            relative_cwd=relative_cwd,
+            timeout_seconds=timeout_seconds,
+        )
+
+    def repository_command_output(
+        self,
+        repository_id: str,
+        command_id: str,
+        *,
+        stream: str,
+        offset: int,
+        limit: int,
+    ) -> dict[str, Any]:
+        return self.repository_work.command_output(
+            repository_id,
+            command_id,
+            stream=stream,
+            offset=offset,
+            limit=limit,
+        )
 
     def create_workspace(
         self, repository_id: str, idempotency_key: str

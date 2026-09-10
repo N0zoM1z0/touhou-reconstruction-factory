@@ -52,6 +52,14 @@ universally correct. A provider can be absent, offline, busy, or correctly fail
 attestation; the result is unavailable/unknown rather than fallback to a
 different target.
 
+The checked TH04 and TH095 deployments currently select Ghidra 12.1.3 and
+JDK 21.0.12.1+1 from separate repo-local directories; their Ghidra `bom.json`
+files have the same SHA-256. They run one bridge service per project. A future migration may
+deduplicate that payload into one immutable Factory tool installation and let a
+broker select the registered game/project. Project state, request serialization,
+and target attestation must remain per-game. Sharing Ghidra's executable is not
+permission to share a Ghidra project or analysis identity.
+
 ## Discovery and calls
 
 `factory_list_analysis_providers` returns configured IDs but deliberately marks
@@ -91,19 +99,22 @@ completeness statement. The factory therefore reports
 false. Do not infer a complete function or reference set unless the selected
 operation itself supplies adequate pagination or extent evidence.
 
-## Relationship to workspaces
+## Relationship to repository work
 
-Analysis state is never mounted into arbitrary workspace Bash. A normal Web
-iteration uses both providers while preserving the boundary:
+Analysis state is not granted authority merely because GPT-web also has broad
+repository Bash. A normal Web iteration composes both surfaces:
 
 1. inspect an attested target with read-only analysis operations;
-2. inspect/edit committed source in a disposable workspace;
-3. run source-only tests and export the workspace diff;
-4. review and apply that diff locally to the canonical repository;
-5. submit a supported factory replay;
-6. query the acceptance registry for verified facts.
+2. inspect the selected live repository, including its current dirty and ignored
+   state;
+3. edit source and run repository-native build, Wine, comparison, and diagnostic
+   scripts through composable Bash;
+4. inspect the diff and create a coherent local `gpt-web:` Git checkpoint;
+5. submit a supported factory replay for a committed claim;
+6. query the acceptance registry for current verified facts.
 
-This separation prevents a free-form shell from copying an original executable,
-analysis database, private compiler, or credentials into model-visible output.
-It also prevents an analysis database edit from silently becoming durable
-project truth.
+The provider envelope makes the selected target and provisional authority
+machine-visible. Repository Bash may use whatever native files and tools the
+game intentionally exposes, but its output and its commits still receive zero
+exactness credit. An analysis database edit or successful build cannot silently
+become Truth Kernel state.

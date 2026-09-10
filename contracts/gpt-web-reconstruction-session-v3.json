@@ -1,0 +1,118 @@
+{
+  "schema_version": 3,
+  "id": "gpt-web-reconstruction-session-v3",
+  "purpose": "Autonomous evidence-first reconstruction in a registered live game repository",
+  "required_inputs": [
+    "game_id",
+    "objective",
+    "stop_condition"
+  ],
+  "optional_inputs": [
+    "scope_hint",
+    "resume_commit"
+  ],
+  "design_principles": [
+    "agent-autonomy-first",
+    "atomic-tools-remain-composable",
+    "framework-improves-accuracy-and-efficiency-without-replacing-judgment",
+    "attempt-authority-is-broader-than-truth-admission-authority",
+    "git-checkpoints-are-review-state-not-oracle-proof",
+    "unknown-is-preferred-to-an-unsupported-claim"
+  ],
+  "workflow_phases": [
+    "discover",
+    "inspect-live-repository-state",
+    "read-repository-instructions",
+    "bound-work-packet",
+    "collect-provisional-analysis",
+    "edit-natural-source",
+    "run-layered-feedback-with-repository-tools",
+    "create-reviewable-git-checkpoints",
+    "update-game-local-knowledge-if-durable",
+    "replay-eligible-committed-claims",
+    "report-evidence-and-unknowns"
+  ],
+  "authorities": {
+    "analysis": {
+      "role": "target-attested source-hypothesis evidence",
+      "exactness_credit": "none"
+    },
+    "repository_work": {
+      "role": "live game-repository development",
+      "reads_dirty_untracked_and_ignored_state": true,
+      "game_repository_write": true,
+      "local_git_commit": true,
+      "git_push": false,
+      "truth_promotion": false
+    },
+    "disposable_workspace": {
+      "role": "optional isolated experiment",
+      "default_for_reconstruction": false,
+      "game_repository_write": false,
+      "truth_promotion": false
+    },
+    "game_knowledge": {
+      "role": "game-repository-local durable input",
+      "canonical_path": ".reconstruction/game-knowledge.json",
+      "web_may_commit": true,
+      "factory_publication": "none",
+      "allowed_statuses": [
+        "observed",
+        "reproduced",
+        "unknown",
+        "superseded"
+      ]
+    },
+    "factory_knowledge": {
+      "role": "local-Codex-reviewed cross-game publication",
+      "web_write": false,
+      "mcp_promotion": false
+    },
+    "replay": {
+      "role": "committed-claim verification",
+      "dirty_source_eligible": false
+    },
+    "acceptance_registry": {
+      "role": "sole live Truth Kernel admission authority"
+    }
+  },
+  "prohibitions": [
+    "invent-identities-or-claims",
+    "git-push",
+    "erase-or-overwrite-preexisting-work-without-understanding-it",
+    "claim-exactness-from-analysis",
+    "claim-exactness-from-build-or-git-commit",
+    "publish-or-promote-game-local-knowledge",
+    "use-factory-catalog-status-or-all-scope-in-game-knowledge",
+    "turn-game-knowledge-into-a-session-journal",
+    "use-inline-assembly-or-byte-embedding-as-a-routine-shortcut",
+    "kill-unrelated-processes",
+    "substitute-imported-progress-for-accepted-evidence",
+    "hide-truncation-or-unknown-state"
+  ],
+  "checkpoint_rules": {
+    "prefix": "gpt-web:",
+    "when": "after one coherent reviewable unit and its available checks",
+    "before_commit": [
+      "inspect-status",
+      "inspect-staged-diff",
+      "stage-only-intended-files"
+    ],
+    "commit_is_exactness_evidence": false
+  },
+  "handoff_fields": [
+    "session_status",
+    "game_and_objective",
+    "starting_and_ending_commit",
+    "starting_and_ending_dirty_state",
+    "bounded_scope",
+    "analysis_evidence_and_attestation",
+    "changed_files",
+    "created_checkpoint_commits",
+    "game_knowledge_changes",
+    "tests_actually_run",
+    "accepted_truth_separate_from_candidate_results",
+    "unknowns_and_blockers",
+    "next_action"
+  ]
+}

@@ -21,30 +21,30 @@ is in [`docs/ontology.md`](docs/ontology.md).
 flowchart LR
     H["Human<br/>scope · stop condition · release"]:::human --> I["Installed Factory Plugin<br/>four bundled skills<br/>registered ChatGPT app binding"]:::control
     K[("Factory repository memory<br/>ontology · providers · adapters<br/>fixtures · knowledge · prompt · skills")]:::memory --> I
-    I --> W["GPT-web agent<br/>factory-reconstruction skill<br/>resumable bounded session"]:::agent
-    W --> D["One shared Factory MCP<br/>discover IDs · read adapter snapshot<br/>candidate claims · knowledge · resume"]:::control
+    I --> W["GPT-web agent<br/>autonomous reconstruction<br/>bounded objective · resumable Git history"]:::agent
+    W --> D["One shared Factory MCP<br/>registered repo selection<br/>atomic evidence tools + composable Bash"]:::control
     K --> D
-    D --> C["Selected canonical game repository<br/>committed HEAD + machine-readable ledgers<br/>original target identity"]:::repo
-    C --> E["Target-attested evidence<br/>committed source + bounded IDA/Ghidra<br/>analysis exactness credit: none"]:::evidence
-    E --> S["Disposable source workspace<br/>natural C/C++ · focused checks<br/>source-only Bash · candidate diff"]:::work
-    S -.-> G["Game-local knowledge input<br/>observed · reproduced · unknown<br/>publication authority: none"]:::repo
-    S -->|"complete diff + workspace ID"| L["Local Codex handoff<br/>review · apply · test · commit<br/>new canonical game source"]:::human
-    G -->|"same reviewable diff"| L
-    L --> J["Durable canonical replay<br/>discovered claim + source · target<br/>toolchain · extent bound receipt"]:::oracle
+    D --> C["Selected live game repository<br/>dirty + untracked + ignored state<br/>ledgers · original target identity"]:::repo
+    C --> E["Target-attested analysis<br/>shared IDA/Ghidra executable<br/>game + target + project bound"]:::evidence
+    E --> S["Autonomous source work<br/>natural C/C++ · Bash · Wine<br/>compiler · objdiff · repo scripts"]:::work
+    C --> S
+    F[("Shared immutable tools<br/>Ghidra · JDK · objdiff<br/>compiler packages · system Wine")]:::memory --> S
+    S --> G["Game-local state<br/>Wine prefix · analysis project<br/>build outputs · knowledge input"]:::repo
+    G --> L["Local gpt-web: Git checkpoints<br/>review · resume · bisect · rollback<br/>commit is not exactness proof"]:::human
+    L --> J["Durable canonical replay<br/>committed claim + source · target<br/>toolchain · extent-bound receipt"]:::oracle
     J --> A{"Integrity + freshness<br/>+ live policy<br/>accepted?"}:::gate
     A -->|"Rejected / invalid / stale"| X["Preserve diagnostics<br/>artifacts + explicit unknowns<br/>define the next bounded task"]:::reject
     A ==>|"Accepted"| T["Truth Kernel<br/>current accepted facts<br/>and accepted snapshots"]:::done
     T --> Q["GPT-web query / next task<br/>report receipt scope<br/>never inflate completeness"]:::agent
     X --> Q
-    L -.-> P["Later local Codex retrospective<br/>history · scripts · tests · receipts<br/>Factory publication not automated"]:::memory
+    L -.-> P["Later local Codex retrospective<br/>completed history · scripts · tests · receipts<br/>cross-game publication not automated"]:::memory
     P -.-> K
 
     P98["PC-98 era family<br/>TH01–TH05<br/>currently validated: TH04"]:::platform --> C
     PE["Windows PE era family<br/>TH06+<br/>currently validated: TH08 / TH095 / TH105"]:::platform --> C
 
-    B["Registered read-only<br/>IDA / Ghidra bridge"]:::evidence -->|"independent target attestation"| E
-    U["Dirty · untracked · ignored<br/>private targets / toolchains"]:::reject -.->|"observed, never copied"| S
-    L -.-> R["Later local-only phase<br/>game runtime validation + portability"]:::platform
+    B["Registered atomic<br/>IDA / Ghidra bridge"]:::evidence -->|"independent target attestation"| E
+    S -.-> O["Optional disposable workspace<br/>explicitly isolated experiment<br/>committed source only"]:::platform
 
     classDef human fill:#fff1c2,stroke:#b7791f,color:#3b2f0b,stroke-width:2px;
     classDef agent fill:#ede9fe,stroke:#7c3aed,color:#2e1065,stroke-width:2px;
@@ -61,10 +61,10 @@ flowchart LR
 ```
 
 The main row is the normal reader journey from scope to accepted truth. Solid
-arrows are operational or data-flow edges, dashed arrows mark excluded inputs
-or later out-of-scope work, and the thick **Accepted** edge is the only route
-into truth. There is intentionally no direct edge from an imported claim,
-analysis result, or workspace test to the Truth Kernel.
+arrows are operational or data-flow edges, dashed arrows mark optional or later
+work, and the thick **Accepted** edge is the only route into truth. There is
+intentionally no direct edge from an imported claim, analysis result, Bash/build
+result, or Git commit to the Truth Kernel.
 
 The same control-plane architecture serves both eras. PC-98 and Windows PE use
 different platform/toolchain providers, adapters, target identities, and replay
@@ -113,7 +113,7 @@ Verified lessons and explicit unknowns are indexed by scope in the
 [`cross-game knowledge base`](docs/knowledge-base.md).
 Game repositories use a separate, non-publishing
 [`game-local knowledge input`](docs/game-knowledge.md) that GPT-web may update
-only as part of a reviewable workspace diff.
+and commit without gaining Factory publication authority.
 
 Factory-controlled replay and content-addressed evidence are specified in
 [`docs/oracle-receipts.md`](docs/oracle-receipts.md).
@@ -126,18 +126,20 @@ or receipt-backed knowledge queries; see the
 Long replays can now be submitted as SQLite-backed durable jobs and executed by
 a separate worker. Job completion, oracle pass, and policy acceptance remain
 three different states. The typed MCP v2 surface lets GPT-web submit, reconnect,
-page complete evidence, and query only accepted facts. It also provides
-capability-addressed disposable source workspaces: bounded repository primitives
-plus arbitrary Bash isolated from the host, canonical worktree, ignored targets,
-credentials, and network. See
+page complete evidence, and query only accepted facts. It also provides broad
+Bash and durable output in registered live repositories, including repo-local
+tools and local Git checkpoints, plus capability-addressed disposable workspaces
+for explicitly isolated experiments. See
 [`durable replay jobs`](docs/durable-jobs.md) and the
 [`GPT-web MCP service`](docs/mcp-server.md).
 
-Workspace source development and verification remain different authorities. A
-workspace exports a tested reviewable diff; a local operator applies it to the
-game repository, and only a later canonical replay receipt can enter the Truth
-Kernel. The exact boundary is specified in the
-[`disposable workspace provider`](docs/workspace-provider.md).
+The governing agent design is autonomy plus composable atomic tools: the
+framework improves accuracy and efficiency without restricting unforeseen
+in-repository work. Git checkpoints and verification remain different
+authorities; only a later accepted replay receipt can enter the Truth Kernel.
+See [`agent autonomy and tool composition`](docs/agent-autonomy.md), the
+[`live repository work provider`](docs/repository-work-provider.md), and the
+special-purpose [`disposable workspace provider`](docs/workspace-provider.md).
 
 IDA and Ghidra remain separate provisional authorities. The MCP analysis
 gateway exposes only registered loopback bridges, factory-allowlisted read
@@ -146,7 +148,7 @@ exactness credit. See the [`attested analysis provider`](docs/analysis-provider.
 
 The repository also publishes a minimal plugin that combines the remote MCP
 connection with an end-to-end reconstruction workflow plus separate analysis,
-source-workspace, and evidence-preserving replay skills. A reusable short prompt
+optional-workspace, and evidence-preserving replay skills. A reusable short prompt
 and a complete standalone prompt live in
 [`prompts/gpt-web-reconstruction.md`](prompts/gpt-web-reconstruction.md).
 The single-user deployment
@@ -160,13 +162,16 @@ PYTHONPATH=src .venv/bin/python scripts/validate-release.py
 ```
 
 The deployed endpoint has a read-only validation mode and explicit opt-in live
-analysis, disposable-workspace, and TH105 replay checks:
+analysis, real Wine/toolchain, disposable-workspace, and TH105 replay checks:
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --repository-toolchains
 PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --all
 ```
 
-The second command creates and discards a temporary TH105 workspace and submits
-one canonical TH105 smoke replay. See [`docs/validation.md`](docs/validation.md)
-for the validation contract and latest recorded run.
+The toolchain option executes non-committing probes through live-repository Bash
+for all four games. `--all` additionally creates and discards a temporary TH105
+workspace and submits one canonical TH105 smoke replay. See
+[`docs/validation.md`](docs/validation.md) for the validation contract and latest
+recorded run.

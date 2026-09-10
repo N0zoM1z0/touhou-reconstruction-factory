@@ -45,6 +45,10 @@ class WorkspaceConflictError(WorkspaceError):
     """Raised when a workspace capability or idempotency key is rebound."""
 
 
+class RepositoryWorkError(FactoryError):
+    """Raised when live work in a registered repository cannot be completed."""
+
+
 class AnalysisError(FactoryError):
     """Raised when attested read-only semantic analysis cannot be completed."""
 

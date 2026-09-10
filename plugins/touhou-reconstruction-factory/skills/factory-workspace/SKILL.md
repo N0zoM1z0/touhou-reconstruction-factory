@@ -1,15 +1,19 @@
 ---
 name: factory-workspace
-description: Explore, modify, and test registered Touhou reconstruction source through a disposable Factory workspace. Use when the user asks GPT-web to inspect files, search code, draft or apply a source patch, run composable shell checks, or return a reviewable diff. Do not use workspace results as exact reconstruction evidence or claim they changed the canonical repository.
+description: Run an intentionally isolated source experiment in a disposable Factory workspace. Use when the user explicitly wants a committed-HEAD scratch copy, a throwaway comparison, or a candidate diff that cannot affect the live game repository. Do not use as the default reconstruction workflow, for repo-local Wine/toolchains, or for Git checkpoints.
 ---
 
 # Factory Workspace
 
-Use the workspace provider as a source-development scratch space, not as an
-oracle or deployment channel. It contains only tracked files from the selected
+Use the workspace provider only as an explicitly isolated scratch space, not as
+the normal reconstruction path, oracle, or deployment channel. It contains only tracked files from the selected
 repository's committed `HEAD`. Local dirty changes, untracked files, ignored
 targets, private toolchains, analysis databases, credentials, and the operator
 home are excluded.
+
+For normal reconstruction, including existing dirty work, ignored `.tools`,
+Wine, native toolchains, and local Git commits, use the live-repository workflow
+in `factory-reconstruction` instead.
 
 ## Work
 

@@ -16,6 +16,7 @@ from .oracle_receipts import canonical_sha256
 
 SERVICE_CONFIG_SCHEMA_VERSION = 1
 _ID = re.compile(r"^[a-z0-9][a-z0-9._:-]*$")
+_ENVIRONMENT_NAME = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 _ANALYSIS_BACKENDS = {"attested-ida-proxy-v1", "attested-ghidra-proxy-v1"}
 
 
@@ -162,6 +163,71 @@ class WorkspacePolicy:
 
 
 @dataclass(frozen=True, slots=True)
+class RepositoryWorkPolicy:
+    """Operator-selected live-worktree execution policy for one-user Web work."""
+
+    enabled: bool
+    root: Path
+    command_timeout_seconds: int
+    max_command_output_bytes: int
+    git_author_name: str
+    git_author_email: str
+    shared_tool_roots: tuple[Path, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.enabled, bool):
+            raise ServiceConfigError("repository_work.enabled must be a boolean")
+        for label, value in (
+            ("command_timeout_seconds", self.command_timeout_seconds),
+            ("max_command_output_bytes", self.max_command_output_bytes),
+        ):
+            if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+                raise ServiceConfigError(
+                    f"repository_work.{label} must be a positive integer"
+                )
+        for label, value in (
+            ("git_author_name", self.git_author_name),
+            ("git_author_email", self.git_author_email),
+        ):
+            if not isinstance(value, str) or not value.strip() or "\0" in value:
+                raise ServiceConfigError(
+                    f"repository_work.{label} must be a non-empty string"
+                )
+        if tuple(sorted(set(self.shared_tool_roots))) != self.shared_tool_roots:
+            raise ServiceConfigError(
+                "repository_work.shared_tool_roots must be sorted and unique"
+            )
+        for path in self.shared_tool_roots:
+            if not path.is_absolute() or not path.is_dir():
+                raise ServiceConfigError(
+                    "repository_work shared tool roots must be existing absolute directories"
+                )
+
+    def public_dict(self) -> dict[str, Any]:
+        return {
+            "enabled": self.enabled,
+            "status": "enabled" if self.enabled else "disabled",
+            "execution_mode": "registered-live-worktree-v1",
+            "source_mode": "live-including-ignored",
+            "network": "unavailable",
+            "git_commit": "available" if self.enabled else "unavailable",
+            "git_push": "unavailable",
+            "command_timeout_seconds": self.command_timeout_seconds,
+            "max_command_output_bytes": self.max_command_output_bytes,
+            "shared_tool_root_count": len(self.shared_tool_roots),
+        }
+
+    def identity_dict(self) -> dict[str, Any]:
+        return {
+            **self.public_dict(),
+            "root": str(self.root),
+            "git_author_name": self.git_author_name,
+            "git_author_email": self.git_author_email,
+            "shared_tool_roots": [str(item) for item in self.shared_tool_roots],
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class RepositoryRegistration:
     """One repository that remote tools may address by opaque stable ID."""
 
@@ -169,6 +235,8 @@ class RepositoryRegistration:
     path: Path
     adapter_id: str
     target_identity_ids: tuple[str, ...]
+    work_environment: tuple[tuple[str, str], ...] = ()
+    work_state_roots: tuple[Path, ...] = ()
 
     def __post_init__(self) -> None:
         _require_id(self.id, "repository registration id")
@@ -182,16 +250,54 @@ class RepositoryRegistration:
             raise ServiceConfigError(
                 "registered repository must declare at least one target identity"
             )
+        names = tuple(name for name, _ in self.work_environment)
+        if tuple(sorted(set(names))) != names:
+            raise ServiceConfigError(
+                "repository work environment names must be sorted and unique"
+            )
+        for name, value in self.work_environment:
+            if _ENVIRONMENT_NAME.fullmatch(name) is None:
+                raise ServiceConfigError(
+                    "repository work environment contains an invalid name"
+                )
+            if not isinstance(value, str) or "\0" in value:
+                raise ServiceConfigError(
+                    "repository work environment values must be strings without NUL"
+                )
+        if tuple(sorted(set(self.work_state_roots))) != self.work_state_roots:
+            raise ServiceConfigError(
+                "repository work state roots must be sorted and unique"
+            )
+        for path in self.work_state_roots:
+            if not path.is_absolute() or not path.is_dir():
+                raise ServiceConfigError(
+                    "repository work state roots must be existing absolute directories"
+                )
 
     def public_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "adapter_id": self.adapter_id,
             "target_identity_ids": list(self.target_identity_ids),
+            "work_environment_names": [name for name, _ in self.work_environment],
+            "work_state_root_count": len(self.work_state_roots),
         }
 
     def identity_dict(self) -> dict[str, Any]:
-        return {**self.public_dict(), "path": str(self.path)}
+        return {
+            **self.public_dict(),
+            "path": str(self.path),
+            "work_environment": dict(self.work_environment),
+            "work_state_roots": [str(item) for item in self.work_state_roots],
+        }
+
+    def replay_identity_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "path": str(self.path),
+            "adapter_id": self.adapter_id,
+            "target_identity_ids": list(self.target_identity_ids),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,6 +315,7 @@ class ServiceConfig:
     worker_lease_seconds: int
     worker_poll_seconds: float
     workspace: WorkspacePolicy
+    repository_work: RepositoryWorkPolicy
     schema_version: int = SERVICE_CONFIG_SCHEMA_VERSION
 
     def __post_init__(self) -> None:
@@ -293,6 +400,41 @@ class ServiceConfig:
                     raise ServiceConfigError(
                         f"{label} must not overlap a registered repository"
                     )
+            for state_root in registration.work_state_roots:
+                if state_root.is_relative_to(
+                    self.state_directory
+                ) or self.state_directory.is_relative_to(state_root):
+                    raise ServiceConfigError(
+                        "repository work state roots must not overlap state_directory"
+                    )
+                if state_root.is_relative_to(
+                    self.evidence_store
+                ) or self.evidence_store.is_relative_to(state_root):
+                    raise ServiceConfigError(
+                        "repository work state roots must not overlap evidence_store"
+                    )
+                if registration.path.is_relative_to(state_root):
+                    raise ServiceConfigError(
+                        "repository work state root must not contain its registered repository"
+                    )
+                for other_registration in self.repositories:
+                    if other_registration.id == registration.id:
+                        continue
+                    if state_root.is_relative_to(
+                        other_registration.path
+                    ) or other_registration.path.is_relative_to(state_root):
+                        raise ServiceConfigError(
+                            "repository work state roots must not overlap another registered repository"
+                        )
+        work_state_roots = [
+            path for registration in self.repositories for path in registration.work_state_roots
+        ]
+        for index, state_root in enumerate(work_state_roots):
+            for other in work_state_roots[index + 1 :]:
+                if state_root.is_relative_to(other) or other.is_relative_to(state_root):
+                    raise ServiceConfigError(
+                        "repository work state roots must not overlap across registrations"
+                    )
         if (
             self.workspace.root == self.state_directory
             or not self.workspace.root.is_relative_to(self.state_directory)
@@ -300,6 +442,46 @@ class ServiceConfig:
             raise ServiceConfigError(
                 "workspace.root must be a strict child of state_directory"
             )
+        if (
+            self.repository_work.root == self.state_directory
+            or not self.repository_work.root.is_relative_to(self.state_directory)
+        ):
+            raise ServiceConfigError(
+                "repository_work.root must be a strict child of state_directory"
+            )
+        if self.repository_work.root.is_relative_to(
+            self.workspace.root
+        ) or self.workspace.root.is_relative_to(self.repository_work.root):
+            raise ServiceConfigError(
+                "workspace.root and repository_work.root must not overlap"
+            )
+        for tool_root in self.repository_work.shared_tool_roots:
+            if tool_root.is_relative_to(
+                self.state_directory
+            ) or self.state_directory.is_relative_to(tool_root):
+                raise ServiceConfigError(
+                    "repository_work shared tool roots must not overlap state_directory"
+                )
+            if tool_root.is_relative_to(
+                self.evidence_store
+            ) or self.evidence_store.is_relative_to(tool_root):
+                raise ServiceConfigError(
+                    "repository_work shared tool roots must not overlap evidence_store"
+                )
+            for repository_path in repository_paths:
+                if tool_root.is_relative_to(
+                    repository_path
+                ) or repository_path.is_relative_to(tool_root):
+                    raise ServiceConfigError(
+                        "repository_work shared tool roots must not overlap registered repositories"
+                    )
+            for state_root in work_state_roots:
+                if tool_root.is_relative_to(
+                    state_root
+                ) or state_root.is_relative_to(tool_root):
+                    raise ServiceConfigError(
+                        "repository_work shared tool roots must not overlap mutable work state"
+                    )
 
     @property
     def sha256(self) -> str:
@@ -351,6 +533,7 @@ class ServiceConfig:
             ],
             "replay_timeout_seconds": self.replay_timeout_seconds,
             "workspace": self.workspace.public_dict(),
+            "repository_work": self.repository_work.public_dict(),
             "schema_version": self.schema_version,
         }
 
@@ -358,6 +541,7 @@ class ServiceConfig:
         return {
             **self.replay_identity_dict(),
             "workspace": self.workspace.identity_dict(),
+            "repository_work": self.repository_work.identity_dict(),
             "analysis_providers": [
                 item.identity_dict() for item in self.analysis_providers
             ],
@@ -371,7 +555,9 @@ class ServiceConfig:
             "policy_path": str(self.policy_path),
             "policy_id": self.policy.id,
             "policy_sha256": self.policy.sha256,
-            "repositories": [item.identity_dict() for item in self.repositories],
+            "repositories": [
+                item.replay_identity_dict() for item in self.repositories
+            ],
             "replay_timeout_seconds": self.replay_timeout_seconds,
             "worker_lease_seconds": self.worker_lease_seconds,
             "worker_poll_seconds": self.worker_poll_seconds,
@@ -400,7 +586,7 @@ def load_service_config(path: str | Path) -> ServiceConfig:
             "worker_poll_seconds",
             "repositories",
         },
-        {"workspace", "analysis_providers"},
+        {"workspace", "repository_work", "analysis_providers"},
         "service configuration",
     )
     base = config_path.parent
@@ -468,17 +654,93 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                 raw_workspace["max_patch_bytes"], "workspace.max_patch_bytes"
             ),
         )
+    raw_repository_work = root.get("repository_work")
+    if raw_repository_work is None:
+        repository_work = RepositoryWorkPolicy(
+            enabled=False,
+            root=state_directory / "repository-work",
+            command_timeout_seconds=3600,
+            max_command_output_bytes=8388608,
+            git_author_name="gpt-web",
+            git_author_email="gpt-web@example.invalid",
+            shared_tool_roots=(),
+        )
+    else:
+        raw_repository_work = _strict_object(
+            raw_repository_work,
+            {
+                "enabled",
+                "root",
+                "command_timeout_seconds",
+                "max_command_output_bytes",
+                "git_author_name",
+                "git_author_email",
+                "shared_tool_roots",
+            },
+            "repository_work",
+        )
+        raw_tool_roots = raw_repository_work["shared_tool_roots"]
+        if not isinstance(raw_tool_roots, list):
+            raise ServiceConfigError(
+                "repository_work.shared_tool_roots must be an array"
+            )
+        repository_work = RepositoryWorkPolicy(
+            enabled=_boolean(
+                raw_repository_work["enabled"], "repository_work.enabled"
+            ),
+            root=_resolve_path(
+                base, raw_repository_work["root"], "repository_work.root"
+            ),
+            command_timeout_seconds=_positive_integer(
+                raw_repository_work["command_timeout_seconds"],
+                "repository_work.command_timeout_seconds",
+            ),
+            max_command_output_bytes=_positive_integer(
+                raw_repository_work["max_command_output_bytes"],
+                "repository_work.max_command_output_bytes",
+            ),
+            git_author_name=_string(
+                raw_repository_work["git_author_name"],
+                "repository_work.git_author_name",
+            ),
+            git_author_email=_string(
+                raw_repository_work["git_author_email"],
+                "repository_work.git_author_email",
+            ),
+            shared_tool_roots=tuple(
+                sorted(
+                    _resolve_path(
+                        base,
+                        item,
+                        f"repository_work.shared_tool_roots[{index}]",
+                        must_exist=True,
+                    )
+                    for index, item in enumerate(raw_tool_roots)
+                )
+            ),
+        )
     policy_path = _resolve_path(base, root["policy"], "policy", must_exist=True)
     registrations = []
     raw_repositories = root["repositories"]
     if not isinstance(raw_repositories, list):
         raise ServiceConfigError("repositories must be an array of tables")
     for index, raw in enumerate(raw_repositories):
-        item = _strict_object(
+        item = _strict_object_optional(
             raw,
             {"id", "path", "adapter_id", "target_identity_ids"},
+            {"work_environment", "work_state_roots"},
             f"repositories[{index}]",
         )
+        raw_environment = item.get("work_environment", {})
+        if not isinstance(raw_environment, dict):
+            raise ServiceConfigError(
+                f"repositories[{index}].work_environment must be a table"
+            )
+        raw_state_roots = item.get("work_state_roots", [])
+        if not isinstance(raw_state_roots, list):
+            raise ServiceConfigError(
+                f"repositories[{index}].work_state_roots must be an array"
+            )
         registrations.append(
             RepositoryRegistration(
                 id=_string(item["id"], f"repositories[{index}].id"),
@@ -494,6 +756,29 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                 target_identity_ids=_strings(
                     item["target_identity_ids"],
                     f"repositories[{index}].target_identity_ids",
+                ),
+                work_environment=tuple(
+                    sorted(
+                        (
+                            _string(name, f"repositories[{index}].work_environment name"),
+                            _string(
+                                value,
+                                f"repositories[{index}].work_environment.{name}",
+                            ),
+                        )
+                        for name, value in raw_environment.items()
+                    )
+                ),
+                work_state_roots=tuple(
+                    sorted(
+                        _resolve_path(
+                            base,
+                            value,
+                            f"repositories[{index}].work_state_roots[{root_index}]",
+                            must_exist=True,
+                        )
+                        for root_index, value in enumerate(raw_state_roots)
+                    )
                 ),
             )
         )
@@ -565,6 +850,7 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                 root["worker_poll_seconds"], "worker_poll_seconds"
             ),
             workspace=workspace,
+            repository_work=repository_work,
             schema_version=_integer(root["schema_version"], "schema_version"),
         )
     except OSError as error:

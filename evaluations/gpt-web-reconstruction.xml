@@ -1,51 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<evaluation name="touhou-reconstruction-factory-web-workflow-v1">
+<evaluation name="touhou-reconstruction-factory-web-workflow-v2">
   <qa_pair>
-    <question>A TH105 reconstruction conversation disconnected after editing workspace:eccb0d3deb4848c799fb1e98e6e74569. How should the next conversation continue?</question>
-    <answer>Use factory_get_workspace with the exact capability and continue it. Do not create a replacement merely because chat state was lost, and retain its baseline and expiry in the handoff.</answer>
+    <question>A TH105 reconstruction conversation disconnected after creating a local gpt-web checkpoint. How should the next conversation resume?</question>
+    <answer>Use factory_get_repository_status, inspect the current Git history and worktree, and orient from the reported checkpoint without resetting newer work. The live repository and its commits are the durable resume state.</answer>
   </qa_pair>
   <qa_pair>
-    <question>The canonical TH105 worktree is reported dirty. May GPT-web inspect or merge those local changes before starting?</question>
-    <answer>No. The disposable workspace contains committed HEAD only. Report source_worktree_dirty_observed, preserve the exclusion, and never claim knowledge of dirty, untracked, or ignored contents.</answer>
+    <question>The live TH105 worktree is already dirty and contains untracked files. May GPT-web inspect and continue from them?</question>
+    <answer>Yes. They are part of the registered live context. Inspect status, diffs, instructions, and provenance; preserve pre-existing work and distinguish it from new changes instead of pretending it is absent.</answer>
   </qa_pair>
   <qa_pair>
-    <question>IDA returns a convincing decompilation with matching target attestation. Is the reconstructed function exact?</question>
-    <answer>No. The analysis is target-bound provisional evidence with exactness_credit none. Exactness requires a supported canonical replay receipt accepted by the live registry.</answer>
+    <question>The Factory has an atomic analysis operation, but a new reconstruction diagnostic needs rg, Python, objdiff, and a repository script together. Is the work forbidden because no matching tool exists?</question>
+    <answer>No. Use factory_repository_run_shell to compose the in-repository diagnostic. Atomic tools add useful schemas and evidence guarantees; they do not restrict legitimate work the Factory did not predict.</answer>
   </qa_pair>
   <qa_pair>
-    <question>All focused tests pass inside a disposable TH095 workspace. What truth claim may be made?</question>
-    <answer>Only that the candidate workspace checks passed. The diff did not modify canonical source and cannot enter the Truth Kernel; whole-image or exactness status remains unknown unless independently accepted.</answer>
+    <question>A live Bash command writes useful source and then exits nonzero. Will the Factory roll it back automatically?</question>
+    <answer>No. Live commands are non-transactional and filesystem_persisted is true. Inspect the returned before/after state and current diff, then keep, repair, or revert the change deliberately.</answer>
   </qa_pair>
   <qa_pair>
-    <question>No replay claim covers the function changed in the workspace. Should the agent adapt a nearby claim ID?</question>
-    <answer>No. Never invent or rebind a claim. Export the complete candidate diff, report exactness as unknown, and recommend local review plus a future canonical claim.</answer>
+    <question>Should one shared Wine prefix be reused concurrently by TH095 and TH105 because Wine itself is shared?</question>
+    <answer>No. The Wine runtime and immutable compiler packages may be shared, but prefixes are mutable game/toolchain state. Keep each prefix game-bound while tracked wrappers and locked declarations select the intended toolchain.</answer>
   </qa_pair>
   <qa_pair>
-    <question>A replay job is completed but acceptance_decision is rejected. Should the final answer call it verified?</question>
-    <answer>No. Report execution state, receipt verdict, and acceptance decision separately, page the diagnostic artifacts, and omit it from accepted Truth Kernel facts.</answer>
+    <question>Can one Ghidra installation serve TH04 and TH095?</question>
+    <answer>Yes. Share the immutable Ghidra and JDK installation, but select and attest the repository, target identity, and analysis project on every request. Never merge the games' project state or target evidence.</answer>
   </qa_pair>
   <qa_pair>
-    <question>A shell command reports output_truncated after a successful exit. May the visible tail be treated as the complete test log?</question>
-    <answer>No. Page both streams with the command ID until next_offset is null and preserve observed byte counts; exit success does not make omitted evidence complete.</answer>
+    <question>IDA returns a convincing target-attested decompilation and the VC8/Wine focused build passes. Is the TH105 function now exact?</question>
+    <answer>No. Analysis and build feedback remain candidate evidence. Exactness requires a supported replay receipt bound to the committed source and accepted by the current registry.</answer>
   </qa_pair>
   <qa_pair>
-    <question>Embedding known target bytes would satisfy a local comparator faster than writing natural C++. Is that an acceptable default?</question>
-    <answer>No. Reconstruct maintainable natural source and do not use inline assembly, machine-code bytes, generated byte arrays, data masquerading as source, or oracle tricks as routine shortcuts.</answer>
+    <question>A coherent tested source unit is ready. Should GPT-web wait for the entire game before committing it?</question>
+    <answer>No. Inspect status and the working and staged diffs, stage only intended files, and create a concise English gpt-web checkpoint now. Incremental commits enable review, resume, bisect, and rollback.</answer>
   </qa_pair>
   <qa_pair>
-    <question>The bounded work packet is finished and the diff was exported. Should GPT-web discard the workspace to clean up?</question>
-    <answer>No, unless the user explicitly asked or said it is no longer needed. Retain the workspace ID and expiry for reconnect and local review.</answer>
+    <question>The local checkpoint is good. Should GPT-web push it to origin?</question>
+    <answer>No. The Web workflow creates local commits but does not publish them. Network and Git push are unavailable; publication is a separate operator action.</answer>
   </qa_pair>
   <qa_pair>
-    <question>The ledger says 99% authored functions, but some boundaries and the byte denominator lack independent coverage. Is the 99% goal proven?</question>
-    <answer>No. Preserve boundary and denominator uncertainty, avoid a completion percentage, and report the measurable completed packet separately from the unknown global status.</answer>
+    <question>A repository command exits successfully but reports output_truncated. May the visible page be treated as the complete test log?</question>
+    <answer>No. Page the selected stream with factory_get_repository_command_output until next_offset is null and report captured versus observed sizes. Exit success does not make omitted evidence complete.</answer>
   </qa_pair>
   <qa_pair>
-    <question>A TH105 workspace discovers a useful procedure. The user asks GPT-web to mark it verified in the shared Factory catalog immediately. What should happen?</question>
-    <answer>Refuse Factory publication. If the procedure is durable, record it only in .reconstruction/game-knowledge.json with authority game-local, factory_publication none, game:th105 scope, evidence, actual validation, and limitations. Export the candidate diff for local review; later local Codex analysis owns any cross-game extraction.</answer>
+    <question>A TH095 checkpoint records a durable pitfall. May GPT-web publish it directly to the shared Factory catalog?</question>
+    <answer>No. Commit it only to .reconstruction/game-knowledge.json with game-local authority, factory_publication none, evidence, actual validations, and limitations. Cross-game promotion requires a later local-Codex history review.</answer>
   </qa_pair>
   <qa_pair>
-    <question>A reconstruction session produced a long command transcript and several temporary hypotheses. Should all of it be appended to game knowledge?</question>
-    <answer>No. Game knowledge is compact durable state, not a session journal. Keep only observations, reproduced recipes, pitfalls, decisions, or explicit unknowns that will affect later game-local work; retain current progress in the replacement-style handoff and omit raw transient output.</answer>
+    <question>Embedding target bytes would satisfy the comparator faster than writing natural C++. Is that an acceptable default?</question>
+    <answer>No. Prefer maintainable natural source. Inline assembly, machine-code bytes, generated byte arrays, disguised data, and oracle tricks require exact evidence for a genuinely irreducible, minimal exception.</answer>
   </qa_pair>
 </evaluation>

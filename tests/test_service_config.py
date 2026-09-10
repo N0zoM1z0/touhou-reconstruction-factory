@@ -59,6 +59,11 @@ worker_poll_seconds = 1.0
         self.assertEqual(len(public["replay_configuration_sha256"]), 64)
         self.assertFalse(public["workspace"]["enabled"])
         self.assertNotIn("root", public["workspace"])
+        self.assertFalse(public["repository_work"]["enabled"])
+        self.assertEqual(public["repository_work"]["status"], "disabled")
+        self.assertEqual(public["repository_work"]["git_commit"], "unavailable")
+        self.assertEqual(public["repository_work"]["git_push"], "unavailable")
+        self.assertNotIn("root", public["repository_work"])
 
     def test_explicit_workspace_policy_is_strict_and_state_contained(self) -> None:
         path = self.write_config()
@@ -120,6 +125,50 @@ max_patch_bytes = 65536
         path.write_text(document, encoding="utf-8")
         changed = load_service_config(path)
         self.assertNotEqual(original.sha256, changed.sha256)
+        self.assertEqual(original.replay_sha256, changed.replay_sha256)
+
+    def test_live_repository_policy_is_opt_in_and_replay_independent(self) -> None:
+        path = self.write_config()
+        original = load_service_config(path)
+        document = (
+            path.read_text(encoding="utf-8")
+            + """
+
+[repository_work]
+enabled = true
+root = "state/repository-work"
+command_timeout_seconds = 3600
+max_command_output_bytes = 8388608
+git_author_name = "gpt-web"
+git_author_email = "gpt-web@example.invalid"
+shared_tool_roots = []
+"""
+        )
+        path.write_text(document, encoding="utf-8")
+        changed = load_service_config(path)
+        self.assertTrue(changed.repository_work.enabled)
+        self.assertEqual(changed.repository_work.shared_tool_roots, ())
+        self.assertNotEqual(original.sha256, changed.sha256)
+        self.assertEqual(original.replay_sha256, changed.replay_sha256)
+
+    def test_per_repository_work_state_is_redacted_and_replay_independent(self) -> None:
+        work_state = self.root / "wine-prefix"
+        work_state.mkdir()
+        original = load_service_config(self.write_config())
+        repositories = f'''
+[[repositories]]
+id = "th08"
+path = "game"
+adapter_id = "th08-vc7-ledgers-v1"
+target_identity_ids = ["target:th08-v1.00d-original"]
+work_environment = {{ WINEPREFIX = "{work_state.as_posix()}" }}
+work_state_roots = ["{work_state.as_posix()}"]
+'''
+        changed = load_service_config(self.write_config(repositories))
+        public = changed.repository("th08").public_dict()
+        self.assertEqual(public["work_environment_names"], ["WINEPREFIX"])
+        self.assertEqual(public["work_state_root_count"], 1)
+        self.assertNotIn(str(work_state), json.dumps(public))
         self.assertEqual(original.replay_sha256, changed.replay_sha256)
 
     def test_analysis_provider_is_loopback_target_bound_and_replay_independent(

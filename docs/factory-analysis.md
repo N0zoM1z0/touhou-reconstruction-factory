@@ -1,9 +1,22 @@
 # Touhou Reconstruction Factory: Evidence, Architecture, and Roadmap
 
-> Status: architecture working paper with an executable v0 foundation
-> Snapshot date: 2026-09-09  
-> Primary requirements source: `/tmp/vc_sth.txt`  
+> Status: architecture working paper with an executable Factory foundation
+> Snapshot date: 2026-09-10
+> Primary requirements source: `/tmp/vc_sth.txt`
 > Evidence base: local repositories, their current reports, selected source and documentation, and full commit-subject histories with focused commit inspection
+
+> **2026-09-10 autonomy correction:** The early MCP sections below correctly
+> identified missing durability, identity, and truth boundaries, but overreached
+> when they proposed replacing general shell work with a complete catalog of
+> declared tasks. Historical `gpt-web:` commits and the first isolated TH105 Web
+> trial show that useful reconstruction depends on agent autonomy, composable
+> Bash, native Wine/toolchains, IDA/Ghidra, current ignored state, and local Git
+> checkpoints. The implemented design therefore registers a real worktree and
+> preserves broad networkless repository Bash alongside atomic, target-attested
+> tools. Capability breadth is not truth authority: commits and successful builds
+> still gain zero exactness credit until a Factory replay receipt is accepted.
+> Existing repository layouts are transitional adapter inputs and may be migrated
+> to a cleaner Factory-owned game profile after infrastructure stabilization.
 
 ## 1. Executive Conclusion
 
@@ -826,9 +839,9 @@ TH09 should be the first clean-room consumer of factory v0 rather than another s
 
 ### Phase 3: resumable MCP
 
-- Add workspace registration, persistent jobs, idempotency, output cursors, cancellation, and artifact promotion.
-- Replace normal unrestricted shell access with declared task capabilities.
-- Add receipt-bound commit support only after isolation and dirty-tree tests pass.
+- Register stable repository IDs and add persistent jobs, idempotency, output cursors, cancellation, and receipt artifacts.
+- Preserve broad live-repository Bash and local Git checkpoints; add atomic tools where schemas, target identity, pagination, or evidence strength materially help.
+- Keep commit/build state separate from receipt acceptance instead of requiring every useful work operation to fit a predeclared task.
 
 ### Phase 4: bootstrap and TH09 pilot
 
@@ -852,8 +865,8 @@ TH09 should be the first clean-room consumer of factory v0 rather than another s
 6. **Freeze faithful output before ports.** TH08's post-port reconciliation shows the cost of crossing the boundary early.
 7. **Make oracle defects permanent fixtures.** The floating-relocation bug must never be rediscovered game by game.
 8. **Replace diary growth with typed, compactable state.** Existing prose policies have not constrained handoff and `.analysis/` growth.
-9. **Make MCP jobs durable and repository-scoped.** The current synchronous unrestricted shell cannot meet reconnect, artifact, or isolation requirements.
-10. **Authorize commits with fresh receipts.** Agent intent and generic “CI passed” statements are too ambiguous.
+9. **Make MCP observation durable and repository-scoped without removing agent composition.** Commands, jobs, and output must survive reconnect while broad live-repository Bash and native tools remain available.
+10. **Treat commits as checkpoints and fresh accepted receipts as truth.** Agent intent and generic “CI passed” statements are too ambiguous, but receipt requirements must not block frequent local `gpt-web:` commits.
 
 ## 16. Open Questions Before Coding Beyond v0
 

@@ -37,6 +37,9 @@ ClaimId = Annotated[
 JobId = Annotated[str, Field(pattern=r"^job:[0-9a-f]{32}$")]
 WorkspaceId = Annotated[str, Field(pattern=r"^workspace:[0-9a-f]{32}$")]
 CommandId = Annotated[str, Field(pattern=r"^command:[0-9a-f]{32}$")]
+RepositoryCommandId = Annotated[
+    str, Field(pattern=r"^repository-command:[0-9a-f]{32}$")
+]
 IdempotencyKey = Annotated[
     str,
     Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"),
@@ -99,6 +102,12 @@ _WORKSPACE_SHELL = ToolAnnotations(
     idempotentHint=False,
     openWorldHint=False,
 )
+_REPOSITORY_SHELL = ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=True,
+    idempotentHint=False,
+    openWorldHint=False,
+)
 
 
 def build_mcp_server(config_path: str | Path) -> MCPServer:
@@ -107,19 +116,22 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     path = Path(config_path).expanduser().resolve(strict=True)
     server = MCPServer(
         "touhou-reconstruction-factory",
-        version="0.3.0",
+        version="0.4.0",
         instructions=(
-            "Use registered repository IDs only. Submit replays with a stable, unique "
+            "Use registered repository IDs only. Prefer the live repository workflow "
+            "for source reconstruction: it exposes the real worktree, broad composable "
+            "Bash, repository-local tools, and local Git checkpoints. Commands may edit "
+            "or commit and their partial changes persist even on failure or timeout; inspect "
+            "status before and after. Network is unavailable, so Git push is not provided. "
+            "A Git commit is a review checkpoint, never proof of exactness. Submit replays "
+            "with a stable, unique "
             "idempotency key, then poll factory_get_job. A completed job is not proof "
             "of exactness: inspect receipt_verdict and acceptance_decision. Only "
             "factory_query_accepted_facts and factory_get_accepted_snapshot expose "
-            "facts admitted to the Truth Kernel. For source work, create a disposable "
-            "workspace and retain its capability ID. Workspace Bash is arbitrary but "
-            "confined: committed source only, no network, host HOME, ignored targets, "
-            "canonical worktree, or Truth Kernel write authority. Export and review its "
-            "diff; a workspace result is never accepted evidence by itself. Game-local "
-            "knowledge may appear only in that reviewable game diff with publication "
-            "authority set to none. This server exposes no Factory-knowledge promotion "
+            "facts admitted to the Truth Kernel. Disposable workspaces remain available "
+            "for intentionally isolated experiments, but they omit dirty, ignored, target, "
+            "and toolchain state. Game-local knowledge may be committed in its game repo "
+            "with publication authority set to none. This server exposes no Factory-knowledge promotion "
             "tool; factory_query_knowledge reads only the packaged cross-game catalog."
         ),
     )
@@ -162,6 +174,73 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     )
     async def factory_list_repositories() -> dict[str, Any]:
         return await invoke(lambda: {"repositories": service().list_repositories()})
+
+    @server.tool(
+        description=(
+            "Inspect the real Git status of one operator-registered reconstruction repo. "
+            "This includes current dirty, staged, untracked, branch, upstream, and HEAD "
+            "state. A clean or committed worktree is a checkpoint state, not Oracle proof."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_get_repository_status(
+        repository_id: RepositoryId,
+    ) -> dict[str, Any]:
+        return await invoke(lambda: service().repository_status(repository_id))
+
+    @server.tool(
+        description=(
+            "Run broad composable Bash in the real worktree of one registered repository. "
+            "The command can inspect ignored targets/toolchains, edit source, build with "
+            "repo-local Wine/toolchains, and create local Git commits. It has no network, "
+            "so remote Git push is unavailable. Filesystem changes persist on nonzero exit "
+            "or timeout. The result records before/after Git state, created commits, and "
+            "initial output pages. A successful command or commit has zero exactness credit "
+            "until a canonical replay receipt is accepted."
+        ),
+        annotations=_REPOSITORY_SHELL,
+        structured_output=True,
+    )
+    async def factory_repository_run_shell(
+        repository_id: RepositoryId,
+        script: ShellScript,
+        relative_cwd: RelativePath = ".",
+        timeout_seconds: CommandTimeout = 120,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().repository_run_shell(
+                repository_id,
+                script,
+                relative_cwd=relative_cwd,
+                timeout_seconds=timeout_seconds,
+            )
+        )
+
+    @server.tool(
+        description=(
+            "Read a bounded stdout or stderr page from a durable live-repository command. "
+            "Use next_offset until null; observed and captured sizes make truncation explicit."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_get_repository_command_output(
+        repository_id: RepositoryId,
+        command_id: RepositoryCommandId,
+        stream: Literal["stdout", "stderr"] = "stdout",
+        offset: Offset = 0,
+        limit: ByteLimit = 16384,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().repository_command_output(
+                repository_id,
+                command_id,
+                stream=stream,
+                offset=offset,
+                limit=limit,
+            )
+        )
 
     @server.tool(
         description=(

@@ -2,21 +2,24 @@
 
 ## Design boundary
 
-The MCP server is the typed remote boundary for two separate authorities. Its
-replay surface submits durable jobs, observes state, pages evidence, and queries
-accepted knowledge. Its workspace surface develops committed source in
-capability-addressed disposable sandboxes. Its analysis surface routes only
-factory-allowlisted reads through target-attested loopback IDA/Ghidra bridges.
-None of these surfaces contains another definition of reconstruction success.
+The MCP server is the typed remote boundary for several separate authorities.
+Its live-repository surface exposes current game state, broad Bash, repo-local
+tools, and local Git checkpoints. Its replay surface submits durable jobs,
+observes state, pages evidence, and queries accepted knowledge. Its optional
+workspace surface provides capability-addressed disposable experiments. Its
+analysis surface routes target-attested IDA/Ghidra reads. None of these surfaces
+contains another definition of reconstruction success.
 
 This improves on the exploratory
 [`mcp_for_gptweb`](https://github.com/N0zoM1z0/mcp_for_gptweb) server while
 retaining what it proved useful: headless operation, Streamable HTTP, Host
-validation, bearer-protected deployment, and simple GPT-web discovery.
+validation, simple GPT-web discovery, and a broad composition surface.
 
 The old repository's history is valuable evidence:
 
-- `8f38474` proved basic Streamable HTTP access, but exposed unrestricted Bash;
+- `8f38474` proved that basic Streamable HTTP plus Bash was immediately useful,
+  but selected work through caller-controlled host paths and had no durable
+  Factory observation;
 - `0d4d47f` and `bed0c6f` proved TH08/IDA calls, but embedded game-specific
   operations in the transport;
 - `96b0624` repaired GPT-web discovery;
@@ -25,13 +28,20 @@ The old repository's history is valuable evidence:
 - `5a9de07` captured a useful reconstruction workflow, while synchronous output
   truncation could still discard the diagnostic tail.
 
-The factory replacement never accepts a host path or exposes a host shell. It
-does accept POSIX-relative workspace paths and arbitrary Bash inside a
-source-only Bubblewrap boundary. This preserves agent composability without
-mounting the canonical worktree, ignored targets/toolchains, operator home,
-network, jobs, evidence, or Truth Kernel state. Game-specific verification
-behavior remains behind adapters and replay drivers. Jobs and evidence survive
-MCP disconnects and server restarts.
+The Factory never accepts an arbitrary caller-supplied host path. It maps a
+stable repository ID to an operator-registered live worktree and exposes broad
+Bash there. The runner sees dirty, untracked, ignored, target, Wine-prefix, and
+toolchain state; changes and local Git commits persist. Its Bubblewrap process
+has no network, so remote Git push is unavailable. Game-specific verification
+behavior remains behind adapters and replay drivers. Command output, jobs, and
+evidence survive MCP disconnects and server restarts.
+
+This is an intentional autonomy correction based on the earlier repositories:
+atomic tools add identity, schemas, and evidence strength, but do not replace a
+general composition surface. See
+[`agent-autonomy.md`](agent-autonomy.md).
+The command/state contract and the transitional Wine profiles are specified in
+[`repository-work-provider.md`](repository-work-provider.md).
 
 ## GPT-web workflow
 
@@ -59,22 +69,22 @@ the original job. Changed arguments with that key fail visibly. If a worker
 dies, the lease eventually fails closed; GPT-web can inspect events and submit a
 new request after repository inspection.
 
-For source development, GPT-web instead performs this sequence:
+For source development, GPT-web performs this sequence:
 
-1. Create a workspace for a returned repository ID with a stable idempotency
-   key and retain its random capability ID.
-2. Note the exact baseline commit and whether dirty canonical work was observed
-   and therefore omitted.
-3. List, read, and search files using relative paths; read repository
-   instructions before changing source.
-4. Apply a text patch or compose arbitrary Bash in the isolated tmpfs.
-5. Inspect command exit state, filesystem-commit state, and complete paged
-   output independently.
-6. Inspect workspace status and page the complete diff with its SHA-256.
-7. Return that diff for local review/application. Do not report that the
-   canonical repository changed and do not treat workspace tests as receipts.
+1. Select a returned repository ID and call
+   `factory_get_repository_status` to capture the real starting HEAD and dirty
+   state.
+2. Use `factory_repository_run_shell` to read repository instructions and
+   compose source edits, Git operations, Wine/toolchain builds, and diagnostics.
+3. Inspect the returned before/after Git state. Nonzero exit and timeout leave
+   filesystem changes in place; inspect before retrying.
+4. Page output with `factory_get_repository_command_output` when needed.
+5. Create reviewable English `gpt-web:` commits after coherent checked units.
+   A commit is a resume/review checkpoint, never a receipt and never exactness.
+6. Discover and replay only claims eligible for the committed source state.
 
-The complete isolation and handoff contract is in
+Use the disposable workspace tools only when an isolated committed-HEAD copy is
+the intended experiment. Their complete isolation contract remains in
 [`workspace-provider.md`](workspace-provider.md).
 
 For semantic target analysis, first list providers for the repository and then
@@ -91,6 +101,9 @@ writes and the legacy bridges' host Bash tools are unreachable. See
 | --- | --- |
 | `factory_describe` | Show redacted configuration and policy identity. |
 | `factory_list_repositories` | List registered repository IDs. |
+| `factory_get_repository_status` | Inspect current live HEAD, branch, upstream, and dirty counts. |
+| `factory_repository_run_shell` | Run broad networkless Bash in the real registered worktree; edits and local commits persist. |
+| `factory_get_repository_command_output` | Resume bounded output paging for a durable live-repository command. |
 | `factory_list_analysis_providers` | List redacted target-bound IDA/Ghidra registrations. |
 | `factory_list_analysis_operations` | Page factory-approved read schemas and attestation state. |
 | `factory_analysis_call` | Run one bounded, read-only, target-bound semantic query. |
@@ -188,17 +201,12 @@ touhou-reconstruction-factory-mcp \
   --allowed-origin https://chatgpt.com
 ```
 
-`--auth none` is intentionally noisy and explicit. Anyone who can discover the
-public URL can inspect registered metadata, submit replay jobs, and request job
-cancellation. When the workspace provider is enabled, they can also read the
-committed source of every registration and consume bounded isolated compute and
-workspace slots. Registered analysis providers also permit bounded semantic
-queries and small raw-byte reads from the attested target. Callers still cannot
-name a host path, invoke bridge Bash, read dirty/untracked/ignored source, reach
-the workspace network, mutate canonical source or analysis databases, or bypass
-the registry. This is not caller authentication: use only non-sensitive
-registered source/targets, accept the residual denial-of-service risk, and
-disable the route when it is not wanted.
+`--auth none` is intentionally explicit. With `repository_work.enabled=true`, a
+caller can read and modify every registered live worktree, see ignored targets
+and toolchains, run repository-local commands, and create local commits. The
+runner has no network and therefore cannot perform remote Git push. Analysis,
+replay, and Truth Kernel admission remain separate interfaces. This deployment
+profile is intended only for the operator's chosen one-user development setup.
 
 The HTTP MCP process may be restarted without changing job identity. The worker
 may also be restarted; only a safely leased new job is claimed. An already
@@ -208,7 +216,9 @@ retaining the SDK's legacy initialization path.
 
 ## Verification
 
-The test suite exercises database restart, idempotency conflicts, atomic
+The test suite exercises live dirty-state observation, repo-local and shared
+tool visibility, Git checkpoint creation, nonzero and timeout persistence,
+output truncation without command abortion, database restart, idempotency conflicts, atomic
 multi-worker claiming, lease expiry, queued and active cancellation, process
 group termination, queue-time identity drift, receipt acceptance, output
 paging, MCP discovery, structured output, model-visible tool errors, committed
@@ -217,8 +227,7 @@ transactional patching, networkless shell execution, timeout rollback, and
 symlink-result rejection. Analysis tests enforce loopback-only registration,
 repository/target ownership, closed operation names, argument bounds, target
 metadata equality, and the absence of native mutation/bridge-shell authority.
-The current 2026-09-10 release checkpoint passes all 116 tests. The live
-29-tool inventory contains no game-knowledge publication or promotion tool.
+The live inventory contains no game-knowledge publication or promotion tool.
 
 Read-only capability questions for future MCP regression runs are in
 [`factory-mcp.xml`](../evaluations/factory-mcp.xml). Live validation should also
@@ -235,11 +244,12 @@ explicitly with `@`. See the official
 [`Skills & Plugins`](https://learn.chatgpt.com/docs/skills-and-plugins) and
 [`Build plugins`](https://learn.chatgpt.com/docs/build-plugins) guides.
 
-The skills guide source development and evidence operation without merging
-their trust states. They remain guidance, not authority: they cannot duplicate
-receipt verification, convert `completed` into `accepted`, promote a workspace
-test, or write the canonical repository. Those invariants stay inside the MCP
-service, registry, and Truth Kernel.
+The skills guide autonomous source development and evidence operation without
+merging their trust states. They are guidance, not a capability cage: broad
+repository Bash remains available alongside atomic analysis and replay tools.
+They cannot duplicate receipt verification, convert `completed` into
+`accepted`, or promote a commit/build result. Those invariants stay inside the
+registry and Truth Kernel.
 
 The exact fixed-URL deployment and TH105 smoke test are in
 [`gpt-web-plugin.md`](gpt-web-plugin.md).

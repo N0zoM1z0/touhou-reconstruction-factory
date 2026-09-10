@@ -2,9 +2,17 @@
 
 ## Decision
 
-The factory exposes a small set of repository primitives and an arbitrary Bash
-tool inside a fixed isolation boundary. It does not expose host Bash and does
-not attempt to predict every useful source operation as a separate MCP tool.
+This provider is an optional, explicitly isolated experiment surface. It is not
+the default GPT-web reconstruction environment and it is not the handoff path
+for normal game work. Normal reconstruction uses the registered live worktree,
+composable repository Bash, native ignored tools and state, and local Git
+checkpoints as described in [`agent-autonomy.md`](agent-autonomy.md).
+
+The disposable provider remains useful when the operator specifically wants a
+committed-HEAD-only experiment whose changes cannot reach the live repository.
+For that case the Factory exposes a small set of source primitives and arbitrary
+Bash inside a fixed isolation boundary; it does not attempt to predict every
+useful source operation as a separate MCP tool.
 
 This is the composability/authority split:
 
@@ -97,7 +105,7 @@ captured and observed byte counts. Output beyond the configured bound is
 discarded explicitly with `output_truncated = true`; it is never represented as
 complete.
 
-## Patch and handoff
+## Patch and optional handoff
 
 `factory_workspace_apply_patch` accepts only a bounded text unified Git diff.
 It rejects absolute or escaping paths, Git control data, binary patches,
@@ -106,7 +114,8 @@ against a copy, followed by the same tree validation and replacement rule.
 
 `factory_get_workspace_diff` constructs a reproducible Git binary diff against
 the immutable synthetic baseline. It returns bounded byte pages and the SHA-256
-of the complete diff. That diff is the handoff object:
+of the complete diff. For an explicitly isolated experiment, that diff can be
+used as a handoff object:
 
 1. GPT-web explores, edits, and tests in the disposable workspace.
 2. GPT-web returns the complete diff, its SHA-256, commands, and limitations.
@@ -116,10 +125,10 @@ of the complete diff. That diff is the handoff object:
    receipt.
 5. Only the acceptance registry may admit the result.
 
-There is no remote “apply to canonical repository” tool. On a public endpoint
-without caller authentication, such a tool would grant every Internet caller
-the same write authority as the operator. A random workspace capability does
-not authenticate the person who created it.
+There is no “apply this disposable diff” operation because normal work no
+longer needs one: GPT-web can inspect, edit, build, and commit in the selected
+registered live repository. A disposable diff enters that repository only when
+the operator deliberately chooses the isolated workflow and reviews the diff.
 
 ## Deliberate limits and residual risk
 

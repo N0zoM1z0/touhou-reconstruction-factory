@@ -22,6 +22,23 @@ command_timeout_seconds = 120
 max_command_output_bytes = 1048576
 max_patch_bytes = 4194304
 
+# Optional live-repository provider for autonomous GPT-web reconstruction. Bash
+# runs in the real registered worktree, sees ignored repo-local tools, and may
+# create local Git commits. Network is unavailable, so remote Git push is not
+# provided. Command output and before/after Git state are durable under root.
+[repository_work]
+enabled = false
+root = "/var/lib/touhou-reconstruction-factory/state/repository-work"
+command_timeout_seconds = 3600
+max_command_output_bytes = 8388608
+git_author_name = "gpt-web"
+git_author_email = "gpt-web@example.invalid"
+
+# Prefer one immutable Factory-managed installation for reusable executables
+# such as Ghidra/JDK/toolchain packages. Per-game repositories select versions,
+# wrappers, Wine prefixes, analysis projects, and Oracle workflows.
+shared_tool_roots = []
+
 # Optional semantic-analysis bridges must be loopback-only. The factory calls
 # only the backend's attested read tool and never forwards its host Bash tool.
 [[analysis_providers]]
@@ -49,12 +66,19 @@ id = "th08"
 path = "/srv/reconstructions/th08"
 adapter_id = "th08-vc7-ledgers-v1"
 target_identity_ids = ["target:th08-main"]
+# Optional mutable state outside the repo, for a legacy wrapper that selects
+# $HOME/.wineth08. Values stay private; only variable names and root counts are
+# exposed by repository discovery.
+# work_environment = { HOME = "/srv/reconstruction-state/th08-home" }
+# work_state_roots = ["/srv/reconstruction-state/th08-home/.wineth08"]
 
 [[repositories]]
 id = "th095"
 path = "/srv/reconstructions/th095"
 adapter_id = "windows-pe-ledgers-v1"
 target_identity_ids = ["target:th095-main"]
+# work_environment = { WINEPREFIX = "/srv/reconstruction-state/th095/wine" }
+# work_state_roots = ["/srv/reconstruction-state/th095/wine"]
 
 [[repositories]]
 id = "th105"
