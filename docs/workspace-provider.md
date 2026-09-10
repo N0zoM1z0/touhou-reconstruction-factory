@@ -145,7 +145,7 @@ compiler is mounted where arbitrary Bash can read it, Bash can copy it into
 model-visible output. The separate
 [`attested analysis provider`](analysis-provider.md) therefore exposes
 target-bound, Factory-allowlisted atomic operations. A native IDA provider may
-update reversible database metadata such as names, comments, and types, but it
+update non-byte database metadata such as names, comments, and types, but it
 never exposes target-byte patching or grants those hypotheses exactness credit.
 Unsupported analysis remains `unknown`; it is not filled by mounting private
 state into the source shell.

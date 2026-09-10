@@ -585,7 +585,7 @@ size, entry point, and six distributed mapped `.text` samples. A second fresh
 call resolved `0x47D45F` as `start`, size `0x1D5`, with provisional authority
 and zero exactness credit.
 
-Twelve discovered operations update reversible IDA database metadata: comments,
+Twelve discovered operations update non-byte IDA database metadata: comments,
 function/global/local/stack names, prototypes, and types. This is intentional
 agent autonomy, not truth promotion. Their results remain target-bound analysis
 hypotheses. Activation and a public GPT-web smoke test are deferred until the

@@ -102,7 +102,7 @@ and a JSON object string to `factory_analysis_call`. The response binds the
 current adapter target, provider identity, operation, arguments, attestation, and
 observation time while fixing `exactness_credit` to `none`. Native analysis
 for TH09 goes directly from the shared Factory process to `ida-pro-mcp` over
-stdio. Its discovered operations include reversible IDA database metadata
+stdio. Its discovered operations include non-byte IDA database metadata
 edits, while target-byte patching and legacy bridges' host Bash tools remain
 absent. See
 [`analysis-provider.md`](analysis-provider.md).

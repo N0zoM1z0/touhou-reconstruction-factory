@@ -309,7 +309,7 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     @server.tool(
         description=(
             "Page the factory-approved atomic operations for an analysis provider. "
-            "Native IDA includes semantic reads and reversible database-metadata edits, "
+            "Native IDA includes semantic reads and non-byte database-metadata edits, "
             "but no target-byte patching. Discovery re-attests the active target; "
             "Ghidra schemas are static and report not-probed until invoked."
         ),
@@ -334,7 +334,7 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     @server.tool(
         description=(
             "Run one discovered, factory-allowlisted semantic-analysis operation. Native "
-            "IDA talks directly over a Factory-owned stdio session and permits reversible "
+            "IDA talks directly over a Factory-owned stdio session and permits non-byte "
             "database-metadata edits; target-byte patching and bridge Bash remain absent. "
             "Encode only the selected operation's listed arguments as one JSON object. "
             "Every result is target-bound provisional evidence with zero exactness credit."
