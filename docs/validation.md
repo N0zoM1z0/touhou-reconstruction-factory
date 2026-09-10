@@ -73,7 +73,42 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --replay-idempotency-key <existing-identical-key>
 ```
 
-## Recorded current autonomy run: 2026-09-10
+## Recorded product-closure run: 2026-09-10
+
+The MCP-enabled release gate passed all 135 tests with no skips. Ruff,
+bytecode compilation, Git whitespace, three CLI construction checks, 36 JSON
+documents, two TOML documents, two evaluation XML documents, and an isolated
+0.4.0 wheel build passed. All four bundled skills passed the skill validator.
+The plugin cachebuster is `0.4.0+codex.20260910082918`. The older local plugin
+validator still reports only its known stale-schema error for the official
+`.app.json` `required` field; the Factory tests validate the current
+required-app shape.
+
+After an idle-job check, the same no-auth MCP and worker services were restarted
+in place. Public read-only validation passed against the fixed URL with all 32
+tools. The new policy/runner epoch correctly rejected all 17 historical receipt
+candidates as stale and accepted none; no candidate was invalid. This is an
+expected freshness boundary, not lost historical job state.
+
+The live TH095 adapter now reports 5,154 claims and two historical fixtures. A
+direct public MCP query for `claim_type=whole_build_closed` returned exactly one
+extent-free product candidate with 88 sources, two profiles, i386 COFF compile,
+PE32 i386 Windows GUI output, zero-unresolved policy, and
+`whole_image_exact=false`. The adapter still imports zero Oracle results. The
+active TH095 worktree had independently advanced to `339bb5a...` with four
+untracked files, so no public replay was submitted against that moving tree.
+
+A separate clean clone at immutable TH095 commit `3442dcf...` completed the
+real 88-TU product replay. Receipt integrity and live freshness passed, and the
+final strict policy admitted the sole candidate with zero rejected or invalid
+entries. The receipt, registry, compiler/linker hashes, source binding, coverage,
+duration, output format/hash observation, and the explicit absence of runtime
+credit are recorded in [`replay-validation.md`](replay-validation.md). Unit
+tests independently exercise the same extent-free coverage through the durable
+job/registry path, so GPT-web uses the existing generic claim/job tools rather
+than a game-specific MCP method.
+
+## Earlier autonomy run: 2026-09-10
 
 The MCP-enabled release gate passed all 127 tests with no skips. Ruff, bytecode
 compilation, Git whitespace, three CLI construction checks, 34 JSON documents,

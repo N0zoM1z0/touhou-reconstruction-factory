@@ -5,7 +5,7 @@ description: Run an autonomous, resumable Touhou source-reconstruction session i
 
 # Factory Reconstruction
 
-Follow `gpt-web-reconstruction-session-v3`. The Factory improves accuracy,
+Follow `gpt-web-reconstruction-session-v4`. The Factory improves accuracy,
 feedback speed, and resumability; it does not replace your engineering judgment
 with a rigid sequence of narrow tools. Prefer broad composable repository Bash
 plus the target-attested analysis and replay tools.
@@ -42,9 +42,11 @@ plus the target-attested analysis and replay tools.
    identity/evidence guarantees. Their presence never means that an unlisted
    in-repository investigation is forbidden.
 5. Run feedback from cheap and local to stronger and broader: syntax/static
-   checks, focused compile/object checks, repository-native scripts, then an
-   eligible Oracle replay. Page truncated command output with
-   `factory_get_repository_command_output`.
+   checks, affected exact function/extent checks, production translation-unit
+   compilation, then a cold whole-product build at bounded milestones. Owner,
+   ABI, layout, shared-header, link-input, or build-graph changes require both
+   affected exact replay and product closure. Neither result grants the other.
+   Page truncated command output with `factory_get_repository_command_output`.
 6. A live command is not transactional. Nonzero exit, timeout, or disconnect may
    leave useful or partial changes. Inspect status and diffs before retrying or
    changing direction.
@@ -91,6 +93,11 @@ history.
 - A replay job is execution state; a passing receipt is Oracle state.
 - Only a current acceptance-registry decision exposes accepted Truth Kernel
   facts.
+- Function/extent exactness, production closure, runtime storage identity, and
+  runtime scenario validation are independent planes. Report each separately.
+- A successful build or playable/manual runtime report is not a runtime receipt.
+  When no Factory runtime provider exists, preserve the live runtime plane as
+  `unknown`.
 - Unknown is preferable to a guessed identity, extent, owner, provenance,
   equivalence, or exactness conclusion.
 
@@ -104,5 +111,6 @@ Always report the session status; game and objective; starting and ending
 commit; starting and ending dirty state; bounded scope completed and excluded;
 analysis provider, target attestation, evidence, and limitations; changed files;
 checkpoint commit hashes and English subjects; game-local knowledge changes;
-tests and commands actually run; accepted facts separately from candidate
-results; unknowns and blockers; and the next useful action.
+tests and commands actually run; the status of every verification plane;
+accepted facts separately from candidate results; unknowns and blockers; and
+the next useful action.

@@ -2,7 +2,7 @@
 
 This prompt starts one autonomous, evidence-first reconstruction session in a
 game repository registered by the shared Touhou Reconstruction Factory MCP. The
-session contract is `gpt-web-reconstruction-session-v3`.
+session contract is `gpt-web-reconstruction-session-v4`.
 
 ## Short prompt with the plugin installed
 
@@ -36,7 +36,7 @@ Use this version when testing without automatic skill selection.
 
 ```text
 Run one autonomous evidence-first Touhou source-reconstruction session under
-contract gpt-web-reconstruction-session-v3.
+contract gpt-web-reconstruction-session-v4.
 
 Task:
 - GAME_ID: th105
@@ -99,9 +99,12 @@ Investigate and reconstruct:
    command runs in the real worktree. Nonzero exit and timeout do not roll back
    files; always inspect status and diff after an interrupted or surprising run.
 5. Run feedback from cheapest/focused to strongest/broader: syntax/static checks,
-   focused compile/object comparison, repository-native verification, and then
-   an eligible canonical replay. If command output is truncated, page it with
-   factory_get_repository_command_output instead of guessing the omitted result.
+   affected exact function/extent checks, production translation-unit compile,
+   and cold whole-product build at bounded milestones. Owner, ABI, layout,
+   shared-header, link-input, or build-graph changes require both affected exact
+   replay and product closure; neither result grants the other. If command output
+   is truncated, page it with factory_get_repository_command_output instead of
+   guessing the omitted result.
 
 Checkpoint:
 1. Create local Git commits after coherent reviewable units; checkpoints are a
@@ -129,6 +132,10 @@ Knowledge and verification:
    state being checked. Keep job completion, receipt verdict, registry decision,
    and accepted-fact query distinct. If dirty source or unsupported scope makes
    replay ineligible, report that boundary accurately.
+4. Report function/extent exactness, production closure, runtime storage
+   identity, and runtime scenario validation as independent planes. A successful
+   build or playable/manual report is not a runtime receipt. When the Factory has
+   no runtime provider, report the corresponding live plane as `unknown`.
 
 Continue until STOP_CONDITION is met, a concrete evidence/tool boundary blocks
 the packet, or a materially different scope decision is required.
@@ -144,6 +151,8 @@ Final handoff:
 - Created `gpt-web:` checkpoint hashes and subjects
 - Game-local knowledge changes, or why none were durable enough
 - Tests/commands actually run, exits/results, and unavailable checks
+- Independent status for exactness, production closure, runtime storage, and
+  runtime scenario planes
 - Accepted Truth Kernel facts, separately from analysis/build/commit candidates
 - Unknowns and blockers
 - Next useful action

@@ -21,8 +21,9 @@
         "target_attested", "boundary_extent", "origin_classified", "source_present",
         "compile_succeeded", "codegen_exact", "owned_extent_exact",
         "relocation_data_exact", "source_ownership", "object_ownership",
-        "physical_ownership", "semantic_ownership", "whole_build_closed",
-        "whole_image_exact", "semantic_evidence", "portable_runtime_validated"
+        "physical_ownership", "semantic_ownership", "runtime_storage_identity",
+        "whole_build_closed", "whole_image_exact", "semantic_evidence",
+        "runtime_scenario_validated", "portable_runtime_validated"
       ]
     },
     "claim_sha256": {"$ref": "#/$defs/sha256"},

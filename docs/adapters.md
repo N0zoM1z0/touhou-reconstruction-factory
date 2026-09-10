@@ -52,6 +52,7 @@ Inputs:
 - `config/matches.csv`
 - `config/match-units.toml`
 - optional `config/function-byte-ownership.toml`
+- optional TH095 `scripts/build-whole.py`
 
 The adapter currently covers the TH095 VC7.1 and TH105 VC8 LTCG ledger forms.
 It separates provisional boundary extents, origin, source presence, exact
@@ -59,6 +60,13 @@ codegen, and physical ownership into independent claims. The TH105 ownership
 manifest is target-bound and validated for main size, exclusions, ordered
 non-overlapping remote chunks, candidate-start intrusion, byte totals, and
 remote-exact evidence.
+
+When TH095 has the maintained whole-build script, the adapter also emits one
+extent-free product subject and one `whole_build_closed` candidate. Its source
+and profile counts are derived from the canonical match-unit table. The claim
+has `evidence_class=unknown` and `state=replay-required`; the adapter never runs
+the script or manufactures a product pass. The controlled product driver and
+acceptance registry perform that independent operation.
 
 The Windows target identity is marked `manifest-declared`, not `hash-attested`,
 because the read adapter deliberately does not access or hash the private
@@ -121,9 +129,11 @@ snapshot.
 ## Deliberate v0 limits
 
 - Adapters do not execute compilers, disassemblers, exact comparators, or
-  whole-build commands.
+  whole-build commands. They may import a typed replay candidate for a
+  separately controlled driver.
 - A TH07 adapter is not yet implemented.
 - Existing evidence prose and IDs are imported but are not automatically
   promoted into the factory artifact store.
-- Whole-build closure remains unattested unless a structured receipt exists;
-  function exactness never fills that gap.
+- Whole-build closure remains unattested unless a structured accepted receipt
+  exists; function exactness never fills that gap. Runtime storage and scenario
+  validation remain separate and currently have no live Factory driver.

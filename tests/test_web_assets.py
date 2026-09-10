@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ElementTree
 
 
 ROOT = Path(__file__).parents[1]
-CONTRACT_ID = "gpt-web-reconstruction-session-v3"
+CONTRACT_ID = "gpt-web-reconstruction-session-v4"
 PLUGIN_ROOT = ROOT / "plugins" / "touhou-reconstruction-factory"
 FACTORY_APP_ID = "asdk_app_6aa21bec66888191bd24c118e47ddee6"
 
@@ -19,7 +19,7 @@ class WebWorkflowAssetTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(contract["schema_version"], 3)
+        self.assertEqual(contract["schema_version"], 4)
         self.assertEqual(contract["id"], CONTRACT_ID)
         self.assertEqual(
             set(contract["required_inputs"]),
@@ -77,6 +77,29 @@ class WebWorkflowAssetTests(unittest.TestCase):
         self.assertIn("created_checkpoint_commits", contract["handoff_fields"])
         self.assertIn("unknowns_and_blockers", contract["handoff_fields"])
         self.assertIn("agent-autonomy-first", contract["design_principles"])
+        self.assertIn(
+            "verification-planes-are-independent-but-feedback-is-coupled",
+            contract["design_principles"],
+        )
+        planes = contract["verification_planes"]
+        self.assertEqual(
+            set(planes),
+            {
+                "function_or_extent_exactness",
+                "production_closure",
+                "runtime_storage",
+                "runtime_scenario",
+            },
+        )
+        self.assertEqual(
+            planes["production_closure"]["subject_kinds"], ["product"]
+        )
+        self.assertEqual(
+            planes["runtime_scenario"]["factory_live_provider"], "unavailable"
+        )
+        self.assertIn(
+            "verification_plane_statuses", contract["handoff_fields"]
+        )
         self.assertFalse(contract["checkpoint_rules"]["commit_is_exactness_evidence"])
 
     def test_prompt_skill_and_manifest_publish_the_same_workflow(self) -> None:
@@ -110,6 +133,8 @@ class WebWorkflowAssetTests(unittest.TestCase):
             self.assertIn("factory_repository_run_shell", document)
             self.assertIn("gpt-web:", document)
             self.assertIn("Git push", document)
+            self.assertIn("production closure", document)
+            self.assertIn("runtime scenario", document)
         self.assertIn("name: factory-reconstruction", skill)
         defaults = "\n".join(manifest["interface"]["defaultPrompt"])
         self.assertIn("reconstruction", defaults.lower())

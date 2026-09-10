@@ -182,3 +182,57 @@ Running an accepted-fact query from a different Python virtual environment can
 correctly reject receipts because the resolved runtime/toolchain surface differs
 from the worker environment. Production workers and the MCP process must use
 the same factory installation and relevant environment.
+
+## TH095 product-closure checkpoint: 2026-09-10
+
+The first product-scoped replay used an isolated clean clone at immutable TH095
+commit `3442dcf29d9e0b5bef384a49bd0c9ad32a711826`. The private canonical target
+was copied into the ignored `resources/` path, while the pinned VC7.1 package
+was reused read-only through `TH095_MSVC71_ROOT`. The concurrently active TH095
+worktree and its four untracked files were not changed.
+
+The adapter imported one extent-free `product` subject and
+`claim:th095-main:product:whole-build-closed` with
+`evidence_class=unknown`, plus zero imported Oracle results. Factory driver
+`th095-vc71-whole-build-v1` then ran the native `scripts/build-whole.py` from a
+clean output graph. It observed:
+
+- clean source commit `3442dcf...`, 278 bound source files, and identical
+  before/after source digest
+  `55d0641ee0055843917a98b069e4a9b48f3612452c970d9398624bc7068fc6e3`;
+- canonical target SHA-256
+  `bb54f6fc54f0eeffaec416ca9f64aef32b5f59b7427fa5a6579f6538e0eddc07`
+  before and after replay;
+- pinned compiler `13.10.3077` / SHA-256 `2ecf86a3...2515` and linker
+  `7.10.3077` / SHA-256 `0d5f9712...3e3c` with verified attestation;
+- complete `production-translation-units` coverage of 88/88 across two
+  canonical profiles;
+- a zero-unresolved, non-`/FORCE*` link and a report-bound 780,288-byte PE32
+  i386 Windows GUI output.
+
+The replay took 655,511 ms, returned `pass` with no acceptance errors, and
+sealed receipt
+`receipt:1ef34f8f9a7eff7abd142f10510bcdc6fc140e9254a0e8de661d7b141c3c7c04`.
+Live receipt verification returned `integrity=pass` and `fresh=true`. The
+`strict-live-v1` registry then classified exactly one candidate as accepted,
+with zero rejected or invalid candidates. The final policy requires verified
+native attestation for this product driver and has digest
+`8f45b3e395b79502234b2a805c6ee797c547dc96fa654a5ba7092104e1108e88`;
+the resulting registry is
+`registry:0a58bcdcf8787ca1627e341d72e3a16c6ef35efb06bd562a160d90a15718881d`.
+An accepted-fact query returned exactly that `whole_build_closed` fact.
+
+The isolated output SHA-256 was
+`1b66423b0ec969584fa05395352ff496e0471f5597f99d13fe3a9d14111b36f0`,
+which differs from the `8e0096...fac97f` artifact recorded by the game
+repository for another build of the same source checkpoint. The cause of the
+binary difference was not investigated in this bounded validation. The result
+is intentionally still a product-closure pass: the claim requires a complete
+cold build, clean link, and bound executable format, not deterministic output
+or whole-image equality. No runtime storage or runtime-scenario status was
+derived from it.
+
+The temporary clone and evidence store are not public retained evidence. The
+receipt and registry IDs above identify this local run, while the controlled
+driver, tests, paired historical fixtures, and reproduction procedure are the
+committed regression surface.

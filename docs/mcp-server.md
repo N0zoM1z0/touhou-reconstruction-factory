@@ -131,6 +131,13 @@ Every tool has structured output and an accurate MCP annotation. Expected
 operator/model errors become MCP tool errors (`isError=true`); an error string
 is never returned inside a nominally successful response.
 
+The job tools are claim-generic rather than game- or stage-specific. GPT-web
+uses the same `factory_list_claims` and `factory_submit_replay` sequence for a
+function exact claim or an extent-free `whole_build_closed` product claim; the
+selected controlled driver defines the coverage domain. Runtime claim types are
+discoverable vocabulary but remain unexecutable until a runtime driver and
+policy allowlist are implemented.
+
 ## Installation and local configuration
 
 Install the optional MCP v2 dependency:

@@ -97,7 +97,13 @@ required = true
     )
 
 
-def make_windows(root: Path, *, vc8: bool = False, bad_owner_target: bool = False) -> None:
+def make_windows(
+    root: Path,
+    *,
+    vc8: bool = False,
+    bad_owner_target: bool = False,
+    whole_build: bool = False,
+) -> None:
     project = "th105" if vc8 else "th095"
     family = (
         "Microsoft Visual C++ 2005 (VC8)"
@@ -159,11 +165,14 @@ family = "{family}"
         "address,name,size,status,match_percent,unit,evidence\n"
         "0x00401000,TestFn,16,matching,100.00,test-unit,native exact\n",
     )
+    profile = 'profile = ["/MT", "/Od"]\n' if whole_build else ""
     write(
         root,
         "config/match-units.toml",
-        "[units.test-unit]\nsource = \"src/Test.cpp\"\n",
+        f"[units.test-unit]\nsource = \"src/Test.cpp\"\n{profile}",
     )
+    if whole_build:
+        write(root, "scripts/build-whole.py", "raise SystemExit(0)\n")
     if vc8:
         owner_hash = HASH_B if bad_owner_target else HASH_A
         write(
@@ -309,6 +318,32 @@ class AdapterTests(unittest.TestCase):
             ]
             self.assertEqual(len(exact_claims), 1)
             self.assertEqual(kit_for_snapshot(snapshot).toolchain.id, "msvc71")
+
+    def test_th095_declares_independent_product_build_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            make_windows(root, whole_build=True)
+            snapshot = inspect_repository(root)
+            product_subject = next(
+                subject
+                for subject in snapshot.subjects
+                if subject.kind.value == "product"
+            )
+            claim = next(
+                claim
+                for claim in snapshot.claims
+                if claim.type is ClaimType.WHOLE_BUILD_CLOSED
+            )
+            self.assertEqual(claim.subject_id, product_subject.id)
+            self.assertEqual(claim.evidence_class.value, "unknown")
+            self.assertEqual(claim.value["source_count"], 1)
+            self.assertEqual(claim.value["profile_count"], 1)
+            self.assertFalse(claim.value["whole_image_exact"])
+            self.assertEqual(snapshot.oracle_results, ())
+            self.assertIn(
+                "whole-build-claim-awaits-replay",
+                {diagnostic.code for diagnostic in snapshot.diagnostics},
+            )
 
     def test_vc8_import_preserves_remote_chunks_without_exact_credit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

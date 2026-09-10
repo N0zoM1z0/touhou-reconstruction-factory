@@ -39,6 +39,7 @@ class StringEnum(str, Enum):
 
 class SubjectKind(StringEnum):
     PRODUCT = "product"
+    RUNTIME_SCENARIO = "runtime_scenario"
     FUNCTION = "function"
     EXTENT = "extent"
     DATA = "data"
@@ -68,9 +69,11 @@ class ClaimType(StringEnum):
     OBJECT_OWNERSHIP = "object_ownership"
     PHYSICAL_OWNERSHIP = "physical_ownership"
     SEMANTIC_OWNERSHIP = "semantic_ownership"
+    RUNTIME_STORAGE_IDENTITY = "runtime_storage_identity"
     WHOLE_BUILD_CLOSED = "whole_build_closed"
     WHOLE_IMAGE_EXACT = "whole_image_exact"
     SEMANTIC_EVIDENCE = "semantic_evidence"
+    RUNTIME_SCENARIO_VALIDATED = "runtime_scenario_validated"
     PORTABLE_RUNTIME_VALIDATED = "portable_runtime_validated"
 
 

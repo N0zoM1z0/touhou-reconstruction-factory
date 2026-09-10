@@ -420,9 +420,22 @@ class AcceptanceRegistryTests(unittest.TestCase):
         loaded = load_acceptance_policy(path)
         self.assertEqual(loaded.id, "strict-live-v1")
         self.assertTrue(loaded.require_live_freshness)
+        self.assertIn(ClaimType.WHOLE_BUILD_CLOSED, loaded.allowed_claim_types)
+        self.assertIn(
+            "th095-vc71-whole-build-v1", loaded.allowed_driver_ids
+        )
+        self.assertNotIn(
+            ClaimType.RUNTIME_SCENARIO_VALIDATED, loaded.allowed_claim_types
+        )
         self.assertEqual(
             dict(loaded.driver_attestation_minimums)[
                 "th04-main-owned-extent-v1"
+            ],
+            AttestationLevel.VERIFIED,
+        )
+        self.assertEqual(
+            dict(loaded.driver_attestation_minimums)[
+                "th095-vc71-whole-build-v1"
             ],
             AttestationLevel.VERIFIED,
         )

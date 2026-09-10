@@ -148,7 +148,16 @@ class WindowsPeRepositoryAdapter(RepositoryAdapter):
         if reader.exists(ownership_path):
             imported_paths.append(ownership_path)
 
-        subjects: list[Subject] = []
+        product_subject_id = f"{product_id}:product"
+        subjects: list[Subject] = [
+            Subject(
+                id=product_subject_id,
+                target_identity_id=target_id,
+                kind=SubjectKind.PRODUCT,
+                name=f"{project.name} production product",
+                metadata={"product_id": product_id, "role": product.role},
+            )
+        ]
         claims: list[Claim] = []
         diagnostics: list[Diagnostic] = []
         diagnostics.append(
@@ -166,6 +175,37 @@ class WindowsPeRepositoryAdapter(RepositoryAdapter):
         authored_bytes = 0
         remote_authored_bytes = 0
         category_counts = {"authored": 0, "excluded": 0, "review": 0}
+
+        whole_build_path = "scripts/build-whole.py"
+        has_factory_whole_build = project_id == "th095" and reader.exists(
+            whole_build_path
+        )
+        if has_factory_whole_build:
+            source_count, profile_count = _whole_build_dimensions(match_units)
+            imported_paths.append(whole_build_path)
+            claims.append(
+                Claim(
+                    id=f"claim:{product_subject_id}:whole-build-closed",
+                    subject_id=product_subject_id,
+                    type=ClaimType.WHOLE_BUILD_CLOSED,
+                    target_identity_id=target_id,
+                    toolchain_identity_id=toolchain.id,
+                    value={
+                        "closed": True,
+                        "source_count": source_count,
+                        "profile_count": profile_count,
+                        "compile_machine": "i386-coff",
+                        "link_output": "pe32-i386-windows-gui",
+                        "zero_unresolved_required": True,
+                        "whole_image_exact": False,
+                    },
+                    evidence_class=EvidenceClass.UNKNOWN,
+                    metadata={
+                        "native_driver": whole_build_path,
+                        "state": "replay-required",
+                    },
+                )
+            )
 
         for address, row in sorted(functions.items()):
             origin_row = origins[address]
@@ -367,27 +407,34 @@ class WindowsPeRepositoryAdapter(RepositoryAdapter):
                     ),
                 ]
             )
-        diagnostics.extend(
-            [
-                Diagnostic(
-                    code="imported-exact-claims-unreplayed",
-                    severity=Severity.INFO,
-                    message=(
-                        "Imported matches retain native evidence text but have no factory "
-                        "OracleResult until cold replayed through a factory oracle envelope."
-                    ),
-                    source="config/matches.csv",
+        diagnostics.append(
+            Diagnostic(
+                code="imported-exact-claims-unreplayed",
+                severity=Severity.INFO,
+                message=(
+                    "Imported matches retain native evidence text but have no factory "
+                    "OracleResult until cold replayed through a factory oracle envelope."
                 ),
-                Diagnostic(
-                    code="whole-build-state-unattested",
-                    severity=Severity.WARNING,
-                    message=(
-                        "No structured whole-build receipt exists in the imported ledgers; "
-                        "the adapter does not infer closure from function exactness."
-                    ),
-                    source="config",
+                source="config/matches.csv",
+            )
+        )
+        diagnostics.append(
+            Diagnostic(
+                code=(
+                    "whole-build-claim-awaits-replay"
+                    if has_factory_whole_build
+                    else "whole-build-state-unattested"
                 ),
-            ]
+                severity=(Severity.INFO if has_factory_whole_build else Severity.WARNING),
+                message=(
+                    "A product-level whole-build candidate is declared, but only a fresh "
+                    "accepted cold replay can establish closure."
+                    if has_factory_whole_build
+                    else "No structured whole-build claim exists in the imported ledgers; "
+                    "the adapter does not infer closure from function exactness."
+                ),
+                source=whole_build_path if has_factory_whole_build else "config",
+            )
         )
 
         return RepositorySnapshot(
@@ -541,3 +588,27 @@ def _exact_owned_size(main_size: int, ownership: dict[str, Any] | None) -> int:
     if ownership["remote_exact"]:
         result += int(ownership["remote_bytes"])
     return result
+
+
+def _whole_build_dimensions(match_units: object) -> tuple[int, int]:
+    if not isinstance(match_units, dict) or not match_units:
+        raise AdapterError("TH095 whole-build claim requires table-shaped match units")
+    source_profiles: dict[str, tuple[str, ...]] = {}
+    for unit_name, raw_unit in match_units.items():
+        if not isinstance(raw_unit, dict):
+            raise AdapterError(f"match unit {unit_name!r} must be a table")
+        source = raw_unit.get("source")
+        raw_profile = raw_unit.get("profile")
+        if not isinstance(source, str) or not source:
+            raise AdapterError(f"match unit {unit_name!r} has no source")
+        if (
+            not isinstance(raw_profile, list)
+            or not raw_profile
+            or not all(isinstance(flag, str) and flag for flag in raw_profile)
+        ):
+            raise AdapterError(f"match unit {unit_name!r} has no canonical profile")
+        profile = tuple(raw_profile)
+        previous = source_profiles.setdefault(source, profile)
+        if previous != profile:
+            raise AdapterError(f"source {source!r} has multiple canonical profiles")
+    return len(source_profiles), len(set(source_profiles.values()))

@@ -178,6 +178,48 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
                 {"repository_id": repository_id, "limit": 1, "offset": 0},
             )
             _check(claims["total"] == inspected["counts"]["claims"], "claim drift")
+            product_closure_claim = None
+            if repository_id == "th095":
+                product_claims = await _call(
+                    client,
+                    "factory_list_claims",
+                    {
+                        "repository_id": repository_id,
+                        "claim_type": "whole_build_closed",
+                        "limit": 5,
+                        "offset": 0,
+                    },
+                )
+                _check(
+                    product_claims["total"] == 1
+                    and len(product_claims["items"]) == 1,
+                    "TH095 product-closure claim is not unique",
+                )
+                product_item = product_claims["items"][0]
+                product_claim = product_item["claim"]
+                product_subject = product_item["subject"]
+                _check(
+                    product_claim["id"]
+                    == "claim:th095-main:product:whole-build-closed"
+                    and product_claim["evidence_class"] == "unknown"
+                    and product_claim["value"]
+                    == {
+                        "closed": True,
+                        "compile_machine": "i386-coff",
+                        "link_output": "pe32-i386-windows-gui",
+                        "profile_count": 2,
+                        "source_count": 88,
+                        "whole_image_exact": False,
+                        "zero_unresolved_required": True,
+                    },
+                    "TH095 product-closure claim contract drifted",
+                )
+                _check(
+                    product_subject["kind"] == "product"
+                    and product_subject["extents"] == [],
+                    "TH095 product closure must use an extent-free product subject",
+                )
+                product_closure_claim = product_claim["id"]
             snapshot = await _call(
                 client,
                 "factory_get_accepted_snapshot",
@@ -189,6 +231,7 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
                 "targets": inspected["target_identity_ids"],
                 "accepted_oracle_results": len(snapshot["oracle_results"]),
                 "input_fingerprint_sha256": inspected["input_fingerprint_sha256"],
+                "product_closure_claim": product_closure_claim,
                 "live_worktree": {
                     "head_commit": worktree["head_commit"],
                     "branch": worktree["branch"],

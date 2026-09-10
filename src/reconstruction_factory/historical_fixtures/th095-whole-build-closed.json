@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../schemas/v1/historical-regression-fixture.schema.json",
+  "schema_version": 1,
+  "id": "th095-whole-build-closed",
+  "title": "Product closure requires a complete clean link",
+  "project": "th095",
+  "contract": "whole-build-closure",
+  "provenance": {
+    "repository": "N0zoM1z0/th095",
+    "commit": "3442dcf29d9e0b5bef384a49bd0c9ad32a711826",
+    "paths": ["docs/WHOLE_BUILD_TODO.md"],
+    "observation": "A cold pinned VC7.1 build compiled all 88 production translation units across two canonical profiles and linked a verified PE32 i386 Windows GUI executable with zero unresolved symbols and without force-link escape hatches. The same checkpoint retained 696 accepted exact functions out of 697 source-present functions, demonstrating that product closure and function exactness remain independent claims."
+  },
+  "input": {
+    "coverage_complete": true,
+    "objects_expected": 88,
+    "objects_compiled": 88,
+    "source_profiles": 2,
+    "link_attempted": true,
+    "link_succeeded": true,
+    "unique_unresolved_symbols": 0,
+    "unresolved_diagnostics": 0,
+    "source_present_functions": 697,
+    "exact_functions": 696
+  },
+  "expected": {
+    "verdict": "pass",
+    "diagnostics": []
+  }
+}

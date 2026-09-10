@@ -44,6 +44,10 @@ This distinction is central to accuracy-first operation:
   destination prove `128.0`.
 - TH095's historical link is `fail` for whole-build closure even though all 88
   source objects compiled and 696 functions were exact.
+- TH095's later cold 88-object, zero-unresolved link is `pass` for product
+  closure while the independently reported function plane remains 696 exact of
+  697 source-present functions. The paired result proves both directions of the
+  separation without granting runtime status.
 - TH105 evidence bound to the earlier executable is `fail` against the active
   target even though both manifests use the string `1.06a`.
 - TH105 physical ownership arithmetic may be established while exactness stays
@@ -66,7 +70,7 @@ This distinction is central to accuracy-first operation:
 | --- | --- | --- |
 | `boundary-coverage` | A tool-created function is a complete source boundary | TH04 Gengetsu foreground renderer |
 | `relocation-destination-content` | Matching relocation form and destination imply matching referenced data | TH08 item auto-collection threshold |
-| `whole-build-closure` | Function or object success implies a linked product | TH095 whole-build audit |
+| `whole-build-closure` | Function or object success implies a linked product, or product closure implies every function is exact | TH095 open and closed whole-build checkpoints |
 | `target-binding` | A version label is sufficient target identity | TH105 v1.06a target reset |
 | `owned-extent-exactness` | A provisional main span is complete ownership, or ownership implies exactness | TH105 Reimu and Sakuya multi-chunk roots |
 | `source-presence-cardinality` | A source-name set has the same cardinality as target functions | TH08 overloaded `Float3` constructors |

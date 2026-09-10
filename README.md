@@ -31,8 +31,12 @@ flowchart LR
     F[("Shared immutable tools<br/>Ghidra · JDK · objdiff<br/>compiler packages · system Wine")]:::memory --> S
     S --> G["Game-local state<br/>Wine prefix · analysis project<br/>build outputs · knowledge input"]:::repo
     G --> L["Local gpt-web: Git checkpoints<br/>review · resume · bisect · rollback<br/>commit is not exactness proof"]:::human
-    L --> J["Durable canonical replay<br/>committed claim + source · target<br/>toolchain · extent-bound receipt"]:::oracle
-    J --> A{"Integrity + freshness<br/>+ live policy<br/>accepted?"}:::gate
+    L --> J1["Exact replay<br/>function / owned extent<br/>claimed-byte coverage"]:::oracle
+    L --> J2["Product closure replay<br/>complete production graph<br/>cold compile + clean link"]:::oracle
+    L -.-> J3["Runtime storage / scenario<br/>separate target-bound contract<br/>live provider not implemented"]:::platform
+    J1 --> A{"Integrity + freshness<br/>+ live policy<br/>accepted?"}:::gate
+    J2 --> A
+    J3 -.-> X
     A -->|"Rejected / invalid / stale"| X["Preserve diagnostics<br/>artifacts + explicit unknowns<br/>define the next bounded task"]:::reject
     A ==>|"Accepted"| T["Truth Kernel<br/>current accepted facts<br/>and accepted snapshots"]:::done
     T --> Q["GPT-web query / next task<br/>report receipt scope<br/>never inflate completeness"]:::agent
@@ -64,7 +68,10 @@ The main row is the normal reader journey from scope to accepted truth. Solid
 arrows are operational or data-flow edges, dashed arrows mark optional or later
 work, and the thick **Accepted** edge is the only route into truth. There is
 intentionally no direct edge from an imported claim, analysis result, Bash/build
-result, or Git commit to the Truth Kernel.
+result, or Git commit to the Truth Kernel. Exactness, production closure, runtime
+storage identity, and runtime scenarios are independent planes; their feedback
+loops interact, but their truth status never transfers implicitly. See
+[`independent verification planes`](docs/verification-planes.md).
 
 The same control-plane architecture serves both eras. PC-98 and Windows PE use
 different platform/toolchain providers, adapters, target identities, and replay

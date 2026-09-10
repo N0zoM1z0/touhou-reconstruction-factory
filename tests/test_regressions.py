@@ -25,11 +25,25 @@ class HistoricalRegressionTests(unittest.TestCase):
     def test_packaged_suite_matches_all_expected_verdicts(self) -> None:
         report = run_fixture_suite()
         self.assertTrue(report.passed)
-        self.assertEqual(len(report.evaluations), 11)
+        self.assertEqual(len(report.evaluations), 12)
         self.assertEqual(
             {item.project for item in report.evaluations},
             {"th04", "th08", "th095", "th105"},
         )
+
+    def test_th095_open_and_closed_build_history_are_both_executable(self) -> None:
+        evaluations = {
+            item.fixture_id: item for item in run_fixture_suite().evaluations
+        }
+        self.assertEqual(
+            evaluations["th095-whole-build-open"].outcome.verdict,
+            Verdict.FAIL,
+        )
+        closed = evaluations["th095-whole-build-closed"].outcome
+        self.assertEqual(closed.verdict, Verdict.PASS)
+        self.assertEqual(closed.diagnostics, ())
+        self.assertEqual(closed.facts["objects"], "88/88")
+        self.assertEqual(closed.facts["exact_functions"], 696)
 
     def test_target_hash_beats_equal_version_labels(self) -> None:
         fixture = next(

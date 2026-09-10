@@ -284,12 +284,35 @@ class ReplayRunner:
             item.exit_code != 0 for item in raw_executions
         ):
             errors.add("replay-stage-nonzero-on-native-pass")
-        expected_bytes = sum(item.size for item in subject.extents)
-        complete = (
-            expected_bytes > 0
-            and outcome.observed_bytes == expected_bytes
-            and outcome.verdict in {Verdict.PASS, Verdict.FAIL}
-        )
+        if outcome.coverage is None:
+            expected_bytes = sum(item.size for item in subject.extents)
+            complete = (
+                expected_bytes > 0
+                and outcome.observed_bytes == expected_bytes
+                and outcome.verdict in {Verdict.PASS, Verdict.FAIL}
+            )
+            coverage = Coverage(
+                domain="claimed-bytes",
+                expected_units=expected_bytes,
+                observed_units=outcome.observed_bytes,
+                complete=complete,
+                notes=(
+                    "Coverage is the sum of every extent bound by the normalized "
+                    "subject."
+                ),
+            )
+        else:
+            complete = (
+                outcome.coverage.complete
+                and outcome.verdict in {Verdict.PASS, Verdict.FAIL}
+            )
+            coverage = Coverage(
+                domain=outcome.coverage.domain,
+                expected_units=outcome.coverage.expected_units,
+                observed_units=outcome.coverage.observed_units,
+                complete=complete,
+                notes=outcome.coverage.notes,
+            )
         if outcome.verdict is Verdict.PASS and not complete:
             errors.add("native-coverage-incomplete")
         if plan.coldness in {Coldness.INCREMENTAL, Coldness.UNKNOWN}:
@@ -327,13 +350,7 @@ class ReplayRunner:
             target_identity_id=target.id,
             toolchain_identity_id=toolchain.id,
             source_tree=source_before.snapshot_sha256,
-            coverage=Coverage(
-                domain="claimed-bytes",
-                expected_units=expected_bytes,
-                observed_units=outcome.observed_bytes,
-                complete=complete,
-                notes="Coverage is the sum of every extent bound by the normalized subject.",
-            ),
+            coverage=coverage,
             verdict=verdict,
             evidence_refs=evidence_refs,
             normalizations=outcome.normalizations,

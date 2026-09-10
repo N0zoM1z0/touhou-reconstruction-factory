@@ -92,6 +92,9 @@ and acceptance checks does not produce truth.
 - A worker never reports success by parsing an English status string.
 - Process exit, native structured output, receipt integrity, artifact integrity,
   live freshness, and acceptance policy remain independent checks.
+- Job submission is claim-generic. Exact and product-closure claims share the
+  same state machine, while their drivers declare different coverage domains;
+  no additional MCP job tool is required for product closure.
 - Output is stored in full and read by bounded byte pages. There is no lossy
   “first N characters” truncation.
 - Repository paths exist only in the trusted operator configuration and are not

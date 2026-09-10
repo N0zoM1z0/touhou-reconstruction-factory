@@ -984,6 +984,41 @@ coordination skills. Skills may improve tool selection and continuity, but they
 must never become another acceptance authority; the concrete boundary is
 recorded in [`mcp-server.md`](mcp-server.md).
 
+## 18. Independent Product-Closure Checkpoint (2026-09-10)
+
+TH095 now supplies a positive product-closure sample in addition to its earlier
+open-link counterexample. The Factory vocabulary and GPT-web contract separate
+four claim planes: function/extent exactness, production closure, runtime
+storage identity, and runtime scenario validation. Their engineering feedback
+is coupled, especially after owner, ABI, layout, or shared-header changes, but
+their truth status cannot transfer between planes.
+
+The Windows adapter imports the maintained TH095 whole-build script as one
+extent-free, replay-required `whole_build_closed` candidate without creating an
+Oracle result. The controlled driver cold-compiles the complete source graph,
+requires every canonical source/profile mapping, attests compiler/linker and
+target identity, rejects `/FORCE*`, requires zero-unresolved linkage, verifies
+the output PE format, and reports coverage as production translation units
+rather than fake bytes.
+
+An isolated replay at immutable commit `3442dcf...` compiled 88/88 production
+translation units across two profiles and linked a 780,288-byte PE32 i386
+Windows GUI artifact. Receipt, freshness, strict-policy registry, and
+accepted-fact queries all passed independently. The same source checkpoint
+still reports 696 exact functions among 697 source-present functions, proving
+that product closure need not imply complete function exactness. The isolated
+output hash also differed from the game repository's earlier recorded build,
+so no deterministic or whole-image claim was inferred. Exact IDs and limits
+are in [`replay-validation.md`](replay-validation.md).
+
+The shared knowledge catalog now binds this passing fixture together with the
+earlier `b864c31...` fixture whose 88/88 compile still had 239 unique unresolved
+symbols. Runtime claim vocabulary is present, but the strict live policy has no
+runtime driver or oracle. TH095's substantial manual runtime evidence therefore
+remains useful scoped evidence while Factory runtime acceptance stays unknown.
+The normal GPT-web path needs no game-specific MCP tool: claim discovery,
+durable replay submission, job observation, and registry query are generic.
+
 ## Appendix A: Evidence Anchors
 
 This index is intentionally small. It identifies the sources that support the architectural conclusions without turning this document into a copy of every repository's history.
@@ -1048,6 +1083,8 @@ Repository root: `/home/pentester/coding/codex_ida/th095-reconstruction/th095`
 - Commit `cd2072b`: fail-closed whole-program build audit.
 - Commits `6585748` and `a3412fb`: canonical shared ownership and ABI repairs.
 - Commit `b864c31`: remaining whole-build closure report.
+- Commit `3442dcf`: playable Windows reconstruction with closed production
+  build and bounded manual runtime status.
 
 ### A.6 TH105
 

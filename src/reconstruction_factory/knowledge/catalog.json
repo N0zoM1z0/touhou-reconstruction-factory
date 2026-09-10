@@ -49,12 +49,16 @@
       "status": "verified",
       "statement": "Source presence, exact function replay, translation-unit compilation, link closure, whole-image equality, and runtime validation are separate claims.",
       "scopes": ["all"],
-      "evidence_fixture_ids": ["th095-whole-build-open"],
+      "evidence_fixture_ids": [
+        "th095-whole-build-closed",
+        "th095-whole-build-open"
+      ],
       "consequences": [
-        "Never derive whole_build_closed from function, byte, source, or object progress metrics."
+        "Never derive whole_build_closed from function, byte, source, or object progress metrics.",
+        "Accept product closure only from complete production-graph compilation and a clean link; keep runtime and whole-image claims separate."
       ],
       "limitations": [
-        "The fixture disproves one implication; it does not prescribe a universal linker or runtime oracle."
+        "The paired fixtures establish the TH095 transition from an open to a closed link; they do not prescribe a universal linker or runtime oracle."
       ]
     },
     {

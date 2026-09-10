@@ -12,7 +12,15 @@ import tomllib
 from typing import Any, Mapping, Sequence
 
 from .errors import ReplayError
-from .ontology import Claim, ClaimType, RepositorySnapshot, Subject, Verdict
+from .ontology import (
+    Claim,
+    ClaimType,
+    Coverage,
+    RepositorySnapshot,
+    Subject,
+    SubjectKind,
+    Verdict,
+)
 from .oracle_receipts import AttestationLevel, Coldness, canonical_sha256
 from .replay_identity import file_sha256
 
@@ -65,6 +73,7 @@ class NativeOutcome:
     diagnostics: tuple[str, ...] = ()
     normalizations: tuple[str, ...] = ()
     attestation: AttestationLevel = AttestationLevel.OBSERVED
+    coverage: Coverage | None = None
 
 
 class ReplayDriver:
@@ -465,6 +474,266 @@ class Th095FunctionDriver(ReplayDriver):
         return _decode_linear_function_report(report, subject, unit=str(plan.metadata["unit"]), size_key="size")
 
 
+class Th095WholeBuildDriver(ReplayDriver):
+    """Cold-build the complete declared TH095 production graph."""
+
+    driver_id = "th095-vc71-whole-build-v1"
+    adapter_id = "windows-pe-ledgers-v1"
+    oracle_id = "windows.msvc71.whole-build-closed"
+
+    def supports(self, snapshot: RepositorySnapshot, claim: Claim) -> bool:
+        return (
+            snapshot.project.id == "th095"
+            and snapshot.adapter_id == self.adapter_id
+            and claim.type is ClaimType.WHOLE_BUILD_CLOSED
+            and claim.value.get("closed") is True
+        )
+
+    def prepare(
+        self,
+        root: Path,
+        snapshot: RepositorySnapshot,
+        claim: Claim,
+        subject: Subject,
+        run_id: str,
+    ) -> ReplayPlan:
+        if subject.kind is not SubjectKind.PRODUCT or subject.extents:
+            raise ReplayError("TH095 whole-build closure requires an extent-free product subject")
+        for key in ("source_count", "profile_count"):
+            value = claim.value.get(key)
+            if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+                raise ReplayError(f"TH095 whole-build claim has invalid {key}")
+        if (
+            claim.value.get("compile_machine") != "i386-coff"
+            or claim.value.get("link_output") != "pe32-i386-windows-gui"
+            or claim.value.get("zero_unresolved_required") is not True
+            or claim.value.get("whole_image_exact") is not False
+        ):
+            raise ReplayError("TH095 whole-build claim has an unsupported closure policy")
+
+        build = _repo_file(root, "scripts/build-whole.py")
+        _toml(root, "config/match-units.toml")
+        _toml(root, "config/target.toml")
+        _toml(root, "config/tools.lock.toml")
+        tool_root = Path(
+            os.environ.get("TH095_MSVC71_ROOT", str(root / ".tools/msvc710"))
+        ).expanduser()
+        vc7 = tool_root / "Vc7"
+        specs = (
+            ComponentSpec("vc71-bin", vc7 / "bin", "$TH095_MSVC71_ROOT/Vc7/bin"),
+            ComponentSpec(
+                "vc71-compiler",
+                vc7 / "bin/cl.exe",
+                "$TH095_MSVC71_ROOT/Vc7/bin/cl.exe",
+                "native-attestation",
+            ),
+            ComponentSpec(
+                "vc71-linker",
+                vc7 / "bin/link.exe",
+                "$TH095_MSVC71_ROOT/Vc7/bin/link.exe",
+                "native-attestation",
+            ),
+            ComponentSpec(
+                "vc71-include", vc7 / "include", "$TH095_MSVC71_ROOT/Vc7/include"
+            ),
+            ComponentSpec("vc71-lib", vc7 / "lib", "$TH095_MSVC71_ROOT/Vc7/lib"),
+            ComponentSpec(
+                "vc71-platformsdk-include",
+                vc7 / "PlatformSDK/Include",
+                "$TH095_MSVC71_ROOT/Vc7/PlatformSDK/Include",
+            ),
+            ComponentSpec(
+                "vc71-platformsdk-lib",
+                vc7 / "PlatformSDK/Lib",
+                "$TH095_MSVC71_ROOT/Vc7/PlatformSDK/Lib",
+            ),
+            *_runtime_components(),
+        )
+        return ReplayPlan(
+            driver_id=self.driver_id,
+            oracle_id=self.oracle_id,
+            coldness=Coldness.CLEAN_OUTPUT_GRAPH,
+            stages=(
+                ReplayStagePlan(
+                    "whole-build",
+                    (sys.executable, str(build.relative_to(root))),
+                    root,
+                ),
+            ),
+            oracle_inputs=_identity_inputs(
+                root,
+                (
+                    "scripts/build-whole.py",
+                    "config/match-units.toml",
+                    "config/target.toml",
+                    "config/tools.lock.toml",
+                ),
+            ),
+            target_path=_repo_file(root, "resources/th095.exe"),
+            toolchain_components=specs,
+            environment_names=(
+                "HOME",
+                "PATH",
+                "PYTHONPATH",
+                "TH095_MSVC71_ROOT",
+                "WINEPREFIX",
+            ),
+            native_report_path=_repo_output(
+                root, "build/whole-validation/report.json"
+            ),
+            metadata={
+                "coverage_domain": "production-translation-units",
+                "source_count": claim.value["source_count"],
+                "profile_count": claim.value["profile_count"],
+                "whole_image_exact": False,
+            },
+        )
+
+    def decode(
+        self,
+        plan: ReplayPlan,
+        claim: Claim,
+        subject: Subject,
+        executions: Sequence[RawExecution],
+    ) -> NativeOutcome:
+        if not executions or plan.native_report_path is None:
+            return NativeOutcome(
+                Verdict.ERROR, 0, None, ("native-whole-build-not-executed",)
+            )
+        if not plan.native_report_path.is_file():
+            return NativeOutcome(
+                Verdict.ERROR, 0, None, ("native-whole-build-report-missing",)
+            )
+        try:
+            report = json.loads(plan.native_report_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ReplayError(f"invalid TH095 whole-build report: {error}") from error
+        if not isinstance(report, dict):
+            raise ReplayError("TH095 whole-build report must be a JSON object")
+
+        expected_sources = int(claim.value["source_count"])
+        expected_profiles = int(claim.value["profile_count"])
+        compile_report = report.get("compile")
+        link_report = report.get("link")
+        report_sources = report.get("source_count")
+        observed_objects = (
+            compile_report.get("object_count", 0)
+            if isinstance(compile_report, dict)
+            else 0
+        )
+        coverage = Coverage(
+            domain="production-translation-units",
+            expected_units=expected_sources,
+            observed_units=(
+                observed_objects
+                if isinstance(observed_objects, int)
+                and not isinstance(observed_objects, bool)
+                and 0 <= observed_objects <= expected_sources
+                else 0
+            ),
+            complete=(
+                report_sources == expected_sources
+                and report.get("profile_count") == expected_profiles
+                and isinstance(compile_report, dict)
+                and compile_report.get("status") == "passed"
+                and observed_objects == expected_sources
+                and compile_report.get("machine") == "i386-coff"
+            ),
+            notes=(
+                "Coverage is the complete src/**/*.cpp production graph declared by "
+                "the canonical TH095 match-unit profiles; it is not function-exact or "
+                "whole-image coverage."
+            ),
+        )
+        diagnostics: list[str] = []
+        if report.get("schema_version") != 1:
+            diagnostics.append("native-whole-build-schema-unsupported")
+        if report.get("target_sha256") != file_sha256(plan.target_path):
+            diagnostics.append("native-target-binding-mismatch")
+        if report_sources != expected_sources or report.get("profile_count") != expected_profiles:
+            diagnostics.append("native-whole-build-plan-mismatch")
+        if not coverage.complete:
+            diagnostics.append("native-production-compile-incomplete")
+
+        if not isinstance(link_report, dict):
+            diagnostics.append("native-link-report-missing")
+            verdict = Verdict.ERROR
+        elif link_report.get("status") == "failed":
+            unresolved = link_report.get("unresolved_unique_count")
+            diagnostics.append(
+                "native-whole-build-unresolved-symbols"
+                if isinstance(unresolved, int) and unresolved > 0
+                else "native-whole-build-link-failed"
+            )
+            verdict = Verdict.FAIL
+        elif link_report.get("status") != "passed":
+            diagnostics.append("native-whole-build-link-incomplete")
+            verdict = Verdict.INCOMPLETE
+        else:
+            verdict = Verdict.PASS
+            flags = link_report.get("flags")
+            if not isinstance(flags, list) or any(
+                not isinstance(flag, str) or flag.upper().startswith("/FORCE")
+                for flag in flags
+            ):
+                diagnostics.append("native-link-policy-unsafe")
+            artifact = link_report.get("artifact")
+            output = _repo_output(
+                root=plan.stages[0].cwd,
+                relative="build/whole-validation/th095-reconstructed.exe",
+            )
+            if not isinstance(artifact, dict) or not output.is_file():
+                diagnostics.append("native-linked-artifact-missing")
+            elif (
+                artifact.get("format") != "PE32"
+                or artifact.get("machine") != "i386"
+                or artifact.get("subsystem") != "windows-gui"
+                or artifact.get("size") != output.stat().st_size
+                or artifact.get("sha256") != file_sha256(output)
+            ):
+                diagnostics.append("native-linked-artifact-binding-mismatch")
+
+        toolchain_report = report.get("toolchain")
+        component_paths = {item.id: item.path for item in plan.toolchain_components}
+        if not isinstance(toolchain_report, dict) or any(
+            toolchain_report.get(key) != file_sha256(component_paths[component_id])
+            for key, component_id in (
+                ("compiler_sha256", "vc71-compiler"),
+                ("linker_sha256", "vc71-linker"),
+            )
+        ) or not all(
+            isinstance(toolchain_report.get(key), str)
+            and toolchain_report.get(key)
+            for key in ("compiler_version", "linker_version")
+        ):
+            diagnostics.append("native-toolchain-attestation-mismatch")
+
+        if executions[-1].exit_code != 0 and verdict is Verdict.PASS:
+            diagnostics.append("native-whole-build-exit-inconsistent")
+        integrity_diagnostics = {
+            "native-whole-build-schema-unsupported",
+            "native-target-binding-mismatch",
+            "native-whole-build-plan-mismatch",
+            "native-link-policy-unsafe",
+            "native-linked-artifact-missing",
+            "native-linked-artifact-binding-mismatch",
+            "native-toolchain-attestation-mismatch",
+            "native-whole-build-exit-inconsistent",
+        }
+        if integrity_diagnostics.intersection(diagnostics):
+            verdict = Verdict.ERROR
+        elif verdict is Verdict.PASS and not coverage.complete:
+            verdict = Verdict.INCOMPLETE
+        return NativeOutcome(
+            verdict=verdict,
+            observed_bytes=0,
+            report=report,
+            diagnostics=tuple(sorted(set(diagnostics))),
+            attestation=AttestationLevel.VERIFIED,
+            coverage=coverage,
+        )
+
+
 class Th105FunctionDriver(ReplayDriver):
     driver_id = "th105-vc8-function-v1"
     adapter_id = "windows-pe-ledgers-v1"
@@ -619,6 +888,7 @@ BUILTIN_DRIVERS: tuple[ReplayDriver, ...] = (
     Th04OwnedExtentDriver(),
     Th08FunctionDriver(),
     Th095FunctionDriver(),
+    Th095WholeBuildDriver(),
     Th105FunctionDriver(),
 )
 

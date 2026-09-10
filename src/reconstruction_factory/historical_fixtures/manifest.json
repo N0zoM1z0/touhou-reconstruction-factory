@@ -26,6 +26,10 @@
       "sha256": "7915f54495654555f0acf3a65741d2b46db869f7b198e9e19d3f43b093631a7b"
     },
     {
+      "path": "th095-whole-build-closed.json",
+      "sha256": "439d45e7f1f8abf43c7458e9b60095f75063b28daaaaa715abd8fa9edb15693e"
+    },
+    {
       "path": "th095-whole-build-open.json",
       "sha256": "7b00eeed89b1da670c4735015af00840a5840a09edbca52726d45cbaeebae49d"
     },

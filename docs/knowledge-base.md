@@ -50,6 +50,13 @@ catalog contains ten verified rules and two explicit unknowns. The unknown
 runtime and general LTCG-reproduction entries are deliberate boundaries, not
 missing data to be filled by guesses.
 
+TH095's whole-build lesson is backed by paired historical fixtures: one
+checkpoint compiles 88/88 production units but fails with unresolved symbols,
+while the later checkpoint compiles 88/88 and links cleanly despite retaining
+696 exact functions out of 697 source-present functions. Together they preserve
+the independence of exactness, product closure, whole-image equality, and
+runtime validation.
+
 ## Publication boundary
 
 Neither GPT-web nor the public MCP can publish, nominate, or promote game-local

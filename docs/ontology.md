@@ -29,7 +29,9 @@ Subject -> Claim -> OracleResult -> ArtifactRef
 - A **toolchain identity** binds compiler-family assertions to a deterministic
   fingerprint over the attested surfaces used by the project.
 - A **subject** is the entity about which a claim is made. Subject kinds are
-  product, function, extent, data, source unit, object, section, and image.
+  product, runtime scenario, function, extent, data, source unit, object,
+  section, and image. A product or runtime scenario may be extent-free because
+  its provider declares a non-byte coverage domain.
 
 Addresses are never globally meaningful. Every subject is target-qualified,
 and every extent names its address space. Non-contiguous physical ownership is
@@ -46,6 +48,23 @@ A **claim** is a typed assertion. Examples include `boundary_extent`, `source_pr
 one subject and one target identity. Toolchain-dependent claims also bind to a
 toolchain identity.
 
+The primary verification planes are deliberately independent:
+
+- `codegen_exact` and `owned_extent_exact` cover declared function or extent
+  bytes;
+- `whole_build_closed` covers the complete declared production graph and a
+  clean link for an extent-free product subject;
+- `runtime_storage_identity` covers a bounded physical-storage, alias,
+  publication, or lifetime relationship observed at runtime;
+- `runtime_scenario_validated` covers one artifact-, asset-, environment-,
+  input-, and observable-bound scenario.
+
+No claim in this list implies another. In particular, exact functions may
+coexist with unresolved product linkage, and a closed product may coexist with
+a deliberately non-exact function or unknown runtime behavior. The operational
+feedback loop and the TH095 positive/negative example are specified in
+[`verification-planes.md`](verification-planes.md).
+
 An **oracle result** evaluates one claim. Its role is either:
 
 - `diagnostic`: routes investigation and cannot grant exactness;
@@ -59,8 +78,12 @@ Verdicts are:
 - `error`: the oracle could not execute its contract.
 
 An acceptance `pass` requires complete coverage and at least one durable
-evidence reference. Missing bytes, unknown extents, stale manifests, absent
-relocation destinations, and truncated output are `incomplete`, never `pass`.
+evidence reference. Coverage is claim-specific: exact claims commonly count
+bytes, product closure counts production translation units, and a future
+runtime provider must count its declared scenario observables. Missing bytes,
+unknown extents, stale manifests, absent relocation destinations, truncated
+output, or an unavailable runtime provider are `incomplete` or `unknown`, never
+`pass`.
 
 The `OracleResult` is the truth-kernel verdict, not the execution transcript.
 When it originates from replay, it is carried by a content-addressed

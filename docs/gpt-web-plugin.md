@@ -42,9 +42,11 @@ knowledge or bypass replay-receipt acceptance.
   local `gpt-web:` checkpoints, and evidence boundaries.
 - [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md) provides a
   short installed-plugin invocation and a complete standalone prompt under the
-  machine-readable `gpt-web-reconstruction-session-v3` contract. Version 3
-  restores live-repository autonomy and Git checkpoints; versions 1 and 2 remain
-  committed as historical contracts.
+  machine-readable `gpt-web-reconstruction-session-v4` contract. Version 4 adds
+  independent exactness, production-closure, runtime-storage, and runtime-scenario
+  reporting plus their coupled feedback loop. Version 3 preserves the earlier
+  live-repository autonomy and Git-checkpoint contract; versions 1 through 3
+  remain committed as historical contracts.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
@@ -286,6 +288,40 @@ linked-owner layout, whole-image closure, and game completeness remain unknown.
 If any discovery result, target binding, replay output, freshness check, or
 policy decision differs, the correct smoke-test result is rejected, failed, or
 unknown—not a remembered success from an earlier receipt.
+
+## TH095 product-closure test
+
+After the deployed Factory has been updated and restarted, GPT-web can exercise
+the independent product plane through the same shared MCP URL:
+
+```text
+Use the Touhou Reconstruction Factory to verify TH095 production closure.
+Discover the registered repository and the whole_build_closed product claim;
+submit its controlled replay with a new stable idempotency key; observe the job
+until terminal; and report job state, receipt verdict, production-TU coverage,
+registry decision, and accepted fact separately. Do not infer function
+exactness, deterministic or whole-image equality, runtime storage identity, or
+runtime scenario validation from the build.
+```
+
+The intended sequence is the same generic sequence used for a function claim:
+
+1. call `factory_list_claims(repository_id="th095",
+   claim_type="whole_build_closed", limit=5, offset=0)`;
+2. select only the returned extent-free product claim;
+3. call `factory_submit_replay` with a new stable idempotency key;
+4. reconnect and poll `factory_get_job` as needed—the cold 88-TU Wine build can
+   take many minutes;
+5. require `completed`, receipt `pass`, complete
+   `production-translation-units` coverage, and registry `accepted` as separate
+   observations;
+6. query `factory_query_accepted_facts` for `whole_build_closed` and report the
+   exact returned receipt scope.
+
+If the live TH095 worktree changes between submission and execution, the job
+must fail before replay as stale. If it changes after the receipt, the registry
+must reject that receipt as stale. Submit a new job for the new state rather
+than treating a prior product pass as permanent.
 
 ## Live-repository capability smoke test
 

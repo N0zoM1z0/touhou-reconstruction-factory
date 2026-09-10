@@ -37,14 +37,14 @@ immutable store evidence.
 ## Explicit policy
 
 [`policies/strict-live-v1.json`](../policies/strict-live-v1.json) is the first
-published policy. It allows only the four current controlled drivers and their
-exact claim types and requires:
+published policy. It allows the four current exact drivers plus the TH095
+product-closure driver and requires:
 
 - a live repository binding for every accepted target;
 - complete coverage and an empty acceptance-error set;
 - one of the three accepted coldness mechanisms;
 - at least observed toolchain surfaces, with verified native attestation for
-  TH04;
+  TH04 and the TH095 whole-product driver;
 - the exact adapter, oracle, and driver allowlists in the policy.
 
 The policy allows a dirty source tree because receipts hash the complete live
@@ -57,6 +57,12 @@ Unknown toolchain attestation, incremental replay, and policies that disable
 freshness, complete coverage, or empty acceptance errors are structurally
 incapable of acceptance. Adding a future driver requires an explicit policy
 change and therefore changes the policy SHA-256.
+
+`runtime_storage_identity` and `runtime_scenario_validated` are defined in the
+truth vocabulary but are not allowed by this policy. Runtime prose, a playable
+label, or a successful product build therefore cannot enter the registry as a
+runtime pass. A future bounded runtime provider requires its own driver and
+oracle allowlist entries.
 
 ## Accepted snapshots
 

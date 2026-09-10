@@ -7,7 +7,8 @@
   ],
   "allowed_claim_types": [
     "codegen_exact",
-    "owned_extent_exact"
+    "owned_extent_exact",
+    "whole_build_closed"
   ],
   "allowed_coldness": [
     "clean-output-graph",
@@ -18,17 +19,20 @@
     "th04-main-owned-extent-v1",
     "th08-vc7-function-v1",
     "th095-vc71-function-v1",
+    "th095-vc71-whole-build-v1",
     "th105-vc8-function-v1"
   ],
   "allowed_oracle_ids": [
     "pc98.borland16.owned-extent-exact",
     "windows.msvc7.function-exact",
     "windows.msvc71.function-exact",
+    "windows.msvc71.whole-build-closed",
     "windows.msvc8.standalone-function-exact"
   ],
-  "description": "Accept only fresh, complete, artifact-backed exact replays from the first factory-controlled driver set.",
+  "description": "Accept only fresh, complete, artifact-backed exact or product-closure replays from the factory-controlled driver set; claim scopes remain independent.",
   "driver_attestation_minimums": {
-    "th04-main-owned-extent-v1": "verified"
+    "th04-main-owned-extent-v1": "verified",
+    "th095-vc71-whole-build-v1": "verified"
   },
   "id": "strict-live-v1",
   "minimum_attestation": "observed",

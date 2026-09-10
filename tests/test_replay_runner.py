@@ -14,6 +14,7 @@ from reconstruction_factory.errors import ReplayCancelled, ReplayError
 from reconstruction_factory.ontology import (
     Claim,
     ClaimType,
+    Coverage,
     EvidenceClass,
     Extent,
     Product,
@@ -85,6 +86,26 @@ class FakeDriver(ReplayDriver):
         return NativeOutcome(Verdict.PASS, 4, report)
 
 
+class FakeProductDriver(FakeDriver):
+    driver_id = "test-whole-build-v1"
+    oracle_id = "test.whole-build-closed"
+
+    def decode(self, plan, claim, subject, executions):
+        report = json.loads(executions[0].stdout)
+        return NativeOutcome(
+            Verdict.PASS,
+            0,
+            report,
+            coverage=Coverage(
+                "production-translation-units",
+                88,
+                88,
+                True,
+                "The complete declared product source graph was compiled.",
+            ),
+        )
+
+
 def snapshot(root: Path) -> RepositorySnapshot:
     target_path = root / "resources/test.exe"
     project = Project("test", "Test")
@@ -131,6 +152,34 @@ def snapshot(root: Path) -> RepositorySnapshot:
         (subject,),
         (claim,),
         adapter_id="test-adapter",
+    )
+
+
+def product_snapshot(root: Path) -> RepositorySnapshot:
+    base = snapshot(root)
+    subject = Subject(
+        "test-main:product",
+        base.targets[0].id,
+        SubjectKind.PRODUCT,
+        "Test production product",
+    )
+    claim = Claim(
+        "claim:test-main:product:whole-build-closed",
+        subject.id,
+        ClaimType.WHOLE_BUILD_CLOSED,
+        base.targets[0].id,
+        {"closed": True},
+        EvidenceClass.UNKNOWN,
+        base.toolchains[0].id,
+    )
+    return RepositorySnapshot(
+        base.project,
+        base.products,
+        base.targets,
+        base.toolchains,
+        (subject,),
+        (claim,),
+        adapter_id=base.adapter_id,
     )
 
 
@@ -224,6 +273,17 @@ print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
             ),
         ):
             self.assertEqual(verify_live_freshness(document, self.root), ())
+
+    def test_product_replay_uses_driver_declared_nonbyte_coverage(self) -> None:
+        self.snapshot = product_snapshot(self.root)
+        driver = FakeProductDriver()
+        run = self.run_with(driver)
+        coverage = run.receipt.result.coverage
+        self.assertEqual(run.receipt.result.verdict, Verdict.PASS)
+        self.assertEqual(coverage.domain, "production-translation-units")
+        self.assertEqual((coverage.observed_units, coverage.expected_units), (88, 88))
+        self.assertTrue(coverage.complete)
+        self.assertEqual(run.receipt.claim.extents, ())
 
     def test_source_mutation_overrides_native_pass(self) -> None:
         run = self.run_with(FakeDriver(mutate="source"))
