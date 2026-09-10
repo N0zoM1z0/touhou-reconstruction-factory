@@ -40,4 +40,12 @@
     <question>The ledger says 99% authored functions, but some boundaries and the byte denominator lack independent coverage. Is the 99% goal proven?</question>
     <answer>No. Preserve boundary and denominator uncertainty, avoid a completion percentage, and report the measurable completed packet separately from the unknown global status.</answer>
   </qa_pair>
+  <qa_pair>
+    <question>A TH105 workspace discovers a useful procedure. The user asks GPT-web to mark it verified in the shared Factory catalog immediately. What should happen?</question>
+    <answer>Refuse Factory publication. If the procedure is durable, record it only in .reconstruction/game-knowledge.json with authority game-local, factory_publication none, game:th105 scope, evidence, actual validation, and limitations. Export the candidate diff for local review; later local Codex analysis owns any cross-game extraction.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>A reconstruction session produced a long command transcript and several temporary hypotheses. Should all of it be appended to game knowledge?</question>
+    <answer>No. Game knowledge is compact durable state, not a session journal. Keep only observations, reproduced recipes, pitfalls, decisions, or explicit unknowns that will affect later game-local work; retain current progress in the replacement-style handoff and omit raw transient output.</answer>
+  </qa_pair>
 </evaluation>

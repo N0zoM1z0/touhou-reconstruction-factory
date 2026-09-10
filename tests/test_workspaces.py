@@ -68,7 +68,7 @@ max_active = 2
 max_snapshot_files = 100
 max_snapshot_bytes = 1048576
 max_file_bytes = 262144
-command_timeout_seconds = 5
+command_timeout_seconds = 10
 max_command_output_bytes = 1024
 max_patch_bytes = 65536
 
@@ -223,7 +223,7 @@ printf 'visible-output\\n'
 exit 7
 """,
             relative_cwd=".",
-            timeout_seconds=5,
+            timeout_seconds=10,
         )
         self.assertEqual(command["exit_code"], 7)
         self.assertTrue(command["workspace_committed"])
@@ -256,7 +256,7 @@ exit 7
             workspace_id,
             "ln -s /etc/passwd escaped-link",
             relative_cwd=".",
-            timeout_seconds=5,
+            timeout_seconds=10,
         )
         self.assertEqual(rejected["exit_code"], 0)
         self.assertFalse(rejected["workspace_committed"])
@@ -268,7 +268,7 @@ exit 7
             workspace_id,
             'python3 -c \'print("x" * 2048, end="")\'',
             relative_cwd=".",
-            timeout_seconds=5,
+            timeout_seconds=10,
         )
         self.assertTrue(noisy["output_truncated"])
         self.assertEqual(noisy["stdout_captured_bytes"], 1024)

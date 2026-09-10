@@ -26,14 +26,17 @@ flowchart LR
     D --> C["Selected canonical game repository<br/>committed HEAD + machine-readable ledgers<br/>original target identity"]:::repo
     C --> E["Target-attested evidence<br/>committed source + bounded IDA/Ghidra<br/>analysis exactness credit: none"]:::evidence
     E --> S["Disposable source workspace<br/>natural C/C++ · focused checks<br/>source-only Bash · candidate diff"]:::work
+    S -.-> G["Game-local knowledge input<br/>observed · reproduced · unknown<br/>publication authority: none"]:::repo
     S -->|"complete diff + workspace ID"| L["Local Codex handoff<br/>review · apply · test · commit<br/>new canonical game source"]:::human
+    G -->|"same reviewable diff"| L
     L --> J["Durable canonical replay<br/>discovered claim + source · target<br/>toolchain · extent bound receipt"]:::oracle
     J --> A{"Integrity + freshness<br/>+ live policy<br/>accepted?"}:::gate
     A -->|"Rejected / invalid / stale"| X["Preserve diagnostics<br/>artifacts + explicit unknowns<br/>define the next bounded task"]:::reject
     A ==>|"Accepted"| T["Truth Kernel<br/>current accepted facts<br/>and accepted snapshots"]:::done
     T --> Q["GPT-web query / next task<br/>report receipt scope<br/>never inflate completeness"]:::agent
     X --> Q
-    T --> P["Promote reusable rules<br/>fixtures · guards · limitations<br/>for later sessions"]:::memory
+    L -.-> P["Later local Codex retrospective<br/>history · scripts · tests · receipts<br/>Factory publication not automated"]:::memory
+    P -.-> K
 
     P98["PC-98 era family<br/>TH01–TH05<br/>currently validated: TH04"]:::platform --> C
     PE["Windows PE era family<br/>TH06+<br/>currently validated: TH08 / TH095 / TH105"]:::platform --> C
@@ -78,6 +81,7 @@ PYTHONPATH=src python3 -m reconstruction_factory --help
 PYTHONPATH=src python3 -m reconstruction_factory inspect /path/to/repo --summary
 PYTHONPATH=src python3 -m reconstruction_factory fixtures
 PYTHONPATH=src python3 -m reconstruction_factory knowledge
+PYTHONPATH=src python3 -m reconstruction_factory validate-game-knowledge --help
 PYTHONPATH=src python3 -m reconstruction_factory verify-provenance --help
 PYTHONPATH=src python3 -m reconstruction_factory replay --help
 PYTHONPATH=src python3 -m reconstruction_factory verify-receipt --help
@@ -106,6 +110,9 @@ Their evidence and verdict semantics are described in
 [`docs/regression-fixtures.md`](docs/regression-fixtures.md).
 Verified lessons and explicit unknowns are indexed by scope in the
 [`cross-game knowledge base`](docs/knowledge-base.md).
+Game repositories use a separate, non-publishing
+[`game-local knowledge input`](docs/game-knowledge.md) that GPT-web may update
+only as part of a reviewable workspace diff.
 
 Factory-controlled replay and content-addressed evidence are specified in
 [`docs/oracle-receipts.md`](docs/oracle-receipts.md).

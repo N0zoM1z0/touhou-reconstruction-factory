@@ -37,6 +37,13 @@ home are excluded.
    states, diff SHA-256, and every limitation. The diff is a candidate for
    local review and application; it has not modified the canonical repository.
 
+When the selected game's reconstruction workflow produces durable local
+knowledge, the workspace may include the canonical
+`.reconstruction/game-knowledge.json` input described by the
+`factory-reconstruction` skill. It must remain `authority="game-local"` and
+`factory_publication="none"`. A workspace must never edit Factory-owned
+cross-game catalogs, fixtures, schemas, or publication state.
+
 Use POSIX-relative paths only. Do not attempt symlinks, device files, Git
 control-data changes, host-path discovery, or network access. Do not call
 `factory_discard_workspace` unless the user asks to discard it or clearly says

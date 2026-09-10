@@ -40,4 +40,8 @@
     <question>A completed replay job has acceptance_decision rejected. Is the claim verified, and where should its diagnostics be read?</question>
     <answer>No. Completion is workflow completion, not truth acceptance. Use factory_get_job_events and factory_get_job_output_page, and only accepted-fact queries for verified conclusions.</answer>
   </qa_pair>
+  <qa_pair>
+    <question>A game-local knowledge input calls one entry reproduced. Can factory_query_knowledge publish or return it as a cross-game rule?</question>
+    <answer>No. factory_query_knowledge reads only the Factory-packaged cross-game catalog. Game-local input has factory_publication none, and the public MCP exposes no nomination or promotion tool.</answer>
+  </qa_pair>
 </evaluation>

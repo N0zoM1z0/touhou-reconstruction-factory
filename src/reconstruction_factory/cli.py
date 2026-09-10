@@ -12,6 +12,7 @@ from .adapters import inspect_repository
 from .artifact_store import ArtifactStore
 from .errors import FactoryError
 from .factory import kit_for_snapshot
+from .game_knowledge import load_game_knowledge
 from .knowledge import load_knowledge_catalog
 from .live_validation import validate_live_repository
 from .ontology import ClaimType
@@ -49,6 +50,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--directory", type=Path, help="use an alternate fixture directory"
     )
     subparsers.add_parser("knowledge", help="print the scoped cross-game knowledge catalog")
+
+    game_knowledge_parser = subparsers.add_parser(
+        "validate-game-knowledge",
+        help="validate game-local knowledge input without publishing it",
+    )
+    game_knowledge_parser.add_argument("document", type=Path)
+    game_knowledge_parser.add_argument(
+        "--repository-root",
+        type=Path,
+        help="also require repository-path evidence to resolve inside this directory",
+    )
+    game_knowledge_parser.add_argument(
+        "--repository-id",
+        help="also require the document to identify this registered repository",
+    )
 
     registry_parser = subparsers.add_parser(
         "acceptance-registry",
@@ -168,6 +184,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "knowledge":
             catalog = load_knowledge_catalog()
             print(json.dumps(catalog.to_dict(), indent=2, sort_keys=True))
+            return 0
+        if args.command == "validate-game-knowledge":
+            game_knowledge = load_game_knowledge(
+                args.document,
+                repository_root=args.repository_root,
+                expected_repository_id=args.repository_id,
+            )
+            print(json.dumps(game_knowledge.to_dict(), indent=2, sort_keys=True))
             return 0
         if args.command == "acceptance-registry":
             registry = build_acceptance_registry(

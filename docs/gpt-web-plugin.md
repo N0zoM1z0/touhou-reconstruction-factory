@@ -41,10 +41,13 @@ is not wanted.
   exactness inflation.
 - [`factory-reconstruction/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-reconstruction/SKILL.md)
   coordinates a bounded, resumable source session while preserving the three
-  authority boundaries above.
+  authority boundaries above and permits only schema-bound game-local
+  knowledge input, never Factory publication.
 - [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md) provides a
   short installed-plugin invocation and a complete standalone prompt under the
-  machine-readable `gpt-web-reconstruction-session-v1` contract.
+  machine-readable `gpt-web-reconstruction-session-v2` contract. Version 2
+  adds the fail-closed game-local knowledge input boundary; version 1 remains
+  committed only as an immutable historical contract.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)

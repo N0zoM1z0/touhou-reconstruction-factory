@@ -88,6 +88,7 @@ target_identity_ids = ["target:th08-v1.00d-original"]
         async with Client(build_mcp_server(self.config)) as client:
             discovered = await client.list_tools()
         names = {tool.name for tool in discovered.tools}
+        self.assertFalse(any("promot" in name or "publish" in name for name in names))
         self.assertEqual(
             names,
             {
@@ -174,9 +175,20 @@ target_identity_ids = ["target:th08-v1.00d-original"]
             repository_failure = await client.call_tool(
                 "factory_inspect_repository", {"repository_id": "th08"}
             )
+            knowledge = await client.call_tool(
+                "factory_query_knowledge", {"limit": 1, "offset": 0}
+            )
         self.assertFalse(description.is_error)
         self.assertEqual(description.structured_content["policy_id"], "strict-live-v1")
         self.assertTrue(description.structured_content["workspace"]["enabled"])
+        self.assertEqual(
+            knowledge.structured_content["authority"],
+            "factory-published-cross-game",
+        )
+        self.assertEqual(
+            knowledge.structured_content["publication_interface"], "none"
+        )
+        self.assertFalse(knowledge.structured_content["game_local_input_included"])
         rendered = json.dumps(description.structured_content)
         self.assertNotIn(str(self.root), rendered)
         self.assertTrue(failure.is_error)

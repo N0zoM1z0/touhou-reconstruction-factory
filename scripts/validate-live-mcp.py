@@ -168,6 +168,12 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
             "factory_query_knowledge",
             {"status": "unknown", "limit": 100, "offset": 0},
         )
+        _check(
+            unknown["authority"] == "factory-published-cross-game"
+            and unknown["publication_interface"] == "none"
+            and unknown["game_local_input_included"] is False,
+            "knowledge query crossed the Factory publication boundary",
+        )
         _check(unknown["total"] > 0, "unknown knowledge was erased")
         fixtures = {}
         for repository_id in REPOSITORIES:

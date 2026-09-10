@@ -364,12 +364,17 @@ class FactoryService:
             if (status is None or item.status is status)
             and (scope is None or scope in item.scopes)
         )
-        return _page_dict(
-            len(entries),
-            offset,
-            limit,
-            tuple(item.to_dict() for item in entries[offset : offset + limit]),
-        )
+        return {
+            "authority": "factory-published-cross-game",
+            "publication_interface": "none",
+            "game_local_input_included": False,
+            **_page_dict(
+                len(entries),
+                offset,
+                limit,
+                tuple(item.to_dict() for item in entries[offset : offset + limit]),
+            ),
+        }
 
     def fixtures(
         self,

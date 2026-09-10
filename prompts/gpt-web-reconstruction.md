@@ -3,7 +3,7 @@
 This prompt starts one bounded reconstruction session against any game registered
 by the shared Touhou Reconstruction Factory MCP. Change the task values, not the
 authority rules. The session contract is
-`gpt-web-reconstruction-session-v1`.
+`gpt-web-reconstruction-session-v2`.
 
 ## Short prompt with the plugin installed
 
@@ -36,7 +36,7 @@ the workflow independently of automatic skill selection.
 
 ```text
 Run one evidence-first Touhou source-reconstruction session under contract
-gpt-web-reconstruction-session-v1.
+gpt-web-reconstruction-session-v2.
 
 Task:
 - GAME_ID: th105
@@ -103,6 +103,14 @@ Workflow:
 7. Prefer curated source, tests, ledgers, and durable explanatory documentation.
    Do not accumulate raw .analysis dumps, chat journals, duplicated decompiler
    output, or stale scratch artifacts in the diff.
+8. If this session produces durable game-local knowledge, update only
+   .reconstruction/game-knowledge.json under the Factory game-knowledge-input
+   v1 schema. Keep authority=game-local and factory_publication=none; require
+   exactly one matching game scope per entry; use only observed, reproduced,
+   unknown, or superseded status; and record evidence, actual validations, and
+   limitations. Do not write a chat journal. Never use all, verified, or
+   provisional, edit the Factory catalog, or request publication. Cross-game
+   extraction is a later local-Codex repository-history review.
 
 Decision rules:
 - Accuracy is more important than completeness. Unknown is a correct result;
@@ -126,6 +134,7 @@ Final handoff (always include every field):
 - Bounded scope completed and excluded
 - Analysis evidence, provider, target attestation, and exactness limitation
 - Changed files and rationale
+- Game-local knowledge entries changed, or why none were durable enough to add
 - Tests actually run, exit/result, and unavailable checks
 - Complete diff byte size and whole-diff SHA-256
 - Accepted Truth Kernel facts, separately from candidate/workspace results

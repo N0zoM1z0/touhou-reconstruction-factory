@@ -1,0 +1,9 @@
+{
+  "$schema": "https://github.com/N0zoM1z0/touhou-reconstruction-factory/schemas/v1/game-knowledge-input.schema.json",
+  "schema_version": 1,
+  "document_type": "game-knowledge-input",
+  "authority": "game-local",
+  "factory_publication": "none",
+  "repository_id": "replace-me",
+  "entries": []
+}

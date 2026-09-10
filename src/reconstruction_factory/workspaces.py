@@ -18,6 +18,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import resource
 import selectors
 import shlex
 import shutil
@@ -41,6 +42,7 @@ _COMMAND_ID = re.compile(r"^command:([0-9a-f]{32})$")
 _MAX_SCRIPT_BYTES = 65536
 _SEARCH_CAPTURE_BYTES = 8 * 1024 * 1024
 _ARCHIVE_OVERHEAD_BYTES = 16 * 1024 * 1024
+_WORKSPACE_PROCESS_HEADROOM = 512
 
 
 class WorkspaceStore:
@@ -575,7 +577,7 @@ exit "$command_status"
             f"--as={2 * 1024 * 1024 * 1024}",
             f"--cpu={timeout_seconds + 5}",
             f"--fsize={self.policy.max_file_bytes}",
-            "--nproc=512",
+            f"--nproc={_workspace_nproc_limit()}",
             "--nofile=256",
             "--",
             nice,
@@ -1076,6 +1078,33 @@ def _validate_committed_snapshot(
         if total_bytes > policy.max_snapshot_bytes:
             raise WorkspaceError("workspace snapshot byte limit exceeded")
     return {"file_count": file_count, "bytes": total_bytes}
+
+
+def _workspace_nproc_limit() -> int:
+    """Reserve bounded child headroom without counting host tasks as sandbox tasks."""
+
+    uid = os.getuid()
+    observed_tasks = 0
+    try:
+        processes = tuple(Path("/proc").iterdir())
+    except OSError as error:
+        raise WorkspaceError("cannot inspect operator task usage") from error
+    for process in processes:
+        if not process.name.isdigit():
+            continue
+        try:
+            if process.stat().st_uid != uid:
+                continue
+            observed_tasks += sum(1 for _ in (process / "task").iterdir())
+        except OSError:
+            continue
+    requested = observed_tasks + _WORKSPACE_PROCESS_HEADROOM
+    _, hard = resource.getrlimit(resource.RLIMIT_NPROC)
+    if hard != resource.RLIM_INFINITY:
+        requested = min(requested, hard)
+    if requested <= observed_tasks:
+        raise WorkspaceError("operator process limit leaves no workspace task headroom")
+    return requested
 
 
 def _git_archive(repository: Path, commit: str, destination: Path) -> None:

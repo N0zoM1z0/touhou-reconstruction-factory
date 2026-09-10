@@ -21,6 +21,10 @@ class RegressionFixtureError(ValidationError):
     """Raised when a historical regression fixture is malformed or tampered."""
 
 
+class GameKnowledgeError(ValidationError):
+    """Raised when game-local knowledge crosses or violates its input contract."""
+
+
 class ReplayError(FactoryError):
     """Raised when a controlled replay cannot satisfy its execution contract."""
 

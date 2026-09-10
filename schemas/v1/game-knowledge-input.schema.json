@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/N0zoM1z0/touhou-reconstruction-factory/schemas/v1/game-knowledge-input.schema.json",
+  "title": "Touhou Reconstruction Game-Local Knowledge Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "document_type",
+    "authority",
+    "factory_publication",
+    "repository_id",
+    "entries"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://github.com/N0zoM1z0/touhou-reconstruction-factory/schemas/v1/game-knowledge-input.schema.json"
+    },
+    "schema_version": {"const": 1},
+    "document_type": {"const": "game-knowledge-input"},
+    "authority": {"const": "game-local"},
+    "factory_publication": {"const": "none"},
+    "repository_id": {"$ref": "#/$defs/id"},
+    "entries": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/entry"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$"
+    },
+    "uniqueStrings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "nonEmptyUniqueStrings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "reference", "note"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "repository-path",
+            "commit",
+            "analysis-observation",
+            "accepted-receipt",
+            "external-reference"
+          ]
+        },
+        "reference": {"$ref": "#/$defs/nonEmptyString"},
+        "note": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "result", "note"],
+      "properties": {
+        "method": {"$ref": "#/$defs/nonEmptyString"},
+        "result": {"enum": ["passed", "failed", "unavailable"]},
+        "note": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {"status": {"const": "unknown"}},
+            "required": ["status"]
+          },
+          "then": {"properties": {"kind": {"const": "unknown"}}}
+        },
+        {
+          "if": {
+            "properties": {"kind": {"const": "unknown"}},
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {"status": {"enum": ["unknown", "superseded"]}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"status": {"const": "superseded"}},
+            "required": ["status"]
+          },
+          "then": {"properties": {"superseded_by": {"minItems": 1}}},
+          "else": {"properties": {"superseded_by": {"maxItems": 0}}}
+        },
+        {
+          "if": {
+            "properties": {"status": {"enum": ["observed", "reproduced"]}},
+            "required": ["status"]
+          },
+          "then": {"properties": {"evidence": {"minItems": 1}}}
+        },
+        {
+          "if": {
+            "properties": {"status": {"const": "reproduced"}},
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "validations": {
+                "contains": {
+                  "type": "object",
+                  "properties": {"result": {"const": "passed"}},
+                  "required": ["result"]
+                },
+                "minContains": 1
+              }
+            }
+          }
+        }
+      ],
+      "required": [
+        "id",
+        "kind",
+        "status",
+        "statement",
+        "scopes",
+        "evidence",
+        "validations",
+        "limitations",
+        "superseded_by"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "kind": {
+          "enum": ["scoped-fact", "recipe", "pitfall", "decision", "unknown"]
+        },
+        "status": {
+          "enum": ["observed", "reproduced", "unknown", "superseded"]
+        },
+        "statement": {"$ref": "#/$defs/nonEmptyString"},
+        "scopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(game|target|subsystem):[a-z0-9][a-z0-9:._-]*$"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/evidence"}
+        },
+        "validations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/validation"}
+        },
+        "limitations": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+        "superseded_by": {"$ref": "#/$defs/uniqueStrings"}
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "schema_version": 2,
+  "id": "gpt-web-reconstruction-session-v2",
+  "purpose": "Evidence-first source reconstruction with isolated game-local knowledge input",
+  "required_inputs": [
+    "game_id",
+    "objective",
+    "stop_condition"
+  ],
+  "optional_inputs": [
+    "scope_hint",
+    "resume_workspace_id"
+  ],
+  "workflow_phases": [
+    "discover",
+    "resume-or-create-workspace",
+    "read-repository-instructions",
+    "bound-work-packet",
+    "collect-provisional-analysis",
+    "edit-natural-source",
+    "run-layered-feedback",
+    "update-game-local-knowledge-if-durable",
+    "export-reviewable-diff",
+    "report-evidence-and-unknowns"
+  ],
+  "authorities": {
+    "analysis": {
+      "role": "source-hypothesis evidence",
+      "exactness_credit": "none"
+    },
+    "workspace": {
+      "role": "disposable committed-source development",
+      "canonical_write": false,
+      "truth_promotion": false
+    },
+    "game_knowledge": {
+      "role": "game-repository-local durable input",
+      "canonical_path": ".reconstruction/game-knowledge.json",
+      "web_may_propose_in_workspace": true,
+      "factory_publication": "none",
+      "allowed_statuses": [
+        "observed",
+        "reproduced",
+        "unknown",
+        "superseded"
+      ]
+    },
+    "factory_knowledge": {
+      "role": "local-Codex-reviewed cross-game publication",
+      "web_write": false,
+      "mcp_promotion": false
+    },
+    "replay": {
+      "role": "canonical committed-claim verification",
+      "workspace_diff_eligible": false
+    },
+    "acceptance_registry": {
+      "role": "sole live Truth Kernel admission authority"
+    }
+  },
+  "prohibitions": [
+    "invent-identities-or-claims",
+    "read-or-overwrite-canonical-dirty-state",
+    "claim-exactness-from-analysis",
+    "claim-acceptance-from-workspace-tests",
+    "replay-a-disposable-workspace-diff",
+    "publish-or-promote-game-local-knowledge",
+    "use-factory-catalog-status-or-all-scope-in-game-knowledge",
+    "turn-game-knowledge-into-a-session-journal",
+    "run-the-game-or-start-portability-work",
+    "use-inline-assembly-or-byte-embedding-as-a-routine-shortcut",
+    "kill-unrelated-processes",
+    "discard-a-resumable-workspace-without-instruction",
+    "substitute-imported-progress-for-accepted-evidence",
+    "hide-truncation-or-unknown-state"
+  ],
+  "handoff_fields": [
+    "session_status",
+    "game_and_objective",
+    "baseline_commit_and_dirty_observation",
+    "workspace_id_and_expiry",
+    "bounded_scope",
+    "analysis_evidence_and_attestation",
+    "changed_files",
+    "game_knowledge_changes",
+    "tests_actually_run",
+    "diff_size_and_sha256",
+    "accepted_truth_separate_from_candidate_results",
+    "unknowns_and_blockers",
+    "next_local_action",
+    "proposed_english_commit_message"
+  ]
+}

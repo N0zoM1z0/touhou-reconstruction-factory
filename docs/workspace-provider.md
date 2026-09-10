@@ -72,6 +72,13 @@ The caller's script runs in that tmpfs with:
 - process address-space, CPU-time, output, file-size, wall-clock, and workspace
   capacity bounds.
 
+`RLIMIT_NPROC` counts every task owned by the real operator UID, including
+unrelated IDA and local development threads. The launcher therefore observes
+that existing count and grants only 512 additional task slots instead of using
+an absolute limit that could already be exhausted before namespace creation.
+The deployed service independently applies the stricter per-service systemd
+`TasksMax` cgroup bound.
+
 After the script exits, the service archives the tmpfs and extracts it into a
 new host-side candidate using its own parser. Only regular files and
 directories with safe POSIX-relative paths are accepted. The complete tree is

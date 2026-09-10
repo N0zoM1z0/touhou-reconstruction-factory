@@ -111,7 +111,7 @@ writes and the legacy bridges' host Bash tools are unreachable. See
 | `factory_get_acceptance_registry` | Classify every receipt candidate. |
 | `factory_get_accepted_snapshot` | Materialize accepted results for one repository. |
 | `factory_query_accepted_facts` | Query only live accepted receipt facts. |
-| `factory_query_knowledge` | Page scoped static knowledge with explicit status. |
+| `factory_query_knowledge` | Page only Factory-published cross-game knowledge; it never reads or promotes game-local input. |
 | `factory_list_historical_fixtures` | Page hash-pinned counterexamples. |
 
 Every tool has structured output and an accurate MCP annotation. Expected

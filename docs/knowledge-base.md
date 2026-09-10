@@ -4,6 +4,11 @@ The factory is the shared knowledge layer above individual game repositories.
 Its job is not to copy every note. It preserves rules that affect truth,
 acceptance, provider selection, or workflow safety across projects.
 
+This published catalog is a different authority from the canonical
+`.reconstruction/game-knowledge.json` input owned by one game repository. The
+game-local format, its intentionally weaker vocabulary, and its Web-write
+boundary are specified in [`game-knowledge.md`](game-knowledge.md).
+
 The machine-readable catalog is packaged at
 `src/reconstruction_factory/knowledge/catalog.json`. Every entry states its
 scope, evidence fixtures, operational consequences, and limitations. The
@@ -19,9 +24,9 @@ evidence.
   consequences.
 - `superseded`: retained for history but no longer active guidance.
 
-An unfinished game can contribute verified local knowledge. Conversely, a
-high project completion percentage cannot promote an unrelated unknown. Status
-belongs to the knowledge statement and its scope, not to the game as a whole.
+These statuses apply only to the Factory-published catalog. Game-local entries
+use `observed`, `reproduced`, `unknown`, and `superseded`; they cannot declare
+`verified` or `provisional` and cannot use the `all` scope.
 
 ## Scope vocabulary
 
@@ -45,7 +50,18 @@ catalog contains ten verified rules and two explicit unknowns. The unknown
 runtime and general LTCG-reproduction entries are deliberate boundaries, not
 missing data to be filled by guesses.
 
-## Promotion rule
+## Publication boundary
+
+Neither GPT-web nor the public MCP can publish, nominate, or promote game-local
+input. `factory_query_knowledge` reads only the catalog packaged with this
+Factory repository. The game-local validator has no write side effect.
+
+For now, cross-game extraction is a later human/local-Codex analysis of the
+completed or otherwise stable game repository, including its Git history,
+scripts, tests, receipts, durable local knowledge, failures, and limitations.
+No automatic promotion workflow is implemented.
+
+## Future promotion rule
 
 Promoting a catalog entry to `verified` requires:
 

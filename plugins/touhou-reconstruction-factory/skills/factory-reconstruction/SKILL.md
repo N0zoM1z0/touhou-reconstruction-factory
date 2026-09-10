@@ -5,7 +5,7 @@ description: Run an end-to-end, resumable Touhou source-reconstruction session t
 
 # Factory Reconstruction
 
-Follow contract `gpt-web-reconstruction-session-v1`. Coordinate the analysis,
+Follow contract `gpt-web-reconstruction-session-v2`. Coordinate the analysis,
 workspace, and replay authorities without merging their evidence states.
 
 ## Establish the session
@@ -43,6 +43,33 @@ workspace, and replay authorities without merging their evidence states.
    stale scratch artifacts. Prefer curated source, tests, ledgers, and concise
    durable documentation.
 
+## Maintain only game-local knowledge
+
+When a result is durable enough to affect a later session, update
+`.reconstruction/game-knowledge.json` in the same disposable workspace diff.
+Do not create or append an entry merely to summarize the current chat. If the
+file is absent, create it only when durable knowledge exists.
+
+The root must use schema version 1, `document_type="game-knowledge-input"`,
+`authority="game-local"`, `factory_publication="none"`, the selected
+repository ID, and an ID-sorted `entries` array. Each entry has exactly these
+fields: `id`, `kind`, `status`, `statement`, `scopes`, `evidence`,
+`validations`, `limitations`, and `superseded_by`.
+
+- Kinds are `scoped-fact`, `recipe`, `pitfall`, `decision`, or `unknown`.
+- Statuses are `observed`, `reproduced`, `unknown`, or `superseded`.
+- Every entry contains exactly one `game:<GAME_ID>` scope. Additional scopes
+  may identify only a target or subsystem.
+- Record only checks actually run; `reproduced` requires a `passed` validation.
+- Preserve unavailable or failed checks as such. Every entry names a limitation.
+- Keep entries compact and replace or supersede stale knowledge instead of
+  accumulating chronology.
+
+Never use `all`, `verified`, or `provisional` in game-local input. Never edit a
+Factory catalog, fixture, schema, or prompt to publish a game observation.
+Neither this skill nor the public MCP has promotion authority. Cross-game
+publication is deferred to a later local-Codex repository-history review.
+
 ## Preserve the evidence boundary
 
 - Analysis output is provisional and has no exactness credit.
@@ -71,6 +98,8 @@ Always report:
 - baseline commit, dirty-state observation, workspace ID, and expiry;
 - analysis provider, target attestation, evidence, and exactness limitation;
 - changed files and rationale;
+- game-local knowledge entries added, replaced, superseded, or deliberately not
+  changed;
 - tests actually run and checks unavailable;
 - complete diff byte size and whole-diff SHA-256;
 - accepted Truth Kernel facts separately from candidate results;

@@ -117,7 +117,10 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
             "workspace and retain its capability ID. Workspace Bash is arbitrary but "
             "confined: committed source only, no network, host HOME, ignored targets, "
             "canonical worktree, or Truth Kernel write authority. Export and review its "
-            "diff; a workspace result is never accepted evidence by itself."
+            "diff; a workspace result is never accepted evidence by itself. Game-local "
+            "knowledge may appear only in that reviewable game diff with publication "
+            "authority set to none. This server exposes no Factory-knowledge promotion "
+            "tool; factory_query_knowledge reads only the packaged cross-game catalog."
         ),
     )
 
@@ -616,8 +619,9 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
 
     @server.tool(
         description=(
-            "Page through scoped cross-game knowledge, preserving verified, provisional, "
-            "unknown, and superseded status rather than guessing missing facts."
+            "Page only the Factory-published cross-game catalog, preserving verified, "
+            "provisional, unknown, and superseded status. This read-only tool never "
+            "reads, nominates, or promotes game-local knowledge input."
         ),
         annotations=_READ_ONLY,
         structured_output=True,
