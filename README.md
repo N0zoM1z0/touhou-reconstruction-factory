@@ -15,6 +15,58 @@ The architecture and repository archaeology are recorded in
 [`docs/factory-analysis.md`](docs/factory-analysis.md). The normative vocabulary
 is in [`docs/ontology.md`](docs/ontology.md).
 
+## System and reconstruction flow
+
+```mermaid
+flowchart LR
+    H["Human<br/>scope · stop condition · release"]:::human --> W["GPT-web agent<br/>factory-reconstruction skill<br/>resumable bounded session"]:::agent
+    K[("Factory repository memory<br/>ontology · providers · adapters<br/>fixtures · knowledge · prompt · skills")]:::memory --> W
+    W --> D["One shared Factory MCP<br/>discover IDs · read adapter snapshot<br/>candidate claims · knowledge · resume"]:::control
+    K --> D
+    D --> C["Selected canonical game repository<br/>committed HEAD + machine-readable ledgers<br/>original target identity"]:::repo
+    C --> E["Target-attested evidence<br/>committed source + bounded IDA/Ghidra<br/>analysis exactness credit: none"]:::evidence
+    E --> S["Disposable source workspace<br/>natural C/C++ · focused checks<br/>source-only Bash · candidate diff"]:::work
+    S -->|"complete diff + workspace ID"| L["Local Codex handoff<br/>review · apply · test · commit<br/>new canonical game source"]:::human
+    L --> J["Durable canonical replay<br/>discovered claim + source · target<br/>toolchain · extent bound receipt"]:::oracle
+    J --> A{"Integrity + freshness<br/>+ live policy<br/>accepted?"}:::gate
+    A -->|"Rejected / invalid / stale"| X["Preserve diagnostics<br/>artifacts + explicit unknowns<br/>define the next bounded task"]:::reject
+    A ==>|"Accepted"| T["Truth Kernel<br/>current accepted facts<br/>and accepted snapshots"]:::done
+    T --> Q["GPT-web query / next task<br/>report receipt scope<br/>never inflate completeness"]:::agent
+    X --> Q
+    T --> P["Promote reusable rules<br/>fixtures · guards · limitations<br/>for later sessions"]:::memory
+
+    P98["PC-98 era family<br/>TH01–TH05<br/>currently validated: TH04"]:::platform --> C
+    PE["Windows PE era family<br/>TH06+<br/>currently validated: TH08 / TH095 / TH105"]:::platform --> C
+
+    B["Registered read-only<br/>IDA / Ghidra bridge"]:::evidence -->|"independent target attestation"| E
+    U["Dirty · untracked · ignored<br/>private targets / toolchains"]:::reject -.->|"observed, never copied"| S
+    L -.-> R["Later local-only phase<br/>game runtime validation + portability"]:::platform
+
+    classDef human fill:#fff1c2,stroke:#b7791f,color:#3b2f0b,stroke-width:2px;
+    classDef agent fill:#ede9fe,stroke:#7c3aed,color:#2e1065,stroke-width:2px;
+    classDef memory fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:2px;
+    classDef control fill:#e0e7ff,stroke:#4338ca,color:#1e1b4b,stroke-width:2px;
+    classDef evidence fill:#cffafe,stroke:#0891b2,color:#083344,stroke-width:2px;
+    classDef work fill:#fef3c7,stroke:#d97706,color:#451a03,stroke-width:2px;
+    classDef oracle fill:#dcfce7,stroke:#16a34a,color:#052e16,stroke-width:2px;
+    classDef gate fill:#f3f4f6,stroke:#4b5563,color:#111827,stroke-width:2px;
+    classDef reject fill:#fee2e2,stroke:#dc2626,color:#450a0a,stroke-width:2px;
+    classDef done fill:#ccfbf1,stroke:#0f766e,color:#042f2e,stroke-width:2px;
+    classDef platform fill:#f5f3ff,stroke:#6d28d9,color:#2e1065,stroke-width:2px;
+    classDef repo fill:#f8fafc,stroke:#475569,color:#0f172a,stroke-width:2px;
+```
+
+The main row is the normal reader journey from scope to accepted truth. Solid
+arrows are operational or data-flow edges, dashed arrows mark excluded inputs
+or later out-of-scope work, and the thick **Accepted** edge is the only route
+into truth. There is intentionally no direct edge from an imported claim,
+analysis result, or workspace test to the Truth Kernel.
+
+The same control-plane architecture serves both eras. PC-98 and Windows PE use
+different platform/toolchain providers, adapters, target identities, and replay
+drivers; they converge only on the shared ontology, receipt envelope,
+acceptance policy, durable workflow, and GPT-web interface.
+
 ## Development
 
 The core has no runtime dependencies outside Python 3.11 or newer. The GPT-web
