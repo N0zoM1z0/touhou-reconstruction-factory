@@ -89,6 +89,17 @@ Native IDA use:
    Read each returned input schema before calling it: `{}` is valid only for
    operations whose schema has no required fields. Never probe address-, range-,
    or name-dependent operations with empty arguments.
+   If the currently deployed Factory reports `input_schema: null`, use this
+   temporary core fallback instead of guessing:
+   `get_metadata {}`; `get_entry_points {}`;
+   `get_function_by_address {"address":"0x..."}`;
+   `decompile_function {"address":"0x..."}`;
+   `disassemble_function {"start_address":"0x..."}`;
+   `get_callers`/`get_callees {"function_address":"0x..."}`;
+   `get_xrefs_to {"address":"0x..."}`;
+   `read_memory_bytes {"memory_address":"0x...","size":N}` where
+   `1 <= N <= 256`; and `list_functions {"offset":N,"count":N}` where count is
+   1 through 200. Do not extrapolate another operation's fields.
 2. Decompilation, disassembly, xrefs, bytes, names, types, and boundaries are
    provisional hypotheses with `exactness_credit=none`.
 3. When discovery advertises `database_metadata_writable=true`, use the atomic
