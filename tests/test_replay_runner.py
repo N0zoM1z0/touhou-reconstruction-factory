@@ -41,6 +41,7 @@ from reconstruction_factory.replay_identity import (
     repository_lock,
 )
 from reconstruction_factory.replay_runner import (
+    FreshnessObservationCache,
     ReplayExpectation,
     ReplayRunner,
     runner_implementation_sha256,
@@ -273,6 +274,49 @@ print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
             ),
         ):
             self.assertEqual(verify_live_freshness(document, self.root), ())
+
+    def test_freshness_snapshot_reuses_expensive_live_observations(self) -> None:
+        driver = FakeDriver()
+        run = self.run_with(driver)
+        document = self.store.verify_receipt_document(run.receipt_path)
+        observations = FreshnessObservationCache()
+        with (
+            patch(
+                "reconstruction_factory.replay_runner.inspect_repository",
+                return_value=self.snapshot,
+            ) as inspection,
+            patch(
+                "reconstruction_factory.replay_runner.select_driver",
+                return_value=driver,
+            ),
+            patch(
+                "reconstruction_factory.replay_runner.capture_source_binding",
+                wraps=capture_source_binding,
+            ) as source_observation,
+            patch(
+                "reconstruction_factory.replay_runner.driver_version",
+                wraps=driver_version,
+            ) as version_observation,
+        ):
+            self.assertEqual(
+                verify_live_freshness(
+                    document,
+                    self.root,
+                    observations=observations,
+                ),
+                (),
+            )
+            self.assertEqual(
+                verify_live_freshness(
+                    document,
+                    self.root,
+                    observations=observations,
+                ),
+                (),
+            )
+        inspection.assert_called_once_with(self.root.resolve(strict=True))
+        source_observation.assert_called_once_with(self.root.resolve(strict=True))
+        version_observation.assert_called_once()
 
     def test_product_replay_uses_driver_declared_nonbyte_coverage(self) -> None:
         self.snapshot = product_snapshot(self.root)

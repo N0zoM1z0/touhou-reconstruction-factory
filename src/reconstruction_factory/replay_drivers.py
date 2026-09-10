@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
 import json
 import os
 from pathlib import Path
@@ -129,9 +130,17 @@ def _repo_output(root: Path, relative: str) -> Path:
 
 def _toml(root: Path, relative: str) -> dict[str, Any]:
     try:
-        return tomllib.loads(_repo_file(root, relative).read_text(encoding="utf-8"))
+        payload = _repo_file(root, relative).read_bytes()
+        return _parse_toml_payload(payload)
     except (UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
         raise ReplayError(f"invalid replay manifest {relative}: {error}") from error
+
+
+@lru_cache(maxsize=64)
+def _parse_toml_payload(payload: bytes) -> dict[str, Any]:
+    """Parse identical immutable manifest bytes once per worker process."""
+
+    return tomllib.loads(payload.decode("utf-8"))
 
 
 def _extent(subject: Subject) -> tuple[str, int]:

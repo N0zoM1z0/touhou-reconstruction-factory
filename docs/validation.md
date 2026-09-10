@@ -246,6 +246,24 @@ Factory MCP route was added. The pre-existing TH105 canonical dirty state
 remained exactly five modified files plus the untracked
 `src/ui/CNumberLifetime.cpp`; no validation workspace content entered it.
 
+## Recorded freshness-performance run: 2026-09-10
+
+The release suite passed 142 tests after adding request-scoped freshness
+observation reuse and exact-byte TOML parse caching. The deployed no-auth MCP
+retained its 33-tool interface. Its active TH095 semantic checkpoint was cold
+replayed through 13 function claims and the complete 88-source Windows i386
+product claim after the runner fingerprint changed; all 14 returned native
+`pass` and registry `accepted`.
+
+Public acceptance-registry latency fell from 15.493/14.132 seconds for 31
+candidates to 2.683/1.897/1.918 seconds for 59 candidates. The accepted-facts
+query fell from 7.125 seconds to 2.262/2.171/2.169 seconds. The post-change
+registry was stable across all reads and reported 14 accepted, 45 rejected,
+and zero invalid candidates. A complete validation of the public endpoint also
+passed with all 33 tools and all four configured game adapters. These are
+observed timings on the single-user live host, not portable performance
+guarantees.
+
 ## Deliberate limitations
 
 This run proves the current service contract and only the narrow TH105 replay

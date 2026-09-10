@@ -236,3 +236,48 @@ The temporary clone and evidence store are not public retained evidence. The
 receipt and registry IDs above identify this local run, while the controlled
 driver, tests, paired historical fixtures, and reproduction procedure are the
 committed regression surface.
+
+## Request-scoped freshness acceleration: 2026-09-10
+
+High-throughput correctness depends on a short, layered feedback loop: run
+cheap exact identity checks first, observe each live dependency once, and run
+expensive native builds only when new evidence is required. Keep every
+applicable Oracle; remove redundant observation and return the narrowest
+sufficient feedback. Speed must not come from accepting a weaker fact.
+
+Freshness remains mandatory under `strict-live-v1`, but repeated receipts no
+longer repeat identical live observations inside one registry build. A single
+request-scoped observation snapshot now reuses each repository adapter result,
+source binding, canonical target digest, toolchain component digest,
+environment binding, runner digest, and driver-version digest. Every receipt
+still independently passes document/content integrity, artifact integrity,
+policy, claim/subject, source, target, toolchain, invocation, coverage, and
+acceptance-error checks. No verdict is persisted or reused across registry
+requests, and no time-to-live or filesystem-metadata shortcut can turn a
+changed input into a fresh result.
+
+Replay-driver TOML parsing is cached separately by the exact input bytes. A
+same-size or same-mtime mutation therefore cannot reuse a parsed manifest; new
+bytes are parsed and participate in the normal driver/input digests.
+
+Before this change, two consecutive public
+`factory_get_acceptance_registry` calls over 31 candidates took 15.493 and
+14.132 seconds. After the final runner-fingerprint rollover of the active TH095
+facts, three calls over the larger 59-candidate store took 2.683, 1.897, and
+1.918 seconds. The final registry contained 14 accepted TH095 results—13
+function-exact claims plus one 88-source product-closure claim—and 45 historical
+rejected candidates. The optimization therefore improved this observed live
+query by about 5.3–8.2 times while evaluating almost twice as many receipts and
+preserving the same fail-closed policy.
+
+The accepted-facts materialization path originally repeated freshness work
+after constructing the registry and took 7.125 seconds for TH095. Sharing the
+same request-scoped observations across that second check reduced three final
+calls to 2.262, 2.171, and 2.169 seconds. All returned the same 14 facts and the
+same registry identity. This cache is deliberately scoped to one request: a
+later request observes the live repositories, tools, and artifacts again.
+
+The registry still scales linearly with receipt documents and their unique
+artifacts. If the retained store grows enough for that cost to matter, the next
+safe step is a content-addressed per-repository observation index and scoped
+query surface, not disabling live freshness.

@@ -30,7 +30,7 @@ from .oracle_receipts import (
     verify_receipt_integrity,
 )
 from .replay_identity import repository_lock
-from .replay_runner import verify_live_freshness
+from .replay_runner import FreshnessObservationCache, verify_live_freshness
 
 
 ACCEPTANCE_POLICY_SCHEMA_VERSION = 1
@@ -395,10 +395,15 @@ class AcceptanceRegistry:
             for repository in sorted(set(repositories), key=str):
                 locks.enter_context(repository_lock(repository, exclusive=False))
             facts = []
+            freshness_observations = FreshnessObservationCache()
             for receipt in receipts:
                 self._verify_artifacts(receipt)
                 repository = self._repositories[receipt.target.identity_id]
-                errors = verify_live_freshness(receipt.to_dict(), repository)
+                errors = verify_live_freshness(
+                    receipt.to_dict(),
+                    repository,
+                    observations=freshness_observations,
+                )
                 if errors:
                     raise AcceptanceError(
                         f"accepted receipt became stale: {receipt.receipt_id}: "
@@ -474,12 +479,19 @@ class AcceptanceRegistry:
         root = Path(repository).expanduser().resolve(strict=True)
         with repository_lock(root, exclusive=False):
             snapshot = inspect_repository(root)
+            freshness_observations = FreshnessObservationCache(
+                snapshots={root: snapshot}
+            )
             target_ids = {target.id for target in snapshot.targets}
             for receipt in self._receipts.values():
                 if receipt.target.identity_id not in target_ids:
                     continue
                 self._verify_artifacts(receipt)
-                errors = verify_live_freshness(receipt.to_dict(), root)
+                errors = verify_live_freshness(
+                    receipt.to_dict(),
+                    root,
+                    observations=freshness_observations,
+                )
                 if errors:
                     raise AcceptanceError(
                         f"accepted receipt became stale: {receipt.receipt_id}: "
@@ -611,6 +623,7 @@ def _build_acceptance_registry_locked(
 ) -> AcceptanceRegistry:
     entries = []
     accepted: dict[str, OracleReceipt] = {}
+    freshness_observations = FreshnessObservationCache()
     candidates = sorted(store.receipts.glob("*.json"), key=lambda path: path.name)
     for path in candidates:
         candidate_path = path.relative_to(store.root).as_posix()
@@ -725,7 +738,11 @@ def _build_acceptance_registry_locked(
             try:
                 reasons.extend(
                     f"freshness:{reason}"
-                    for reason in verify_live_freshness(document, repository)
+                    for reason in verify_live_freshness(
+                        document,
+                        repository,
+                        observations=freshness_observations,
+                    )
                 )
             except (FactoryError, OSError, TypeError, ValueError):
                 reasons.append("freshness:evaluation-error")

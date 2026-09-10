@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
 from pathlib import Path
@@ -34,6 +34,7 @@ from .oracle_receipts import (
     AttestationLevel,
     ClaimBinding,
     Coldness,
+    ComponentObservation,
     InvocationBinding,
     InvocationStage,
     OracleReceipt,
@@ -44,6 +45,7 @@ from .oracle_receipts import (
     canonical_sha256,
 )
 from .replay_drivers import (
+    ComponentSpec,
     NativeOutcome,
     RawExecution,
     ReplayDriver,
@@ -82,6 +84,92 @@ class ReplayExpectation:
     driver_version_sha256: str
     oracle_id: str
     runner_implementation_sha256: str
+
+
+@dataclass(slots=True)
+class FreshnessObservationCache:
+    """Reuse exact live observations within one acceptance-registry snapshot."""
+
+    snapshots: dict[Path, RepositorySnapshot] = field(default_factory=dict)
+    source_bindings: dict[Path, SourceBinding] = field(default_factory=dict)
+    target_bindings: dict[Path, tuple[str, int]] = field(default_factory=dict)
+    component_bindings: dict[
+        tuple[str, Path, str, str | None],
+        tuple[ComponentObservation | None, str | None],
+    ] = field(default_factory=dict)
+    environment_bindings: dict[tuple[str, ...], tuple[tuple[str, ...], str]] = field(
+        default_factory=dict
+    )
+    driver_versions: dict[
+        tuple[str, str, str, tuple[Path, ...]], str
+    ] = field(default_factory=dict)
+    runner_sha256: str | None = None
+
+    def snapshot(self, root: Path) -> RepositorySnapshot:
+        if root not in self.snapshots:
+            self.snapshots[root] = inspect_repository(root)
+        return self.snapshots[root]
+
+    def source(self, root: Path) -> SourceBinding:
+        if root not in self.source_bindings:
+            self.source_bindings[root] = capture_source_binding(root)
+        return self.source_bindings[root]
+
+    def target(self, path: Path) -> tuple[str, int]:
+        resolved = path.resolve(strict=True)
+        if resolved not in self.target_bindings:
+            self.target_bindings[resolved] = _observe_target(resolved)
+        return self.target_bindings[resolved]
+
+    def components(
+        self, plan: ReplayPlan
+    ) -> tuple[tuple[ComponentObservation, ...], tuple[str, ...]]:
+        components = []
+        errors = []
+        for spec in plan.toolchain_components:
+            key = _component_cache_key(spec)
+            if key not in self.component_bindings:
+                try:
+                    observation = observe_component(
+                        spec.id,
+                        spec.path,
+                        logical_path=spec.logical_path,
+                        kind=spec.kind,
+                    )
+                    self.component_bindings[key] = (observation, None)
+                except (OSError, ReplayError) as error:
+                    self.component_bindings[key] = (
+                        None,
+                        f"toolchain-component-unavailable:{spec.id}:{error}",
+                    )
+            observation, error = self.component_bindings[key]
+            if observation is not None:
+                components.append(observation)
+            if error is not None:
+                errors.append(error)
+        return tuple(sorted(components, key=lambda item: item.id)), tuple(errors)
+
+    def environment(self, names: tuple[str, ...]) -> tuple[tuple[str, ...], str]:
+        key = tuple(sorted(set(names)))
+        if key not in self.environment_bindings:
+            self.environment_bindings[key] = environment_binding(key)
+        return self.environment_bindings[key]
+
+    def runner(self) -> str:
+        if self.runner_sha256 is None:
+            self.runner_sha256 = runner_implementation_sha256()
+        return self.runner_sha256
+
+    def driver(self, plan: ReplayPlan) -> str:
+        key = (
+            plan.driver_id,
+            plan.oracle_id,
+            plan.coldness.value,
+            tuple(path.resolve(strict=True) for path in plan.oracle_inputs),
+        )
+        if key not in self.driver_versions:
+            self.driver_versions[key] = driver_version(plan)
+        return self.driver_versions[key]
 
 
 class ReplayRunner:
@@ -548,16 +636,20 @@ def _terminate_process_group(
         process.wait()
 
 def verify_live_freshness(
-    document: Mapping[str, object], repository: str | Path
+    document: Mapping[str, object],
+    repository: str | Path,
+    *,
+    observations: FreshnessObservationCache | None = None,
 ) -> tuple[str, ...]:
     """Compare a verified receipt document with the current normalized graph."""
 
     root = Path(repository).expanduser().resolve(strict=True)
-    snapshot = inspect_repository(root)
+    live = observations or FreshnessObservationCache()
+    snapshot = live.snapshot(root)
     errors: list[str] = []
     if document.get("repository_adapter_id") != snapshot.adapter_id:
         errors.append("adapter-id-changed")
-    current_runner = runner_implementation_sha256()
+    current_runner = live.runner()
     if document.get("runner_implementation_sha256") != current_runner:
         errors.append("runner-implementation-stale")
     claim_doc = document.get("claim")
@@ -588,11 +680,11 @@ def verify_live_freshness(
     if claim_doc.get("subject_sha256") != subject_sha256:
         errors.append("subject-or-extents-changed")
     source_doc = document.get("source_after")
-    current_source = capture_source_binding(root)
+    current_source = live.source(root)
     if not isinstance(source_doc, dict) or source_doc != to_primitive(current_source):
         errors.append("source-snapshot-stale")
     target_doc = document.get("target")
-    current_target_sha256, current_target_size = _observe_target(plan.target_path)
+    current_target_sha256, current_target_size = live.target(plan.target_path)
     expected_target_path = plan.target_path.relative_to(root).as_posix()
     if not isinstance(target_doc, dict):
         errors.append("target-binding-malformed")
@@ -612,9 +704,9 @@ def verify_live_freshness(
     if current_target_sha256 != target.sha256 or current_target_size != target.size:
         errors.append("normalized-target-identity-changed")
     toolchain_doc = document.get("toolchain")
-    current_components, component_errors = _observe_components(plan)
+    current_components, component_errors = live.components(plan)
     current_component_digest = canonical_sha256(to_primitive(current_components))
-    current_environment_names, current_environment = environment_binding(
+    current_environment_names, current_environment = live.environment(
         plan.environment_names
     )
     if not isinstance(toolchain_doc, dict):
@@ -634,7 +726,7 @@ def verify_live_freshness(
         if current_environment != toolchain_doc.get("environment_sha256"):
             errors.append("toolchain-environment-stale")
     invocation_doc = document.get("invocation")
-    current_version = driver_version(plan)
+    current_version = live.driver(plan)
     if document.get("oracle_id") != plan.oracle_id:
         errors.append("oracle-id-changed")
     if document.get("oracle_version") != current_version:
@@ -766,6 +858,10 @@ def _observe_components(plan: ReplayPlan) -> tuple[tuple, tuple[str, ...]]:
         except (OSError, ReplayError) as error:
             errors.append(f"toolchain-component-unavailable:{spec.id}:{error}")
     return tuple(sorted(components, key=lambda item: item.id)), tuple(errors)
+
+
+def _component_cache_key(spec: ComponentSpec) -> tuple[str, Path, str, str | None]:
+    return (spec.id, spec.path.expanduser().absolute(), spec.logical_path, spec.kind)
 
 
 def _unique_artifacts(values: list[ArtifactRef]) -> Iterator[ArtifactRef]:

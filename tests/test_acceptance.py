@@ -291,6 +291,35 @@ class AcceptanceRegistryTests(unittest.TestCase):
         right = self.build()
         self.assertEqual(left.registry_id, right.registry_id)
 
+    def test_registry_shares_one_live_observation_snapshot(self) -> None:
+        second = replace(
+            self.receipt,
+            receipt_id="",
+            created_utc="2026-09-09T00:00:01+00:00",
+        ).seal()
+        self.store.write_receipt(second)
+        with (
+            patch(
+                "reconstruction_factory.acceptance.repository_lock",
+                return_value=nullcontext(),
+            ),
+            patch(
+                "reconstruction_factory.acceptance.verify_live_freshness",
+                return_value=(),
+            ) as freshness,
+        ):
+            registry = build_acceptance_registry(
+                self.store,
+                policy(),
+                {self.receipt.target.identity_id: self.repository},
+            )
+        self.assertEqual(registry.accepted_count, 2)
+        self.assertEqual(freshness.call_count, 2)
+        self.assertIs(
+            freshness.call_args_list[0].kwargs["observations"],
+            freshness.call_args_list[1].kwargs["observations"],
+        )
+
     def test_invalid_candidate_contents_are_bound_into_registry_id(self) -> None:
         self.receipt_path.write_text("not json\n", encoding="utf-8")
         left = self.build()
@@ -406,6 +435,32 @@ class AcceptanceRegistryTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(AcceptanceError, "became stale"):
                 registry.accepted_facts()
+
+    def test_query_shares_one_freshness_observation_snapshot(self) -> None:
+        second = replace(
+            self.receipt,
+            receipt_id="",
+            created_utc="2026-09-09T00:00:01+00:00",
+        ).seal()
+        self.store.write_receipt(second)
+        registry = self.build()
+        with (
+            patch(
+                "reconstruction_factory.acceptance.repository_lock",
+                return_value=nullcontext(),
+            ),
+            patch(
+                "reconstruction_factory.acceptance.verify_live_freshness",
+                return_value=(),
+            ) as freshness,
+        ):
+            facts = registry.accepted_facts()
+        self.assertEqual(len(facts), 2)
+        self.assertEqual(freshness.call_count, 2)
+        self.assertIs(
+            freshness.call_args_list[0].kwargs["observations"],
+            freshness.call_args_list[1].kwargs["observations"],
+        )
 
     def test_policy_cannot_accept_unknown_attestation(self) -> None:
         with self.assertRaisesRegex(ValidationError, "cannot be unknown"):
