@@ -590,3 +590,13 @@ function/global/local/stack names, prototypes, and types. This is intentional
 agent autonomy, not truth promotion. Their results remain target-bound analysis
 hypotheses. Activation and a public GPT-web smoke test are deferred until the
 active TH095 session can tolerate a Factory process restart.
+
+The first staging attempt also exposed an important hot-reload boundary. The
+running 0.4.0 server reloads its operator TOML on every call, so placing 0.5.0
+native-provider fields in the watched live file caused TH095 control-plane calls
+to fail before command creation even without a process restart. Restoring the
+four-game live file immediately restored public describe, TH095 status, and
+repository-shell execution at unchanged HEAD `0e6f0ef`, with zero tracked dirty
+changes and the same four pre-existing untracked files. The TH09 registration
+now lives only in `service.next.toml` until coordinated activation. Future
+code-dependent provider changes must follow the same sidecar-validation pattern.

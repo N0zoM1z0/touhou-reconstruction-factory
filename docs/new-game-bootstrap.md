@@ -66,22 +66,43 @@ progress.
    one target-bound analysis provider. GPT-web continues using the same Factory
    URL and selects the game by repository/provider ID.
 8. **Validate without activating.** Load the candidate private configuration in
-   a fresh local process, inspect the adapter, list provider operations, and run
-   a real semantic query. This does not restart or disturb the deployed Factory.
+   a fresh local process from a separate file such as `service.next.toml`,
+   inspect the adapter, list provider operations, and run a real semantic query.
+   Do not place fields that require new code into the configuration watched by
+   an older running process. This does not restart or disturb the deployed
+   Factory.
 9. **Activate at a deliberate boundary.** A running MCP process must load code
-   changes through a planned restart. Do not restart while another game's Web
-   session or durable command is active. After activation, validate the public
-   endpoint and start the game campaign with the standalone prompt.
+   changes through a planned restart. Switch the staged configuration only as
+   part of that activation. Do not restart while another game's Web session or
+   durable command is active. After activation, validate the public endpoint
+   and start the game campaign with the standalone prompt.
 
 Run the staged native-provider check with no public-service restart:
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/validate-native-analysis-provider.py \
-  --config .factory/web-live/service.toml \
+  --config .factory/web-live/service.next.toml \
   --provider th09-ida \
   --operation get_function_by_address \
   --arguments-json '{"address":"0x47d45f"}'
 ```
+
+### Hot-reload compatibility trap
+
+The Factory MCP loads operator configuration for each public tool call. That is
+useful for compatible repository/path changes, but it means configuration is
+not isolated merely because the process was not restarted. On 2026-09-10, a
+native TH09 provider block was briefly added to the live file while the running
+0.4.0 process still had the legacy parser. TH095 calls then correctly failed
+before command creation with missing legacy `endpoint`/`upstream_tool` fields
+and unexpected native `command`/`arguments`/`target_path` fields.
+
+The live four-game file was restored immediately. Public `factory_describe`,
+TH095 status, and a real repository-shell command then succeeded with unchanged
+TH095 HEAD and dirty counts; the native TH09 registration moved to
+`service.next.toml` and passed separate validation. No TH095 source command was
+created during the failure. The durable rule is: **never stage a code-dependent
+configuration variant in the path watched by an incompatible live process**.
 
 ## Native IDA registration
 
