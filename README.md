@@ -85,7 +85,28 @@ operations, independent target binding, bounded/redacted output, and zero
 exactness credit. See the [`attested analysis provider`](docs/analysis-provider.md).
 
 The repository also publishes a minimal plugin that combines the remote MCP
-connection with separate source-workspace and evidence-preserving replay skills.
+connection with an end-to-end reconstruction workflow plus separate analysis,
+source-workspace, and evidence-preserving replay skills. A reusable short prompt
+and a complete standalone prompt live in
+[`prompts/gpt-web-reconstruction.md`](prompts/gpt-web-reconstruction.md).
 The single-user deployment
 and first TH105 web test are documented in
 [`GPT-web plugin and Funnel deployment`](docs/gpt-web-plugin.md).
+
+Run the complete local release gate with the MCP-enabled service environment:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/validate-release.py
+```
+
+The deployed endpoint has a read-only validation mode and explicit opt-in live
+analysis, disposable-workspace, and TH105 replay checks:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --all
+```
+
+The second command creates and discards a temporary TH105 workspace and submits
+one canonical TH105 smoke replay. See [`docs/validation.md`](docs/validation.md)
+for the validation contract and latest recorded run.

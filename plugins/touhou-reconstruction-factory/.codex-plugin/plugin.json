@@ -1,6 +1,6 @@
 {
   "name": "touhou-reconstruction-factory",
-  "version": "0.3.0+codex.20260909183635",
+  "version": "0.3.0+codex.20260910004949",
   "description": "Touhou Reconstruction Factory plugin",
   "author": {
     "name": "N0zoM1z0",
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Touhou Reconstruction Factory",
     "shortDescription": "Develop source and verify reconstruction evidence.",
-    "longDescription": "Explore and test committed reconstruction source in disposable sandboxes, query target-attested read-only IDA/Ghidra analysis, export reviewable diffs, submit bounded replays, and query only facts admitted by the factory Truth Kernel.",
+    "longDescription": "Run resumable evidence-first reconstruction sessions: explore and test committed source in disposable sandboxes, query target-attested read-only IDA/Ghidra analysis, export reviewable diffs, submit bounded canonical replays, and query only facts admitted by the Factory Truth Kernel.",
     "developerName": "N0zoM1z0",
     "category": "Developer Tools",
     "capabilities": [
@@ -28,8 +28,8 @@
     ],
     "websiteURL": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
     "defaultPrompt": [
+      "Start a bounded TH105 reconstruction session and return a resumable reviewable diff.",
       "Verify the known TH105 smoke-test claim and report only accepted evidence.",
-      "Analyze TH105, test a candidate source change in a disposable workspace, and return a reviewable diff.",
       "List current accepted reconstruction facts."
     ]
   },

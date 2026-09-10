@@ -143,6 +143,28 @@ target_identity_ids = ["target:th08-v1.00d-original"]
         self.assertEqual(shell.input_schema["properties"]["script"]["maxLength"], 65536)
         self.assertTrue(shell.annotations.destructive_hint)
 
+        mutating = {
+            "factory_create_workspace": (False, False, True),
+            "factory_workspace_apply_patch": (False, False, False),
+            "factory_workspace_run_shell": (False, True, False),
+            "factory_discard_workspace": (False, True, True),
+            "factory_submit_replay": (False, False, True),
+            "factory_cancel_job": (False, True, True),
+        }
+        for tool in discovered.tools:
+            with self.subTest(tool=tool.name):
+                expected = mutating.get(tool.name, (True, False, True))
+                self.assertEqual(
+                    (
+                        tool.annotations.read_only_hint,
+                        tool.annotations.destructive_hint,
+                        tool.annotations.idempotent_hint,
+                    ),
+                    expected,
+                )
+                self.assertFalse(tool.annotations.open_world_hint)
+                self.assertTrue(tool.description)
+
     async def test_structured_read_and_model_visible_error(self) -> None:
         async with Client(build_mcp_server(self.config)) as client:
             description = await client.call_tool("factory_describe")

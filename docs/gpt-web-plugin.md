@@ -39,6 +39,12 @@ is not wanted.
 - [`factory-analysis/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-analysis/SKILL.md)
   teaches target-attested semantic queries without native database writes or
   exactness inflation.
+- [`factory-reconstruction/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-reconstruction/SKILL.md)
+  coordinates a bounded, resumable source session while preserving the three
+  authority boundaries above.
+- [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md) provides a
+  short installed-plugin invocation and a complete standalone prompt under the
+  machine-readable `gpt-web-reconstruction-session-v1` contract.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
@@ -115,6 +121,21 @@ OpenAI's current product documentation describes remote MCP connections and
 plugin packaging in [MCP](https://learn.chatgpt.com/docs/extend/mcp),
 [Build plugins](https://learn.chatgpt.com/docs/build-plugins), and
 [Skills & Plugins](https://learn.chatgpt.com/docs/skills-and-plugins).
+
+## Reconstruction session prompt
+
+Use the maintained prompt in
+[`prompts/gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md).
+With the plugin installed, select **@Touhou Reconstruction Factory** and fill in
+only the game ID, objective, optional scope hint, measurable stop condition, and
+an existing workspace ID when resuming. The longer standalone form repeats all
+authority and handoff rules for testing without automatic skill selection.
+
+The prompt deliberately does not ask GPT-web to commit or push. The remote
+workspace is a committed-HEAD snapshot and exports a candidate diff. A local
+Codex session reviews and applies that diff to the canonical game repository;
+only then can a discovered canonical claim be replayed and considered by the
+acceptance registry.
 
 ## TH105 acceptance smoke test
 
