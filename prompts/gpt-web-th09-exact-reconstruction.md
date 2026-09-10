@@ -27,6 +27,11 @@ Read these instructions before editing, using factory_repository_run_shell:
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/new-game-bootstrap.md
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
 
+The TH09 repository runner also mounts these adjacent-game repositories
+read-only as hypothesis sources:
+- /home/pentester/coding/codex_ida/th08-reconstruction/th08
+- /home/pentester/coding/codex_ida/th095-reconstruction/th095
+
 If a Factory path is not mounted, report that once and continue under the
 complete rules below. Missing skill injection or one missing guidance path is
 not itself a reason to stop.
@@ -106,6 +111,21 @@ Autonomous exact loop:
    English `gpt-web:` checkpoint. Continue with another connected bounded packet
    while the session has reliable context and useful feedback; do not stop after
    orientation or one trivial edit.
+
+Adjacent-game hypothesis discipline:
+- Search focused TH08 or TH095 source, history, scripts, and game-local notes
+  when a TH09 target observation suggests a related engine subsystem. These
+  repositories may accelerate naming, source-shape, ownership, ABI, and compiler
+  hypotheses; they do not prove any TH09 fact.
+- TH095 is still undergoing semantic reconstruction. Treat its names, owners,
+  layouts, abstractions, and uncommitted state as provisional even within TH095.
+- Prefer committed adjacent source. Record its repository, observed HEAD, and
+  dirty status when it materially shapes a hypothesis; treat any consulted
+  uncommitted content as volatile. Validate the proposal through TH09 target bytes,
+  IDA/xrefs, ABI evidence, compiler output, and the relevant TH09 Oracle. Never
+  transfer addresses, extents, data ownership, exactness, or completion claims.
+- If adjacent source conflicts with TH09 evidence, TH09 wins. If TH09 cannot
+  decide, retain unknown rather than selecting the more familiar implementation.
 
 Whole-build discipline:
 - Keep `config/build.toml` honestly open while inputs are unknown, but exercise

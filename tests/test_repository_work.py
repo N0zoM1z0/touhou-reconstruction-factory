@@ -56,6 +56,11 @@ void fixture(void *value) {
         self.shared_tools = self.root / "shared-tools"
         self.shared_tools.mkdir()
         (self.shared_tools / "shared.txt").write_text("shared\n", encoding="utf-8")
+        self.reference_repository = self.root / "reference-repository"
+        self.reference_repository.mkdir()
+        (self.reference_repository / "reference.txt").write_text(
+            "adjacent hypothesis\n", encoding="utf-8"
+        )
         self.wine_prefix = self.root / "operator-home" / ".wine-fixture"
         self.wine_prefix.mkdir(parents=True)
         policy_source = Path(__file__).parents[1] / "policies/strict-live-v1.json"
@@ -86,8 +91,15 @@ id = "fixture"
 path = "repository"
 adapter_id = "windows-pe-ledgers-v1"
 target_identity_ids = ["target:fixture"]
+reference_repository_ids = ["reference"]
 work_environment = {{ WINEPREFIX = "{self.wine_prefix.as_posix()}" }}
 work_state_roots = ["{self.wine_prefix.as_posix()}"]
+
+[[repositories]]
+id = "reference"
+path = "reference-repository"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:reference"]
 ''',
             encoding="utf-8",
         )
@@ -166,6 +178,10 @@ work_state_roots = ["{self.wine_prefix.as_posix()}"]
             f'''set -eu
 test "$(cat .tools/toolchain.txt)" = "repo-local toolchain"
 test "$(cat {self.shared_tools.as_posix()}/shared.txt)" = shared
+test "$(cat {self.reference_repository.as_posix()}/reference.txt)" = "adjacent hypothesis"
+if printf 'forbidden\n' > {self.reference_repository.as_posix()}/reference.txt 2>/dev/null; then
+  exit 91
+fi
 test "$WINEPREFIX" = "{self.wine_prefix.as_posix()}"
 printf 'prefix-state\n' > "$WINEPREFIX/observed.txt"
 test -f /etc/passwd

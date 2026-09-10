@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "touhou-reconstruction-factory"
-version = "0.5.0"
+version = "0.5.1"
 description = "Evidence-first control plane for verified Touhou reconstruction projects"
 readme = "README.md"
 requires-python = ">=3.11"

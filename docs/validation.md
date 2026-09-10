@@ -27,26 +27,30 @@ tests, so the release script rejects that environment instead of reporting an
 incomplete pass.
 
 `scripts/validate-live-mcp.py` checks the deployed no-auth endpoint. Its default
-mode is read-only:
+mode is read-only. Supply the operator-private URL through the environment or
+`--url`; the script contains no deployment endpoint:
 
 ```bash
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py
+PYTHONPATH=src FACTORY_MCP_URL="$FACTORY_MCP_URL" \
+  .venv/bin/python scripts/validate-live-mcp.py
 ```
 
 The default checks the exact 33-tool inventory, annotations and bounded schemas,
-strict policy, all four registered adapters, imported-versus-accepted evidence
+strict policy, all five registered adapters, imported-versus-accepted evidence
 separation, real Git HEAD/dirty state, the TH095 semantic router's authority and
 source binding, live accepted snapshots, registry partition, explicit unknown
-knowledge, and per-game historical fixtures.
+knowledge, and committed historical fixtures. Mature TH04/TH08/TH095/TH105
+coverage must remain nonzero; fresh TH09 accurately reports zero until a
+meaningful historical regression is admitted.
 
 Mutation and bridge checks are explicit:
 
 ```bash
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --analysis
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --repository-toolchains
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --workspace
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --replay-th105
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --all
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --analysis
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --repository-toolchains
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --workspace
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --replay-th105
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --all
 ```
 
 The workspace check creates an idempotent TH105 committed-HEAD snapshot, rejects

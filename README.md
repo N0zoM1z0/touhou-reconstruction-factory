@@ -207,9 +207,9 @@ The deployed endpoint has a read-only validation mode and explicit opt-in live
 analysis, real Wine/toolchain, disposable-workspace, and TH105 replay checks:
 
 ```bash
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --repository-toolchains
-PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --all
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL"
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --repository-toolchains
+PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --all
 ```
 
 The toolchain option executes non-committing probes through live-repository Bash

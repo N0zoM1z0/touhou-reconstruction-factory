@@ -81,18 +81,21 @@ target_identity_ids = ["target:th08-main"]
 # work_state_roots = ["/srv/reconstruction-state/th08-home/.wineth08"]
 
 [[repositories]]
+id = "th09"
+path = "/srv/reconstructions/th09"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:th09-main"]
+# Adjacent registered repositories are mounted read-only only for this repo's
+# live shell. They generate hypotheses and never confer evidence or exactness.
+reference_repository_ids = ["th08", "th095"]
+
+[[repositories]]
 id = "th095"
 path = "/srv/reconstructions/th095"
 adapter_id = "windows-pe-ledgers-v1"
 target_identity_ids = ["target:th095-main"]
 # work_environment = { WINEPREFIX = "/srv/reconstruction-state/th095/wine" }
 # work_state_roots = ["/srv/reconstruction-state/th095/wine"]
-
-[[repositories]]
-id = "th09"
-path = "/srv/reconstructions/th09"
-adapter_id = "windows-pe-ledgers-v1"
-target_identity_ids = ["target:th09-main"]
 
 [[repositories]]
 id = "th105"

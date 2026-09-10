@@ -243,7 +243,11 @@ class RepositoryWorkStore:
             script,
             self.policy.git_author_name,
             self.policy.git_author_email,
-            self.policy.shared_tool_roots,
+            self.policy.shared_tool_roots
+            + tuple(
+                self.config.repository(reference_id).path
+                for reference_id in registration.reference_repository_ids
+            ),
             registration.work_environment,
             registration.work_state_roots,
         )

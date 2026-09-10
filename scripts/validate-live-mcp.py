@@ -7,6 +7,7 @@ import argparse
 import asyncio
 from datetime import datetime, timezone
 import json
+import os
 import re
 from typing import Any
 from uuid import uuid4
@@ -14,16 +15,15 @@ from uuid import uuid4
 from mcp import Client
 
 
-DEFAULT_URL = (
-    "https://laptop-9d3a7045.taile42c02.ts.net/"
-    "touhou-reconstruction-factory-mcp"
-)
+DEFAULT_URL = os.environ.get("FACTORY_MCP_URL")
 REPOSITORIES = {
     "th04": "th04-pc98-v1",
     "th08": "th08-vc7-ledgers-v1",
+    "th09": "windows-pe-ledgers-v1",
     "th095": "windows-pe-ledgers-v1",
     "th105": "windows-pe-ledgers-v1",
 }
+REQUIRED_HISTORICAL_FIXTURE_REPOSITORIES = {"th04", "th08", "th095", "th105"}
 EXPECTED_TOOLS = {
     "factory_cancel_job",
     "factory_analysis_call",
@@ -60,6 +60,7 @@ EXPECTED_TOOLS = {
     "factory_workspace_search",
 }
 MUTATING_ANNOTATIONS = {
+    "factory_analysis_call": (False, False, False),
     "factory_create_workspace": (False, False, True),
     "factory_workspace_apply_patch": (False, False, False),
     "factory_workspace_run_shell": (False, True, False),
@@ -319,7 +320,11 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
                 {"project": repository_id, "limit": 100, "offset": 0},
             )
             fixtures[repository_id] = page["total"]
-            _check(page["total"] > 0, f"no historical fixtures for {repository_id}")
+            if repository_id in REQUIRED_HISTORICAL_FIXTURE_REPOSITORIES:
+                _check(
+                    page["total"] > 0,
+                    f"no historical fixtures for {repository_id}",
+                )
 
         report["read_only"] = {
             "tool_count": len(tools),
@@ -335,6 +340,7 @@ async def _analysis(url: str, report: dict[str, Any]) -> None:
     probes = {
         "th04-ghidra": ("check", "target:th04-main"),
         "th08-ida": ("get_metadata", "target:th08-main"),
+        "th09-ida": ("get_metadata", "target:th09-main"),
         "th095-ghidra": ("check", "target:th095-main"),
         "th105-ida": ("get_metadata", "target:th105-main"),
     }
@@ -753,9 +759,13 @@ async def _main(arguments: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate the fixed Factory MCP; mutation checks are opt-in."
+        description="Validate a deployed Factory MCP; mutation checks are opt-in."
     )
-    parser.add_argument("--url", default=DEFAULT_URL)
+    parser.add_argument(
+        "--url",
+        default=DEFAULT_URL,
+        help="private deployment URL (or set FACTORY_MCP_URL)",
+    )
     parser.add_argument("--analysis", action="store_true")
     parser.add_argument(
         "--repository-toolchains",
@@ -777,6 +787,8 @@ def main() -> int:
         ),
     )
     arguments = parser.parse_args()
+    if not arguments.url:
+        parser.error("--url or FACTORY_MCP_URL is required")
     report = asyncio.run(_main(arguments))
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0

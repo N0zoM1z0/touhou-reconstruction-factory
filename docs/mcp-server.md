@@ -214,7 +214,7 @@ touhou-reconstruction-factory-mcp \
   --transport streamable-http \
   --host 127.0.0.1 \
   --port 8772 \
-  --mcp-path /touhou-reconstruction-factory-mcp \
+  --mcp-path /factory-<random-hex> \
   --auth none \
   --allowed-host machine-name.example.ts.net \
   --allowed-host 127.0.0.1:8772 \

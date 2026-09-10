@@ -2,15 +2,15 @@
 
 ## Architectural invariant
 
-Every reconstruction uses the same public Touhou Reconstruction Factory MCP
-URL. A new game does **not** receive another Web-facing MCP server, Funnel URL,
-or checkout of `mcp_for_gptweb`. The game repository is an evidence-bearing
-instance; the Factory is the shared control plane.
+Every reconstruction uses the same operator-private Touhou Reconstruction
+Factory MCP URL. A new game does **not** receive another Web-facing MCP server,
+Funnel URL, or checkout of `mcp_for_gptweb`. The game repository is an
+evidence-bearing instance; the Factory is the shared control plane.
 
 ```text
 GPT-web
    |
-   | one stable Streamable HTTP endpoint
+   | one operator-private stable Streamable HTTP endpoint
    v
 Touhou Reconstruction Factory MCP
    |-- registered live repository work + local Git checkpoints
@@ -76,6 +76,13 @@ progress.
    part of that activation. Do not restart while another game's Web session or
    durable command is active. After activation, validate the public endpoint
    and start the game campaign with the standalone prompt.
+10. **Allowlist adjacent hypotheses deliberately.** When a new game benefits
+    from nearby reconstructions, add their registered IDs to the new game's
+    private `reference_repository_ids`. The repository runner mounts only those
+    checkouts read-only. Adjacent source and history can accelerate a
+    hypothesis, but never transfer target facts, ownership, ABI, exactness, or
+    completion; a reference that is still undergoing semantic work is more
+    provisional still.
 
 Run the staged native-provider check with no public-service restart:
 

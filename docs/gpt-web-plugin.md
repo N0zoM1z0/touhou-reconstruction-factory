@@ -5,17 +5,14 @@
 This is a deliberately small, single-operator integration. It packages
 autonomous live-repository reconstruction and semantic reconstruction skills,
 an optional isolated-workspace skill, and separate analysis/replay skills with
-the Factory MCP through one fixed Tailscale Funnel URL. It does not automate
-repository creation, require GitHub access for reconstruction, provide Git
-push, or introduce another verification path.
+the Factory MCP through one operator-private Tailscale Funnel URL. It does not
+automate repository creation, require GitHub access for reconstruction, provide
+Git push, or introduce another verification path.
 
-The committed endpoint is:
-
-```text
-https://laptop-9d3a7045.taile42c02.ts.net/touhou-reconstruction-factory-mcp
-```
-
-It uses no token or login in the operator's chosen one-user development setup.
+The deployment URL is deliberately not committed. Its high-entropy path is held
+only in the operator's private service environment and the ChatGPT connection.
+It uses no token or login in the operator's chosen one-user development setup;
+the unguessable path is the only deployment-level access boundary.
 With the live-repository provider enabled, GPT-web can inspect dirty, untracked,
 and ignored game state; run broad Bash, Wine, and repo-local tools; modify source;
 and create local Git commits in every registered game repository. The runner has
@@ -35,8 +32,8 @@ knowledge or bypass replay-receipt acceptance.
   teaches intentionally isolated committed-HEAD experiments; it is not the
   default source workflow.
 - [`factory-analysis/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-analysis/SKILL.md)
-  teaches target-attested semantic queries without native database writes or
-  exactness inflation.
+  teaches target-attested semantic queries, explicit native IDA metadata edits,
+  and the boundary that prevents either from inflating exactness.
 - [`factory-reconstruction/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-reconstruction/SKILL.md)
   coordinates autonomous live source work, Bash/analysis/toolchain composition,
   local `gpt-web:` checkpoints, and evidence boundaries.
@@ -61,8 +58,8 @@ knowledge or bypass replay-receipt acceptance.
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
   executes queued replays independently of chat connections.
-- [`configure-funnel.sh`](../scripts/configure-funnel.sh) maps the fixed public
-  path to the same path on the loopback server.
+- [`configure-funnel.sh`](../scripts/configure-funnel.sh) maps the
+  operator-private route path to the same path on the loopback server.
 
 ## Bind skills to the registered ChatGPT app
 
@@ -90,7 +87,7 @@ The current development registration was checked on 2026-09-10:
 
 | Field | Value |
 | --- | --- |
-| URL | `https://laptop-9d3a7045.taile42c02.ts.net/touhou-reconstruction-factory-mcp` |
+| URL | operator-private; never committed |
 | Authorization supported / used | `None` / `None` |
 | App Id | `asdk_app_6aa21bec66888191bd24c118e47ddee6` |
 | Version Id at observation time | `asdk_app_v_6aa21bec66988191a434524226c15aee` |
@@ -159,8 +156,10 @@ python3 -m venv .venv
 Copy `config/factory-service.example.toml` to a private path and replace every
 repository path. Copy `config/factory-mcp.env.example` to
 `~/.config/touhou-reconstruction-factory-mcp.env` and set the exact Python,
-service-config, hostname, port, and path values. Do not put shell quoting around
-values in this systemd environment file.
+service-config, hostname, port, and a newly generated high-entropy path. Do not
+put shell quoting around values in this systemd environment file. Do not copy
+the resulting URL or path into tracked documentation, scripts, issues, or
+commit messages.
 
 To enable normal source work, configure `[repository_work]` with a root that is
 a strict child of `state_directory`, a Git identity, output/time bounds, and any
@@ -197,9 +196,12 @@ tailscale funnel status
 To remove only this public route while leaving other Funnel mappings intact:
 
 ```bash
+set -a
+source ~/.config/touhou-reconstruction-factory-mcp.env
+set +a
 tailscale funnel \
-  --https=443 \
-  --set-path=/touhou-reconstruction-factory-mcp \
+  --https="$FACTORY_FUNNEL_HTTPS_PORT" \
+  --set-path="$FACTORY_MCP_PATH" \
   off
 ```
 
@@ -343,7 +345,15 @@ probe read both new guidance files successfully through Bubblewrap. The service
 loads this operator configuration for each tool call, so adding these read-only
 roots required no process restart and did not interrupt the active TH095 Web
 campaign. The roots expose guidance only; the Factory evidence/job store and
-other game repositories remain outside the command namespace.
+non-allowlisted game repositories remain outside the command namespace.
+
+TH09 separately allowlists registered repositories `th08` and `th095` through
+its private `reference_repository_ids`. Those canonical checkouts are visible
+read-only only while a TH09 shell runs. TH08 and TH095 can guide focused source
+and history searches, but neither grants TH09 evidence or exactness; TH095's
+ongoing semantic reconstruction is explicitly provisional. The standalone TH09
+prompt names both canonical paths and requires TH09-local target and Oracle
+confirmation.
 
 ## TH105 acceptance smoke test
 
@@ -459,8 +469,8 @@ verify it.
 
 ## Current live autonomy checkpoint
 
-The fixed public URL was revalidated after adding the semantic workflow on
-2026-09-10. Discovery returned exactly 33 tools: the prior 32 plus the live-
+The operator-private public URL was revalidated after adding the semantic
+workflow on 2026-09-10. Discovery returned exactly 33 tools: the prior 32 plus the live-
 bound `factory_report_semantic_debt` router. The public
 description reports `execution_mode="registered-live-worktree-v1"`, source mode
 `live-including-ignored`, local commit availability, no network, and no remote
@@ -475,8 +485,8 @@ plus 829 anonymous-identifier candidates; direct absolute-address and
 routing candidates only. The response was bound to current HEAD/status and
 fixed completion, exactness, and semantic-evidence credit to false/none.
 
-The same public endpoint ran non-committing native toolchain probes for all four
-registrations:
+The same operator-private endpoint ran non-committing native toolchain probes
+for all four registrations:
 
 | Game | Actual path exercised | Result |
 | --- | --- | --- |
@@ -518,8 +528,9 @@ A subsequent read reported 17 candidates, one current accepted TH105 result,
 
 ## Initial isolated-provider checkpoint
 
-The fixed public URL was exercised without credentials on 2026-09-10. Remote
-discovery returned exactly 29 factory tools: 15 replay/registry tools, 11
+The operator-private public URL was exercised without credentials on
+2026-09-10. Remote discovery returned exactly 29 factory tools: 15
+replay/registry tools, 11
 workspace tools, and three analysis tools. It exposed no upstream
 `run_command`, arbitrary host path, canonical-source write, analysis mutation,
 or fact-promotion tool. The public description returned policy

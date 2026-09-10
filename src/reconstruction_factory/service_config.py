@@ -287,6 +287,7 @@ class RepositoryRegistration:
     path: Path
     adapter_id: str
     target_identity_ids: tuple[str, ...]
+    reference_repository_ids: tuple[str, ...] = ()
     work_environment: tuple[tuple[str, str], ...] = ()
     work_state_roots: tuple[Path, ...] = ()
 
@@ -302,6 +303,9 @@ class RepositoryRegistration:
             raise ServiceConfigError(
                 "registered repository must declare at least one target identity"
             )
+        _require_sorted_ids(self.reference_repository_ids, "reference_repository_ids")
+        if self.id in self.reference_repository_ids:
+            raise ServiceConfigError("registered repository cannot reference itself")
         names = tuple(name for name, _ in self.work_environment)
         if tuple(sorted(set(names))) != names:
             raise ServiceConfigError(
@@ -331,6 +335,7 @@ class RepositoryRegistration:
             "id": self.id,
             "adapter_id": self.adapter_id,
             "target_identity_ids": list(self.target_identity_ids),
+            "reference_repository_ids": list(self.reference_repository_ids),
             "work_environment_names": [name for name, _ in self.work_environment],
             "work_state_root_count": len(self.work_state_roots),
         }
@@ -426,6 +431,12 @@ class ServiceConfig:
             if provider.target_identity_id not in repository.target_identity_ids:
                 raise ServiceConfigError(
                     "analysis provider target is outside its repository registration"
+                )
+        repository_ids = set(ids)
+        for repository in self.repositories:
+            if set(repository.reference_repository_ids) - repository_ids:
+                raise ServiceConfigError(
+                    "reference_repository_ids must name registered repositories"
                 )
         if self.state_directory.is_relative_to(
             self.evidence_store
@@ -592,6 +603,7 @@ class ServiceConfig:
     def identity_dict(self) -> dict[str, Any]:
         return {
             **self.replay_identity_dict(),
+            "repositories": [item.identity_dict() for item in self.repositories],
             "workspace": self.workspace.identity_dict(),
             "repository_work": self.repository_work.identity_dict(),
             "analysis_providers": [
@@ -780,7 +792,11 @@ def load_service_config(path: str | Path) -> ServiceConfig:
         item = _strict_object_optional(
             raw,
             {"id", "path", "adapter_id", "target_identity_ids"},
-            {"work_environment", "work_state_roots"},
+            {
+                "reference_repository_ids",
+                "work_environment",
+                "work_state_roots",
+            },
             f"repositories[{index}]",
         )
         raw_environment = item.get("work_environment", {})
@@ -808,6 +824,10 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                 target_identity_ids=_strings(
                     item["target_identity_ids"],
                     f"repositories[{index}].target_identity_ids",
+                ),
+                reference_repository_ids=_strings(
+                    item.get("reference_repository_ids", []),
+                    f"repositories[{index}].reference_repository_ids",
                 ),
                 work_environment=tuple(
                     sorted(

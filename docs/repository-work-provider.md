@@ -104,6 +104,7 @@ id = "th09"
 path = "/srv/reconstruction/th09"
 adapter_id = "windows-pe-ledgers-v1"
 target_identity_ids = ["target:th09-main"]
+reference_repository_ids = ["th08", "th095"]
 work_environment = { WINEPREFIX = "/srv/touhou-factory/state/th09/wine" }
 work_state_roots = ["/srv/touhou-factory/state/th09/wine"]
 ```
@@ -113,6 +114,16 @@ profile or wrapper chooses an exact tool/version and records its content
 identity. `work_state_roots` are mutable and bound to one repository. Environment
 values and host paths are redacted from discovery responses; only names and
 counts are public.
+
+`reference_repository_ids` is a per-game allowlist of other registered live
+repositories. Their current trees and Git history are mounted read-only at
+their canonical paths only inside the selected repository's shell. This makes
+adjacent-game source available for composable searches without granting writes
+or silently exposing every game to every session. References are hypotheses,
+not evidence: prefer committed reference content, record its HEAD and dirty
+status, then confirm all accepted facts against the selected game's own target,
+analyzer, compiler, and Oracles. A reference under active semantic
+reconstruction is explicitly provisional.
 
 Mounting the Factory `contracts/` and `docs/` directories through the same
 read-only mechanism lets standalone GPT-web prompts name exact guidance paths.

@@ -171,6 +171,44 @@ work_state_roots = ["{work_state.as_posix()}"]
         self.assertNotIn(str(work_state), json.dumps(public))
         self.assertEqual(original.replay_sha256, changed.replay_sha256)
 
+    def test_adjacent_repository_references_are_explicit_and_replay_independent(
+        self,
+    ) -> None:
+        (self.root / "reference").mkdir()
+        repositories = """
+[[repositories]]
+id = "th08"
+path = "game"
+adapter_id = "th08-vc7-ledgers-v1"
+target_identity_ids = ["target:th08-v1.00d-original"]
+
+[[repositories]]
+id = "th095"
+path = "reference"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:th095"]
+"""
+        original = load_service_config(self.write_config(repositories))
+        referenced = repositories.replace(
+            'target_identity_ids = ["target:th08-v1.00d-original"]',
+            'target_identity_ids = ["target:th08-v1.00d-original"]\n'
+            'reference_repository_ids = ["th095"]',
+        )
+        changed = load_service_config(self.write_config(referenced))
+        self.assertEqual(
+            changed.repository("th08").reference_repository_ids, ("th095",)
+        )
+        self.assertEqual(
+            changed.repository("th08").public_dict()["reference_repository_ids"],
+            ["th095"],
+        )
+        self.assertNotEqual(original.sha256, changed.sha256)
+        self.assertEqual(original.replay_sha256, changed.replay_sha256)
+
+        unknown = referenced.replace('["th095"]', '["missing"]', 1)
+        with self.assertRaisesRegex(ServiceConfigError, "registered repositories"):
+            load_service_config(self.write_config(unknown))
+
     def test_analysis_provider_is_loopback_target_bound_and_replay_independent(
         self,
     ) -> None:
