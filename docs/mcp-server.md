@@ -83,6 +83,15 @@ For source development, GPT-web performs this sequence:
    A commit is a resume/review checkpoint, never a receipt and never exactness.
 6. Discover and replay only claims eligible for the committed source state.
 
+For semantic reconstruction, use the specialized
+[`semantic reconstruction workflow`](semantic-reconstruction.md). The optional
+`factory_report_semantic_debt` tool binds a lexical routing report to live HEAD
+and dirty state; it does not replace Bash search, target analysis, or model
+judgment, and no count is a progress or completion claim. Semantic work follows
+the target exact baseline and corresponding historical-platform product closure
+so the exact and native product/runtime lanes can act as independent regression
+oracles before portable products begin.
+
 Use the disposable workspace tools only when an isolated committed-HEAD copy is
 the intended experiment. Their complete isolation contract remains in
 [`workspace-provider.md`](workspace-provider.md).
@@ -102,6 +111,7 @@ writes and the legacy bridges' host Bash tools are unreachable. See
 | `factory_describe` | Show redacted configuration and policy identity. |
 | `factory_list_repositories` | List registered repository IDs. |
 | `factory_get_repository_status` | Inspect current live HEAD, branch, upstream, and dirty counts. |
+| `factory_report_semantic_debt` | Page live-worktree-bound heuristic C/C++ semantic candidates; routing only, with zero exactness or semantic-evidence credit. |
 | `factory_repository_run_shell` | Run broad networkless Bash in the real registered worktree; edits and local commits persist. |
 | `factory_get_repository_command_output` | Resume bounded output paging for a durable live-repository command. |
 | `factory_list_analysis_providers` | List redacted target-bound IDA/Ghidra registrations. |

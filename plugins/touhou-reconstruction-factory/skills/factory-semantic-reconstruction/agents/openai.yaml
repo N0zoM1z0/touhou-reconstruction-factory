@@ -1,0 +1,4 @@
+interface:
+  display_name: "Factory Semantic Reconstruction"
+  short_description: "Recover typed meaning without losing exactness"
+  default_prompt: "Use $factory-semantic-reconstruction to complete one bounded evidence-backed TH095 semantic batch and create a local checkpoint."

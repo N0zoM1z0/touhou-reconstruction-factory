@@ -26,6 +26,7 @@ import uuid
 
 from .errors import ReplayError, RepositoryWorkError
 from .replay_identity import repository_lock
+from .semantic_debt import scan_semantic_debt
 from .service_config import RepositoryRegistration, ServiceConfig
 
 
@@ -53,6 +54,46 @@ class RepositoryWorkStore:
             registration, exclusive=False
         ):
             return _repository_status(registration)
+
+    def semantic_debt_report(
+        self,
+        repository_id: str,
+        *,
+        relative_path: str,
+        category: str,
+        limit: int,
+        offset: int,
+    ) -> dict[str, Any]:
+        """Return a live-worktree-bound heuristic routing report."""
+
+        self._require_enabled()
+        registration = self.config.repository(repository_id)
+        with self._repository_lock(repository_id), self._factory_repository_lock(
+            registration, exclusive=False
+        ):
+            before = _repository_status(registration)
+            report = scan_semantic_debt(
+                registration.path,
+                relative_path=relative_path,
+                category=category,
+                limit=limit,
+                offset=offset,
+            )
+            after = _repository_status(registration)
+            if (
+                before["head_commit"] != after["head_commit"]
+                or before["status_sha256"] != after["status_sha256"]
+            ):
+                raise RepositoryWorkError(
+                    "repository changed during semantic-debt scan; retry against the new state"
+                )
+            report["repository_id"] = repository_id
+            report["source_binding"] = {
+                "head_commit": after["head_commit"],
+                "status_sha256": after["status_sha256"],
+                "dirty": after["dirty"],
+            }
+            return report
 
     def run_shell(
         self,

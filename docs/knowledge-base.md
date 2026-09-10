@@ -45,10 +45,10 @@ limitations state how narrow the observed counterexample is.
 PYTHONPATH=src python3 -m reconstruction_factory knowledge
 ```
 
-The command emits deterministic JSON including status counts. The initial
-catalog contains ten verified rules and two explicit unknowns. The unknown
-runtime and general LTCG-reproduction entries are deliberate boundaries, not
-missing data to be filled by guesses.
+The command emits deterministic JSON including status counts. The current
+catalog contains ten verified rules, one provisional workflow lesson, and two
+explicit unknowns. The unknown runtime and general LTCG-reproduction entries
+are deliberate boundaries, not missing data to be filled by guesses.
 
 TH095's whole-build lesson is backed by paired historical fixtures: one
 checkpoint compiles 88/88 production units but fails with unresolved symbols,
@@ -56,6 +56,15 @@ while the later checkpoint compiles 88/88 and links cleanly despite retaining
 696 exact functions out of 697 source-present functions. Together they preserve
 the independence of exactness, product closure, whole-image equality, and
 runtime validation.
+
+The provisional semantic-order lesson records the TH095-shaped sequence for
+Windows PE reconstruction and its corresponding 16-bit form for PC-98:
+target-specific exact baseline, historical-platform product closure and runtime
+owner feedback, semantic reconstruction under both feedback lanes, and only
+then portable products. TH095's paired fixtures prove why exactness cannot
+replace product closure. TH08/TH095 history motivates the two-oracle semantic
+workflow, but the catalog deliberately does not present its false-positive
+reduction as a quantified or universally verified theorem.
 
 ## Publication boundary
 

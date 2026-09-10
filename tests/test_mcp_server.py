@@ -127,6 +127,7 @@ target_identity_ids = ["target:th08-v1.00d-original"]
                 "factory_list_repositories",
                 "factory_query_accepted_facts",
                 "factory_query_knowledge",
+                "factory_report_semantic_debt",
                 "factory_repository_run_shell",
                 "factory_submit_replay",
                 "factory_workspace_apply_patch",
@@ -166,6 +167,15 @@ target_identity_ids = ["target:th08-v1.00d-original"]
             65536,
         )
         self.assertTrue(repository_shell.annotations.destructive_hint)
+        semantic_debt = next(
+            tool
+            for tool in discovered.tools
+            if tool.name == "factory_report_semantic_debt"
+        )
+        self.assertEqual(
+            semantic_debt.input_schema["properties"]["limit"]["maximum"], 100
+        )
+        self.assertTrue(semantic_debt.annotations.read_only_hint)
 
         mutating = {
             "factory_create_workspace": (False, False, True),

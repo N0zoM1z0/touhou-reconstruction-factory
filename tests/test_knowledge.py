@@ -21,13 +21,23 @@ from reconstruction_factory.knowledge import (
 class KnowledgeCatalogTests(unittest.TestCase):
     def test_catalog_links_verified_rules_to_fixture_evidence(self) -> None:
         catalog = load_knowledge_catalog()
-        self.assertEqual(len(catalog.entries), 12)
+        self.assertEqual(len(catalog.entries), 13)
         verified = [entry for entry in catalog.entries if entry.status is KnowledgeStatus.VERIFIED]
+        provisional = [
+            entry
+            for entry in catalog.entries
+            if entry.status is KnowledgeStatus.PROVISIONAL
+        ]
         unknown = [entry for entry in catalog.entries if entry.status is KnowledgeStatus.UNKNOWN]
         self.assertEqual(len(verified), 10)
+        self.assertEqual(len(provisional), 1)
         self.assertEqual(len(unknown), 2)
         self.assertTrue(all(entry.evidence_fixture_ids for entry in verified))
         self.assertTrue(all(not entry.consequences for entry in unknown))
+        self.assertEqual(
+            provisional[0].id,
+            "semantic-reconstruction-needs-native-product-baseline",
+        )
 
     def test_unknown_entry_cannot_impose_verified_consequences(self) -> None:
         document = json.loads(DEFAULT_KNOWLEDGE_CATALOG.read_text(encoding="utf-8"))

@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "id": "gpt-web-semantic-reconstruction-session-v1",
+  "extends": "gpt-web-reconstruction-session-v4",
+  "purpose": "One bounded evidence-backed semantic reconstruction batch in a registered live game repository",
+  "required_inputs": [
+    "game_id",
+    "semantic_objective",
+    "stop_condition"
+  ],
+  "optional_inputs": [
+    "scope_hint",
+    "resume_commit",
+    "evidence_seed"
+  ],
+  "ontology": {
+    "semantic_debt_candidate": "A heuristic route to source that may encode known meaning as raw layout, an anonymous identifier, an absolute view, an opaque range, or an unnamed protocol. It is not evidence or progress.",
+    "semantic_batch": "One coherent owner, field, representation, or protocol family changed and validated as one reviewable unit.",
+    "evidence_record": "A durable separation of observed, corroborated, inferred, and unknown meaning for the batch, including addresses and limitations.",
+    "regression_baseline": "The live pre-edit status of every applicable verification plane and every affected native oracle.",
+    "affected_oracle_closure": "All exact, production, format, and runtime checks required by the actual change surface have been rerun and reported independently.",
+    "semantic_checkpoint": "A local Git commit containing one coherent semantic batch and its evidence record. It is review state, not Truth Kernel admission.",
+    "semantic_completion": "A qualitative project milestone that requires an explicit game-local exit audit. Candidate counts, checked boxes, or a sequence of batches never imply it."
+  },
+  "non_implications": [
+    "semantic-debt-candidate-does-not-imply-semantic-debt",
+    "zero-router-candidates-does-not-imply-semantic-completion",
+    "layout-assertion-does-not-prove-meaning",
+    "readable-name-does-not-prove-original-name",
+    "exact-codegen-does-not-prove-semantic-interpretation",
+    "build-or-runtime-success-does-not-prove-semantic-interpretation",
+    "semantic-checkpoint-does-not-imply-any-oracle-pass",
+    "one-semantic-batch-does-not-imply-project-semantic-completion"
+  ],
+  "historical_platform_stage_order": [
+    "target-specific-exact-reconstruction-baseline",
+    "corresponding-historical-platform-product-closure-and-runtime-owner-feedback",
+    "semantic-reconstruction-under-both-feedback-lanes",
+    "portable-platform-products"
+  ],
+  "phase_entry": {
+    "required_live_checks": [
+      "inspect-current-head-branch-dirty-staged-and-untracked-state",
+      "read-current-repository-instructions-and-semantic-plan",
+      "attest-the-canonical-target-before-target-analysis",
+      "record-each-applicable-verification-plane-as-pass-fail-incomplete-or-unknown",
+      "preserve-preexisting-work"
+    ],
+    "whole_project_exact_completion_required": false,
+    "target_specific_exact_baseline_required": true,
+    "historical_platform_product_closure_required": true,
+    "historical_platform_runtime_owner_feedback_required": true,
+    "rule": "An explicit exact residual may remain unknown, but semantic work starts only after the corresponding historical-platform production graph compiles and links and its available native runtime/data-owner baseline has been exercised. A modern port cannot substitute for either prerequisite."
+  },
+  "semantic_regression_oracles": {
+    "target_exact_oracle": "Detects target code-generation, relocation, extent, and other configured exact regressions.",
+    "historical_platform_product_oracle": "Detects compile/link, initialized-data ownership, storage identity, lifetime, and exercised native behavior regressions in the reconstructed original platform product.",
+    "joint_role": "A semantic batch must preserve both applicable lanes; their independent agreement reduces false positives but does not by itself prove an English name.",
+    "portable_product_role": "A later consumer and additional regression surface after semantic readiness, never a substitute prerequisite."
+  },
+  "batch_workflow": [
+    "preflight-live-repository-and-target",
+    "route-candidates-with-heuristics-and-repository-search",
+    "select-one-coherent-owner-field-representation-or-protocol-family",
+    "bound-all-reads-writes-widths-callers-state-transitions-and-owners",
+    "record-observed-corroborated-inferred-and-unknown-meaning",
+    "capture-affected-exact-and-product-baselines",
+    "implement-the-narrowest-natural-typed-source-change",
+    "rerun-the-change-surface-regression-matrix",
+    "record-the-evidence-and-retained-unknowns",
+    "create-one-reviewable-local-git-checkpoint",
+    "report-every-verification-plane-separately"
+  ],
+  "selection_policy": {
+    "prefer": [
+      "multiple-independent-target-local-consumers",
+      "bounded-caller-and-owner-scope",
+      "existing-focused-exact-units",
+      "high-owner-or-pointer-width-value",
+      "no-required-behavior-change"
+    ],
+    "avoid_as_first_batch": [
+      "repository-wide-renaming",
+      "mixed-unrelated-managers",
+      "large-interpreter-protocol-and-control-flow-rewrite",
+      "persistent-format-redesign",
+      "meaning-inferred-only-from-an-adjacent-game"
+    ]
+  },
+  "evidence_classes": {
+    "observed": "Directly present in the canonical target, target-bound analysis, exact code shape, or a bounded target/runtime observation.",
+    "corroborated": "Independent target-local consumers agree, or adjacent-game evidence agrees with target-local evidence.",
+    "inferred": "A bounded target-local interpretation without independent naming evidence; use a neutral name and state the limitation.",
+    "unknown": "Only storage, width, alignment, lifetime, extent, or a weaker relationship is known; preserve the uncertainty."
+  },
+  "source_rules": [
+    "preserve-target-abi-layout-width-signedness-packing-construction-and-translation-unit-visibility",
+    "prefer-canonical-owners-real-fields-aggregates-enums-and-explicit-protocol-types",
+    "add-focused-sizeof-and-offset-assertions-only-for-relied-on-layout-facts",
+    "keep-wire-formats-instruction-streams-tagged-storage-and-platform-abi-buffers-byte-oriented-when-that-is-their-real-semantics",
+    "do-not-create-duplicate-globals-for-views-inside-an-existing-owner",
+    "do-not-hide-unknown-meaning-behind-a-confident-name-union-accessor-or-cast",
+    "do-not-combine-semantic-typing-with-unrelated-control-flow-or-api-redesign",
+    "prefer-unknown-to-an-unsupported-name-type-owner-or-protocol"
+  ],
+  "regression_matrix": {
+    "private-name-field-or-expression": [
+      "replay-every-accepted-unit-in-the-affected-object",
+      "compile-the-complete-declared-production-graph-or-the-repository-defined-equivalent"
+    ],
+    "shared-header-layout-inline-pch-or-owner": [
+      "replay-every-affected-object",
+      "run-the-repository-required-cold-aggregate-exact-gate",
+      "cold-compile-and-link-the-product",
+      "run-a-bounded-runtime-transition-when-identity-lifetime-or-behavior-can-change"
+    ],
+    "serialized-protocol-persistence-callback-render-input-or-audio": [
+      "strictly-compare-every-touched-function",
+      "run-focused-format-or-protocol-tests",
+      "cold-compile-and-link-the-product",
+      "exercise-the-smallest-relevant-runtime-transition-and-output-when-available"
+    ]
+  },
+  "factory_tools": {
+    "factory_report_semantic_debt": "Optional cross-game lexical router bound to live HEAD and dirty state; never a completion metric.",
+    "factory_repository_run_shell": "Primary composable surface for repository search, edits, Git, compilers, Wine, native checks, and any unlisted in-repository investigation.",
+    "factory_analysis_call": "Target-attested provisional semantic evidence with zero exactness credit.",
+    "factory_submit_replay": "Factory-controlled verification for an eligible committed exact or product claim; it does not verify the English interpretation.",
+    "factory_query_accepted_facts": "Reads only independently accepted receipt facts; it does not certify semantic completion."
+  },
+  "authority_boundary": {
+    "router_output": "work-selection-only",
+    "analysis_output": "provisional-semantic-evidence",
+    "repository_checks": "engineering-feedback",
+    "semantic_checkpoint": "durable-review-state",
+    "game_local_batch_record": "durable-game-evidence-input",
+    "exact_or_product_receipt": "claim-specific-oracle-state",
+    "acceptance_registry": "truth-kernel-admission-for-the-receipts-own-claim-only",
+    "factory_semantic_completion_provider": "unavailable"
+  },
+  "checkpoint_rules": {
+    "prefix": "gpt-web:",
+    "required_contents": [
+      "one-coherent-semantic-batch",
+      "evidence-record-or-durable-document-reference",
+      "retained-unknowns",
+      "tests-actually-run"
+    ],
+    "exclude_unrelated_preexisting_work": true,
+    "commit_is_semantic_or_exactness_proof": false
+  },
+  "handoff_fields": [
+    "session_status",
+    "game_and_semantic_objective",
+    "starting_and_ending_commit",
+    "starting_and_ending_dirty_state",
+    "selected_batch_and_excluded_scope",
+    "router_profile_scope_counts-and-limitations",
+    "target-and-analysis-attestation",
+    "observed-corroborated-inferred-and-unknown-evidence",
+    "layout-and-abi-facts-relied-on",
+    "changed-files",
+    "created-checkpoint-commits",
+    "tests-actually-run",
+    "affected-oracle-closure",
+    "verification-plane-statuses",
+    "accepted-truth-separate-from-semantic-interpretation",
+    "remaining-unknowns-and-next-batch"
+  ]
+}

@@ -19,8 +19,19 @@ class RepositoryWorkTests(unittest.TestCase):
         self.repository = self.root / "repository"
         self.repository.mkdir()
         subprocess.run(["git", "init", "-q"], cwd=self.repository, check=True)
+        (self.repository / "src").mkdir()
         (self.repository / ".gitignore").write_text(".tools/\n", encoding="utf-8")
         (self.repository / "README.md").write_text("fixture\n", encoding="utf-8")
+        (self.repository / "src" / "SemanticFixture.cpp").write_text(
+            """struct View { unsigned char unknown004[4]; };
+void fixture(void *value) {
+    (void)(reinterpret_cast<u8 *>(value) + 0x10);
+    (void)reinterpret_cast<int *>(0x401000);
+    unknown_fields(8);
+}
+""",
+            encoding="utf-8",
+        )
         subprocess.run(["git", "add", "."], cwd=self.repository, check=True)
         subprocess.run(
             [
@@ -94,6 +105,59 @@ work_state_roots = ["{self.wine_prefix.as_posix()}"]
         self.assertEqual(status["unstaged_changes"], 0)
         self.assertEqual(status["source_mode"], "live-including-ignored")
         self.assertTrue(status["git_commit_is_checkpoint_only"])
+
+    def test_semantic_debt_report_is_snapshot_bound_routing_only(self) -> None:
+        report = self.store.semantic_debt_report(
+            "fixture",
+            relative_path="src",
+            category="all",
+            limit=2,
+            offset=0,
+        )
+        self.assertTrue(report["routing_only"])
+        self.assertFalse(report["completion_metric"])
+        self.assertEqual(report["exactness_credit"], "none")
+        self.assertEqual(report["semantic_evidence_credit"], "none")
+        self.assertTrue(report["scope_complete"])
+        self.assertEqual(
+            report["category_counts"],
+            {
+                "raw-member-access": 1,
+                "absolute-address": 1,
+                "anonymous-identifier": 1,
+                "opaque-storage": 1,
+            },
+        )
+        self.assertEqual(report["findings"]["total"], 4)
+        self.assertEqual(len(report["findings"]["items"]), 2)
+        self.assertEqual(report["findings"]["next_offset"], 2)
+        self.assertEqual(
+            report["source_binding"]["head_commit"],
+            self.store.status("fixture")["head_commit"],
+        )
+        self.assertTrue(report["source_binding"]["dirty"])
+
+        filtered = self.store.semantic_debt_report(
+            "fixture",
+            relative_path="src/SemanticFixture.cpp",
+            category="anonymous-identifier",
+            limit=10,
+            offset=0,
+        )
+        self.assertEqual(filtered["findings"]["total"], 1)
+        self.assertEqual(
+            filtered["findings"]["items"][0]["match"], "unknown004"
+        )
+
+    def test_semantic_debt_scope_cannot_leave_repository(self) -> None:
+        with self.assertRaisesRegex(RepositoryWorkError, "repository-relative"):
+            self.store.semantic_debt_report(
+                "fixture",
+                relative_path="/tmp",
+                category="all",
+                limit=20,
+                offset=0,
+            )
 
     @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
     def test_shell_sees_tools_commits_and_persists_nonzero_changes(self) -> None:

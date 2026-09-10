@@ -48,6 +48,12 @@ A **claim** is a typed assertion. Examples include `boundary_extent`, `source_pr
 one subject and one target identity. Toolchain-dependent claims also bind to a
 toolchain identity.
 
+`semantic_evidence` records one bounded interpretation with its evidence class
+and limitations. `semantic_ownership` records one target-qualified conceptual
+owner relationship. Neither is a project-level "semantics complete" bit, and
+neither follows from a readable identifier, layout assertion, exact function,
+successful build, or runtime observation alone.
+
 The primary verification planes are deliberately independent:
 
 - `codegen_exact` and `owned_extent_exact` cover declared function or extent
@@ -90,6 +96,48 @@ When it originates from replay, it is carried by a content-addressed
 [`OracleReceipt`](oracle-receipts.md) that additionally binds the full claim,
 subject extents, observed target and toolchain surfaces, exact live source
 snapshot, invocation stages, and retained output.
+
+## Engineering phases and semantic batches
+
+Engineering phases coordinate work; they are not truth verdicts and never
+promote claims implicitly:
+
+- **authored reconstruction** recovers maintainable source candidates for
+  target behavior;
+- **production closure** recovers the complete compile/link graph, ABI, data,
+  and owners needed to build a declared product;
+- **semantic reconstruction** replaces target-layout-shaped source with
+  evidence-backed types, names, representations, protocols, and canonical
+  owners while preserving applicable exact and product/runtime baselines; and
+- **port implementation** adapts semantic source to another platform product
+  without turning that product's behavior into target exactness.
+
+The historical-platform order is deliberate:
+
+```text
+target-specific exact baseline
+  -> corresponding historical-platform product closure and runtime-owner feedback
+  -> semantic reconstruction under both feedback lanes
+  -> portable platform products
+```
+
+For Windows PE projects, the middle prerequisite is the reconstructed Windows
+i386 product. For PC-98 projects, it is the corresponding 16-bit product and
+runtime environment. Whole-project exactness need not be falsely declared when
+a bounded residual remains unknown, but the exact baseline must be explicit and
+the historical production graph must compile/link before semantic work begins.
+A modern Windows, Linux, or Web port cannot substitute for that product gate.
+Finishing exact functions or a clean link alone still does not imply semantic
+completion.
+
+A **semantic-debt candidate** is a heuristic work route, not a claim. A
+**semantic batch** is one coherent owner, field, representation, or protocol
+family plus its evidence record and affected-oracle closure. A **semantic
+checkpoint** is the batch's durable review commit; it is not an OracleResult.
+**Semantic completion** is a qualitative game-local exit audit and has no
+canonical aggregate claim or live Factory provider in schema version 1. The
+normative batch contract and non-implications are in
+[`semantic-reconstruction.md`](semantic-reconstruction.md).
 
 ## Evidence maturity
 

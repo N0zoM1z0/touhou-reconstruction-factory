@@ -346,7 +346,21 @@ The semantic workflow introduced a strong evidence vocabulary:
 
 It also preserved aggregate ownership, layout assertions, offsets, and byte-oriented serialized storage. These should become shared contracts.
 
-The portable branch later exposed 88 cold exact failures after owner canonicalization: most were relocation-manifest or extent mismatches, with two true code differences. That episode is evidence that the faithful baseline should be closed and frozen before a portable fork, while still allowing the portable build to act as an independent semantic/runtime oracle afterward.
+The portable branch later exposed 88 cold exact failures after owner
+canonicalization: most were relocation-manifest or extent mismatches, with two
+true code differences. More importantly, the port could compile, link, and
+enter gameplay while port-side startup populated target-initialized tables that
+the reconstructed VC7 Windows product did not yet own. Native i386 runtime work
+later exposed the empty Effect-template owner and related Last Spell,
+stage-result score, and dialogue-color data-owner gaps.
+
+That episode is evidence for the stricter TH095-shaped order: establish and
+freeze a target exact baseline, close and exercise the corresponding historical-
+platform product, perform semantic reconstruction under the independent exact
+and native product/runtime oracles, and only then begin portable products. The
+portable build remains valuable as an additional later consumer, but it cannot
+serve as the prerequisite second oracle because it may hide or supply missing
+canonical ownership.
 
 The most important regression fixture is commits `7148a76b` and `a393f400`:
 

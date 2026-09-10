@@ -10,6 +10,11 @@ feedback speed, and resumability; it does not replace your engineering judgment
 with a rigid sequence of narrow tools. Prefer broad composable repository Bash
 plus the target-attested analysis and replay tools.
 
+When the objective is semantic reconstruction of already recovered source, use
+`factory-semantic-reconstruction`. Its specialized contract preserves the
+historical-platform order: target exact baseline, corresponding native product
+closure/runtime feedback, semantic reconstruction, then portable products.
+
 ## Establish the live session
 
 1. Require a game ID, concrete objective, and measurable stop condition. A scope

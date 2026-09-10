@@ -50,6 +50,7 @@ EXPECTED_TOOLS = {
     "factory_list_repositories",
     "factory_query_accepted_facts",
     "factory_query_knowledge",
+    "factory_report_semantic_debt",
     "factory_repository_run_shell",
     "factory_submit_replay",
     "factory_workspace_apply_patch",
@@ -179,7 +180,53 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
             )
             _check(claims["total"] == inspected["counts"]["claims"], "claim drift")
             product_closure_claim = None
+            semantic_debt_report = None
             if repository_id == "th095":
+                semantic_debt = await _call(
+                    client,
+                    "factory_report_semantic_debt",
+                    {
+                        "repository_id": repository_id,
+                        "relative_path": "src",
+                        "category": "all",
+                        "limit": 5,
+                        "offset": 0,
+                    },
+                )
+                _check(
+                    semantic_debt["repository_id"] == repository_id
+                    and semantic_debt["routing_only"] is True
+                    and semantic_debt["completion_metric"] is False
+                    and semantic_debt["exactness_credit"] == "none"
+                    and semantic_debt["semantic_evidence_credit"] == "none",
+                    "TH095 semantic-debt authority boundary drifted",
+                )
+                _check(
+                    semantic_debt["source_binding"]["head_commit"]
+                    == worktree["head_commit"]
+                    and semantic_debt["source_binding"]["status_sha256"]
+                    == worktree["status_sha256"],
+                    "TH095 semantic-debt report is not bound to live repository state",
+                )
+                _check(
+                    set(semantic_debt["category_counts"])
+                    == {
+                        "raw-member-access",
+                        "absolute-address",
+                        "anonymous-identifier",
+                        "opaque-storage",
+                    },
+                    "TH095 semantic-debt category contract drifted",
+                )
+                semantic_debt_report = {
+                    "scan_profile": semantic_debt["scan_profile"],
+                    "scope": semantic_debt["scope"],
+                    "scope_complete": semantic_debt["scope_complete"],
+                    "files_scanned": semantic_debt["files_scanned"],
+                    "category_counts": semantic_debt["category_counts"],
+                    "findings": semantic_debt["findings"]["total"],
+                    "report_sha256": semantic_debt["report_sha256"],
+                }
                 product_claims = await _call(
                     client,
                     "factory_list_claims",
@@ -232,6 +279,7 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
                 "accepted_oracle_results": len(snapshot["oracle_results"]),
                 "input_fingerprint_sha256": inspected["input_fingerprint_sha256"],
                 "product_closure_claim": product_closure_claim,
+                "semantic_debt_report": semantic_debt_report,
                 "live_worktree": {
                     "head_commit": worktree["head_commit"],
                     "branch": worktree["branch"],

@@ -85,6 +85,23 @@ class FactoryService:
     def repository_status(self, repository_id: str) -> dict[str, Any]:
         return self.repository_work.status(repository_id)
 
+    def repository_semantic_debt_report(
+        self,
+        repository_id: str,
+        *,
+        relative_path: str,
+        category: str,
+        limit: int,
+        offset: int,
+    ) -> dict[str, Any]:
+        return self.repository_work.semantic_debt_report(
+            repository_id,
+            relative_path=relative_path,
+            category=category,
+            limit=limit,
+            offset=offset,
+        )
+
     def repository_run_shell(
         self,
         repository_id: str,

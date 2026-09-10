@@ -149,6 +149,23 @@
       ]
     },
     {
+      "id": "semantic-reconstruction-needs-native-product-baseline",
+      "title": "Semantic reconstruction follows native product closure",
+      "status": "provisional",
+      "statement": "A semantic reconstruction phase should follow a target-specific exact baseline and closure of the corresponding historical-platform product so semantic changes receive independent exact and native product/runtime feedback before portable products are introduced.",
+      "scopes": ["windows-pe-coff", "pc98-mz-omf"],
+      "evidence_fixture_ids": ["th095-whole-build-open", "th095-whole-build-closed"],
+      "consequences": [
+        "For Windows PE games, establish the reconstructed Windows i386 compile/link/data-owner baseline before semantic reconstruction and begin portable Windows, Linux, or Web products only after the semantic phase.",
+        "For PC-98 games, use the corresponding 16-bit product and runtime environment as the native product feedback lane rather than substituting a later port.",
+        "Treat target exactness and historical-platform product/runtime behavior as independent semantic regression oracles; a portable build cannot replace either prerequisite."
+      ],
+      "limitations": [
+        "The TH095 fixtures directly establish that function exactness and native product closure are independent; the reduced false-positive value of the two-oracle semantic workflow is a bounded lesson from TH08 and TH095 history, not a quantified acceptance theorem.",
+        "The PC-98 application is a workflow requirement awaiting a completed game-local semantic phase and does not claim that every 16-bit runtime provider is already implemented."
+      ]
+    },
+    {
       "id": "cross-platform-runtime-equivalence",
       "title": "Cross-platform runtime equivalence",
       "status": "unknown",

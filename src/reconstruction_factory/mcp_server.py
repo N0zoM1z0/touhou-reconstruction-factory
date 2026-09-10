@@ -63,6 +63,13 @@ Offset = Annotated[int, Field(ge=0)]
 RelativePath = Annotated[str, Field(min_length=1, max_length=1024)]
 GlobPattern = Annotated[str, Field(min_length=1, max_length=256)]
 SearchQuery = Annotated[str, Field(min_length=1, max_length=512)]
+SemanticDebtCategory = Literal[
+    "all",
+    "raw-member-access",
+    "absolute-address",
+    "anonymous-identifier",
+    "opaque-storage",
+]
 UnifiedPatch = Annotated[str, Field(min_length=1, max_length=4194304)]
 ShellScript = Annotated[str, Field(min_length=1, max_length=65536)]
 CommandTimeout = Annotated[int, Field(ge=1, le=3600)]
@@ -123,6 +130,10 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
             "Bash, repository-local tools, and local Git checkpoints. Commands may edit "
             "or commit and their partial changes persist even on failure or timeout; inspect "
             "status before and after. Network is unavailable, so Git push is not provided. "
+            "For semantic reconstruction, use factory_report_semantic_debt only as a "
+            "live-bound lexical router, preserve the target exact and corresponding "
+            "historical-platform product/runtime baselines, and keep portable products "
+            "after semantic readiness. "
             "A Git commit is a review checkpoint, never proof of exactness. Submit replays "
             "with a stable, unique "
             "idempotency key, then poll factory_get_job. A completed job is not proof "
@@ -188,6 +199,34 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
         repository_id: RepositoryId,
     ) -> dict[str, Any]:
         return await invoke(lambda: service().repository_status(repository_id))
+
+    @server.tool(
+        description=(
+            "Report paginated C/C++ semantic-debt candidates from the live worktree of "
+            "one registered repository. The report is bound to HEAD and dirty-state "
+            "digests and is only a heuristic router for raw member offsets, absolute "
+            "addresses, anonymous identifiers, and opaque storage. Counts, including "
+            "zero, are not semantic progress, evidence, exactness, or completion claims."
+        ),
+        annotations=_READ_ONLY,
+        structured_output=True,
+    )
+    async def factory_report_semantic_debt(
+        repository_id: RepositoryId,
+        relative_path: RelativePath = "src",
+        category: SemanticDebtCategory = "all",
+        limit: PageLimit = 20,
+        offset: Offset = 0,
+    ) -> dict[str, Any]:
+        return await invoke(
+            lambda: service().repository_semantic_debt_report(
+                repository_id,
+                relative_path=relative_path,
+                category=category,
+                limit=limit,
+                offset=offset,
+            )
+        )
 
     @server.tool(
         description=(

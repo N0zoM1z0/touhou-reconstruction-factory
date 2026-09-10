@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ElementTree
 
 ROOT = Path(__file__).parents[1]
 CONTRACT_ID = "gpt-web-reconstruction-session-v4"
+SEMANTIC_CONTRACT_ID = "gpt-web-semantic-reconstruction-session-v1"
 PLUGIN_ROOT = ROOT / "plugins" / "touhou-reconstruction-factory"
 FACTORY_APP_ID = "asdk_app_6aa21bec66888191bd24c118e47ddee6"
 
@@ -102,6 +103,88 @@ class WebWorkflowAssetTests(unittest.TestCase):
         )
         self.assertFalse(contract["checkpoint_rules"]["commit_is_exactness_evidence"])
 
+    def test_semantic_contract_preserves_stage_order_and_two_oracles(self) -> None:
+        contract = json.loads(
+            (ROOT / "contracts" / f"{SEMANTIC_CONTRACT_ID}.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(contract["schema_version"], 1)
+        self.assertEqual(contract["id"], SEMANTIC_CONTRACT_ID)
+        self.assertEqual(contract["extends"], CONTRACT_ID)
+        self.assertEqual(
+            contract["historical_platform_stage_order"],
+            [
+                "target-specific-exact-reconstruction-baseline",
+                "corresponding-historical-platform-product-closure-and-runtime-owner-feedback",
+                "semantic-reconstruction-under-both-feedback-lanes",
+                "portable-platform-products",
+            ],
+        )
+        entry = contract["phase_entry"]
+        self.assertFalse(entry["whole_project_exact_completion_required"])
+        self.assertTrue(entry["target_specific_exact_baseline_required"])
+        self.assertTrue(entry["historical_platform_product_closure_required"])
+        self.assertTrue(entry["historical_platform_runtime_owner_feedback_required"])
+        self.assertEqual(
+            set(contract["semantic_regression_oracles"]),
+            {
+                "target_exact_oracle",
+                "historical_platform_product_oracle",
+                "joint_role",
+                "portable_product_role",
+            },
+        )
+        self.assertEqual(
+            contract["authority_boundary"]["factory_semantic_completion_provider"],
+            "unavailable",
+        )
+        self.assertIn(
+            "zero-router-candidates-does-not-imply-semantic-completion",
+            contract["non_implications"],
+        )
+        self.assertFalse(
+            contract["checkpoint_rules"]["commit_is_semantic_or_exactness_proof"]
+        )
+
+    def test_semantic_prompt_skill_and_manifest_publish_the_same_workflow(self) -> None:
+        prompt = (ROOT / "prompts" / "gpt-web-semantic-reconstruction.md").read_text(
+            encoding="utf-8"
+        )
+        skill = (
+            PLUGIN_ROOT
+            / "skills"
+            / "factory-semantic-reconstruction"
+            / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        reference = (
+            PLUGIN_ROOT
+            / "skills"
+            / "factory-semantic-reconstruction"
+            / "references"
+            / "th095-start.md"
+        ).read_text(encoding="utf-8")
+        manifest = json.loads(
+            (PLUGIN_ROOT / ".codex-plugin" / "plugin.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        for document in (prompt, skill):
+            self.assertIn(SEMANTIC_CONTRACT_ID, document)
+            self.assertIn("factory_report_semantic_debt", document)
+            self.assertIn("factory_repository_run_shell", document)
+            self.assertIn("gpt-web:", document)
+            self.assertIn("unknown", document)
+        for field in ("GAME_ID", "SEMANTIC_OBJECTIVE", "STOP_CONDITION"):
+            self.assertIn(field, prompt)
+        for document in (prompt, skill, reference):
+            self.assertIn("Windows i386", document)
+            self.assertIn("exact", document.lower())
+            self.assertIn("semantic", document.lower())
+        self.assertIn("name: factory-semantic-reconstruction", skill)
+        defaults = "\n".join(manifest["interface"]["defaultPrompt"])
+        self.assertIn("TH095 semantic", defaults)
+
     def test_prompt_skill_and_manifest_publish_the_same_workflow(self) -> None:
         prompt = (ROOT / "prompts" / "gpt-web-reconstruction.md").read_text(
             encoding="utf-8"
@@ -166,6 +249,7 @@ class WebWorkflowAssetTests(unittest.TestCase):
             "factory-analysis": "Factory Analysis",
             "factory-reconstruction": "Factory Reconstruction",
             "factory-replay": "Factory Replay",
+            "factory-semantic-reconstruction": "Factory Semantic Reconstruction",
             "factory-workspace": "Factory Workspace",
         }
         for skill_name, display_name in expected.items():
@@ -183,12 +267,12 @@ class WebWorkflowAssetTests(unittest.TestCase):
             self.assertGreaterEqual(len(short_description), 25)
             self.assertLessEqual(len(short_description), 64)
 
-    def test_workflow_evaluation_has_twelve_independent_scenarios(self) -> None:
+    def test_workflow_evaluation_has_eighteen_independent_scenarios(self) -> None:
         root = ElementTree.parse(
             ROOT / "evaluations" / "gpt-web-reconstruction.xml"
         ).getroot()
         pairs = root.findall("qa_pair")
-        self.assertEqual(len(pairs), 12)
+        self.assertEqual(len(pairs), 18)
         questions = [pair.findtext("question") for pair in pairs]
         answers = [pair.findtext("answer") for pair in pairs]
         self.assertEqual(len(questions), len(set(questions)))

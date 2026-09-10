@@ -33,10 +33,11 @@ mode is read-only:
 PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py
 ```
 
-The default checks the exact 32-tool inventory, annotations and bounded schemas,
+The default checks the exact 33-tool inventory, annotations and bounded schemas,
 strict policy, all four registered adapters, imported-versus-accepted evidence
-separation, real Git HEAD/dirty state, live accepted snapshots, registry
-partition, explicit unknown knowledge, and per-game historical fixtures.
+separation, real Git HEAD/dirty state, the TH095 semantic router's authority and
+source binding, live accepted snapshots, registry partition, explicit unknown
+knowledge, and per-game historical fixtures.
 
 Mutation and bridge checks are explicit:
 
@@ -72,6 +73,33 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --all \
   --replay-idempotency-key <existing-identical-key>
 ```
+
+## Recorded semantic-workflow run: 2026-09-10
+
+The MCP-enabled release gate passed all 139 tests with no skips. Ruff, bytecode
+compilation, Git whitespace, three CLI construction checks, 37 JSON documents,
+two TOML documents, two evaluation XML documents, and an isolated 0.4.0 wheel
+build passed. All five bundled skills passed the skill validator. The plugin
+cachebuster is `0.4.0+codex.20260910093008`. The older local plugin validator
+still reports only its known stale-schema error for the official `.app.json`
+`required` field; the Factory tests validate the current required-app shape.
+
+The no-auth MCP and worker restarted in place behind the unchanged Funnel URL.
+Public read-only validation passed with exactly 33 tools. The new
+`factory_report_semantic_debt` tool scanned the real TH095 live `src` scope at
+`339bb5a...` and its four-file untracked status: 197 UTF-8 C/C++ source files,
+227 raw-member candidates, 829 anonymous-identifier candidates, zero direct
+absolute-address candidates, zero `unknown_fields` candidates, and 1,056 total.
+The scope was complete under `c-cpp-layout-heuristics-v1`; the report was bound
+to the live HEAD/status digest and returned `routing_only=true`,
+`completion_metric=false`, and zero exactness/semantic-evidence credit.
+
+Public analysis validation independently re-attested TH095 Ghidra and returned
+one bounded function query under target `target:th095-main`. TH04 Ghidra and
+TH105 IDA also passed; TH08 IDA accurately remained unavailable for its current
+active database. The registry partition remained 17 rejected stale candidates,
+zero accepted, and zero invalid. No game repository was modified by these
+checks.
 
 ## Recorded product-closure run: 2026-09-10
 

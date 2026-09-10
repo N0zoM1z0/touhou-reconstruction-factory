@@ -2,12 +2,12 @@
 
 ## Scope
 
-This is a deliberately small, single-operator integration. It packages an
-autonomous live-repository reconstruction skill, an optional isolated-workspace
-skill, and separate analysis/replay skills with the Factory MCP through one
-fixed Tailscale Funnel URL. It does not automate repository creation, require
-GitHub access for reconstruction, provide Git push, or introduce another
-verification path.
+This is a deliberately small, single-operator integration. It packages
+autonomous live-repository reconstruction and semantic reconstruction skills,
+an optional isolated-workspace skill, and separate analysis/replay skills with
+the Factory MCP through one fixed Tailscale Funnel URL. It does not automate
+repository creation, require GitHub access for reconstruction, provide Git
+push, or introduce another verification path.
 
 The committed endpoint is:
 
@@ -40,6 +40,9 @@ knowledge or bypass replay-receipt acceptance.
 - [`factory-reconstruction/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-reconstruction/SKILL.md)
   coordinates autonomous live source work, Bash/analysis/toolchain composition,
   local `gpt-web:` checkpoints, and evidence boundaries.
+- [`factory-semantic-reconstruction/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-semantic-reconstruction/SKILL.md)
+  runs one bounded evidence-backed owner/field/protocol batch under independent
+  exact and historical-platform product/runtime feedback.
 - [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md) provides a
   short installed-plugin invocation and a complete standalone prompt under the
   machine-readable `gpt-web-reconstruction-session-v4` contract. Version 4 adds
@@ -47,6 +50,9 @@ knowledge or bypass replay-receipt acceptance.
   reporting plus their coupled feedback loop. Version 3 preserves the earlier
   live-repository autonomy and Git-checkpoint contract; versions 1 through 3
   remain committed as historical contracts.
+- [`gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md)
+  provides a ready-to-run TH095 prompt and standalone fallback under
+  `gpt-web-semantic-reconstruction-session-v1`.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
@@ -255,6 +261,41 @@ compose Bash with IDA/Ghidra/Wine/toolchains, and create local English
 `gpt-web:` checkpoints after coherent tested units. It explicitly forbids Git
 push and keeps commits/builds separate from replay and Truth Kernel acceptance.
 
+For already reconstructed source, use the maintained semantic prompt in
+[`prompts/gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md).
+It selects the bundled `factory-semantic-reconstruction` skill and fixes the
+historical-platform order: target exact baseline, corresponding Windows i386 or
+16-bit product closure/runtime-owner feedback, semantic reconstruction under
+both lanes, then portable products. The prompt intentionally lets live TH095
+evidence choose the first bounded family instead of freezing a stale filename or
+candidate count.
+
+## TH095 semantic reconstruction start
+
+After syncing a plugin version containing `factory-semantic-reconstruction`,
+start a new GPT-web conversation, select **@Touhou Reconstruction Factory**, and
+paste the short prompt from
+[`gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md).
+The intended first sequence is:
+
+1. discover `th095` and inspect its real HEAD and dirty/untracked state;
+2. read the repository's semantic phase plan and run target, tracking, and
+   target-attested Ghidra preflight;
+3. call `factory_report_semantic_debt` for `src`, preserving its HEAD/status
+   binding and routing-only limitations;
+4. supplement the lexical candidates with Bash, ledgers, exact-unit mappings,
+   and target-local Ghidra evidence;
+5. choose one small owner/field family, preserve both exact and reconstructed
+   Windows i386 product/runtime feedback, document the evidence classes, and
+   create a local English `gpt-web:` checkpoint; and
+6. report runtime receipt status as `unknown` while no deterministic Factory
+   runtime provider exists, even when repo-native runtime feedback passes.
+
+The current TH095 worktree may contain pre-existing untracked runtime
+experiments. Web must inspect and preserve them. It may use repo-native checks
+while the tree is dirty, but it must not delete or silently commit unrelated
+files merely to make a Factory replay eligible.
+
 ## TH105 acceptance smoke test
 
 Start with this prompt, either relying on automatic selection or selecting the
@@ -369,14 +410,21 @@ verify it.
 
 ## Current live autonomy checkpoint
 
-The fixed public URL was revalidated after enabling live repository work on
-2026-09-10. Discovery returned exactly 32 tools: the previous 29 plus live Git
-status, live repository Bash, and durable repository-command output. The public
+The fixed public URL was revalidated after adding the semantic workflow on
+2026-09-10. Discovery returned exactly 33 tools: the prior 32 plus the live-
+bound `factory_report_semantic_debt` router. The public
 description reports `execution_mode="registered-live-worktree-v1"`, source mode
 `live-including-ignored`, local commit availability, no network, and no remote
 Git push. The replay-configuration digest remained
 `f3b26f68e0bf0fd12c7d29dca3c85e8070aea082839b106586ea317003361f89`;
 Web-only execution mounts did not change replay identity.
+
+The new router scanned TH095 `src` at live commit `339bb5a...` and its four-file
+untracked status. It covered 197 UTF-8 C/C++ files and returned 227 raw-member
+plus 829 anonymous-identifier candidates; direct absolute-address and
+`unknown_fields` candidates were zero under this profile. All 1,056 results are
+routing candidates only. The response was bound to current HEAD/status and
+fixed completion, exactness, and semantic-evidence credit to false/none.
 
 The same public endpoint ran non-committing native toolchain probes for all four
 registrations:

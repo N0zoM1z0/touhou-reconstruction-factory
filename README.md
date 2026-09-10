@@ -19,7 +19,7 @@ is in [`docs/ontology.md`](docs/ontology.md).
 
 ```mermaid
 flowchart LR
-    H["Human<br/>scope · stop condition · release"]:::human --> I["Installed Factory Plugin<br/>four bundled skills<br/>registered ChatGPT app binding"]:::control
+    H["Human<br/>scope · stop condition · release"]:::human --> I["Installed Factory Plugin<br/>five bundled skills<br/>registered ChatGPT app binding"]:::control
     K[("Factory repository memory<br/>ontology · providers · adapters<br/>fixtures · knowledge · prompt · skills")]:::memory --> I
     I --> W["GPT-web agent<br/>autonomous reconstruction<br/>bounded objective · resumable Git history"]:::agent
     W --> D["One shared Factory MCP<br/>registered repo selection<br/>atomic evidence tools + composable Bash"]:::control
@@ -77,6 +77,27 @@ The same control-plane architecture serves both eras. PC-98 and Windows PE use
 different platform/toolchain providers, adapters, target identities, and replay
 drivers; they converge only on the shared ontology, receipt envelope,
 acceptance policy, durable workflow, and GPT-web interface.
+
+The historical-platform development order is intentionally stricter than the
+generic verification graph:
+
+```mermaid
+flowchart LR
+    X["Target-specific exact baseline<br/>explicit residuals may remain unknown"] --> N["Historical-platform product closure<br/>Windows i386 or corresponding 16-bit product<br/>compile · link · initialized owners · runtime"]
+    X --> O1["Exact regression Oracle"]
+    N --> O2["Native product/runtime Oracle"]
+    O1 --> S["Semantic reconstruction<br/>one evidenced owner/field/protocol batch"]
+    O2 --> S
+    S --> P["Portable products<br/>modern Windows · Linux · Web"]
+```
+
+The two independent semantic feedback lanes are the key false-positive defense:
+exact comparison catches target-code regressions, while the reconstructed
+historical-platform product catches compile/link, initialized-data ownership,
+lifetime, and exercised behavior errors. A modern port cannot replace the
+native product prerequisite. This TH095-shaped sequence and the TH08 bitter
+lesson are specified in the
+[`semantic reconstruction workflow`](docs/semantic-reconstruction.md).
 
 ## Development
 
@@ -154,10 +175,12 @@ operations, independent target binding, bounded/redacted output, and zero
 exactness credit. See the [`attested analysis provider`](docs/analysis-provider.md).
 
 The repository also publishes a minimal plugin that combines the remote MCP
-connection with an end-to-end reconstruction workflow plus separate analysis,
-optional-workspace, and evidence-preserving replay skills. A reusable short prompt
-and a complete standalone prompt live in
+connection with end-to-end reconstruction and semantic workflows plus separate
+analysis, optional-workspace, and evidence-preserving replay skills. Reusable
+short prompts and complete standalone prompts live in
 [`prompts/gpt-web-reconstruction.md`](prompts/gpt-web-reconstruction.md).
+The ready-to-run TH095 semantic session is in
+[`prompts/gpt-web-semantic-reconstruction.md`](prompts/gpt-web-semantic-reconstruction.md).
 The single-user deployment
 and first TH105 web test are documented in
 [`GPT-web plugin and Funnel deployment`](docs/gpt-web-plugin.md).
