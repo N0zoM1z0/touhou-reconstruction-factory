@@ -15,7 +15,13 @@ Select exactly:
 - repository: th09
 - analysis provider: th09-ida
 - target: target:th09-main
+- private game file: /home/pentester/coding/codex_ida/th09-reconstruction/th09/resources/th09.exe
 - phase: exact reconstruction, with early faithful Windows i386 build feedback
+
+The private game file above is an operator-supplied, ignored WSL-local input.
+Never commit, replace, modify, or relocate it. Do not search `/mnt`, request a
+Windows game-directory mount, or set `TH09_TARGET_PATH` during normal Factory
+work; the repository tools already default to this path.
 
 Read these instructions before editing, using factory_repository_run_shell:
 - /home/pentester/coding/codex_ida/th09-reconstruction/th09/AGENTS.md
@@ -65,15 +71,24 @@ Mandatory recovery gate:
    checkpoint recoverable work first. Preserve and exclude unrelated or unknown
    work. Never reset, overwrite, delete, or stage it merely to obtain a clean
    tree.
-4. Run the repository target, IDA, ledger, status, and public-CI preflights named
-   in AGENTS.md. Stop on a target mismatch. A failed or timed-out command may
+4. Through `factory_repository_run_shell`, run the target, ledger, status, and
+   public-CI preflights named in AGENTS.md. Do not run the host-only
+   `scripts/check-ida-mcp.py` in that shell. Perform the mandatory IDA preflight
+   through `factory_list_analysis_operations(th09-ida)` followed by
+   `factory_analysis_call(th09-ida, get_metadata, {})`; require a passed
+   attestation for `target:th09-main` and
+   `attestation.provider_transport=factory-native-stdio`.
+   Stop on a target or provider mismatch. A failed or timed-out command may
    leave files; always inspect status afterward and page durable output instead
    of guessing.
 
 Native IDA use:
 1. Discover `th09-ida` operations instead of inventing tool names or schemas.
    Require `attestation.status=passed`, target `target:th09-main`, and
-   `provider_transport=factory-native-stdio` on every useful result.
+   `attestation.provider_transport=factory-native-stdio` on every useful result.
+   Read each returned input schema before calling it: `{}` is valid only for
+   operations whose schema has no required fields. Never probe address-, range-,
+   or name-dependent operations with empty arguments.
 2. Decompilation, disassembly, xrefs, bytes, names, types, and boundaries are
    provisional hypotheses with `exactness_credit=none`.
 3. When discovery advertises `database_metadata_writable=true`, use the atomic

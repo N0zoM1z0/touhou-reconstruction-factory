@@ -5,6 +5,7 @@ import unittest
 try:
     from reconstruction_factory.analysis_mcp import (
         _arguments,
+        _mcp_tool_input_schema,
         _validate_ghidra_arguments,
         _validate_ida_arguments,
         _validate_ida_metadata,
@@ -83,6 +84,19 @@ class AnalysisGatewayTests(unittest.TestCase):
                 },
                 self.target,
             )
+
+    def test_native_mcp_tool_schema_uses_sdk_python_field_name(self) -> None:
+        class Tool:
+            input_schema = {
+                "type": "object",
+                "properties": {"address": {"type": "string"}},
+                "required": ["address"],
+            }
+
+        self.assertEqual(
+            _mcp_tool_input_schema(Tool()),
+            Tool.input_schema,
+        )
 
 
 if __name__ == "__main__":

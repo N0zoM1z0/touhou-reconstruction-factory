@@ -350,7 +350,7 @@ class AnalysisGateway:
                 {
                     "name": name,
                     "description": description,
-                    "input_schema": getattr(tool, "inputSchema", None),
+                    "input_schema": _mcp_tool_input_schema(tool),
                     "mutates_analysis_database": name
                     in _IDA_METADATA_WRITE_ALLOWED,
                 }
@@ -800,6 +800,14 @@ def _validate_ida_arguments(operation: str, arguments: dict[str, Any]) -> None:
             raise AnalysisError(
                 "read_memory_bytes requires only memory_address and size"
             )
+
+
+def _mcp_tool_input_schema(tool: Any) -> Any:
+    """Read an MCP tool schema across SDK field-name conventions."""
+    schema = getattr(tool, "input_schema", None)
+    if schema is not None:
+        return schema
+    return getattr(tool, "inputSchema", None)
 
 
 def _contains_field(value: Any, names: set[str]) -> bool:

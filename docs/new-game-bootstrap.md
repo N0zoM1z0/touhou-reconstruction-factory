@@ -34,6 +34,24 @@ many games, but each provider binds one repository, one immutable target
 identity, and one game-specific database/project. Wine is similarly shared as a
 runtime while prefixes and target/toolchain selection remain game-bound.
 
+## Private target staging invariant
+
+Copy each legally supplied original game executable from the host installation
+into the WSL game repository before Web work begins. Its canonical location is
+`resources/<game>.exe` (for example, TH09 uses `resources/th09.exe`). Add the
+exact path to the game repository's `.gitignore`, keep the file untracked and
+operator-owned, and verify its hash and native-image metadata against the
+tracked target manifest. The game `AGENTS.md`, standalone Web prompt, repository
+scripts, and private analysis-provider binding must all name that same WSL-local
+copy.
+
+Do not solve target availability by mounting a Windows game directory into the
+repository shell. Repository agents should neither search `/mnt` nor depend on
+an operator-specific drive layout. `THxx_TARGET_PATH`-style variables are only
+explicit local overrides, not the normal Factory contract. Shared Windows tools
+such as IDA or MSVC may still be launched from their provider installation; that
+does not make the host game directory a repository input.
+
 ## Accuracy-first bootstrap
 
 These steps are ordered to create a useful feedback loop without manufacturing
@@ -43,9 +61,12 @@ progress.
    tracked, untracked, and ignored state plus recent commits before changing it.
    An interrupted Web session is a continuation candidate, not permission to
    start around dirty work.
-2. **Attest the target.** Record size and cryptographic hashes, parse the native
-   executable format, and pin primary provenance. Use `unknown` for facts not
-   demonstrated by the file or a pinned source.
+2. **Stage and attest the target.** Copy it to the ignored
+   `resources/<game>.exe` path, confirm Git ignores the exact file, record size
+   and cryptographic hashes, parse the native executable format, and pin primary
+   provenance. Bind repository tools and the private analyzer provider to this
+   WSL-local copy. Use `unknown` for facts not demonstrated by the file or a
+   pinned source.
 3. **Identify only evidenced toolchain facts.** PE linker and Rich-header facts
    may identify a compiler generation. They do not reveal flags, translation
    units, library selection, resources, or link order; initialize those as
