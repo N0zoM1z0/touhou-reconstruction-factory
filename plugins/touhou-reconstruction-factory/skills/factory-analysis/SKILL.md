@@ -1,6 +1,6 @@
 ---
 name: factory-analysis
-description: Query target-attested IDA or Ghidra semantic analysis through the Touhou Reconstruction Factory. Use when the user asks GPT-web to decompile, disassemble, inspect functions, callers, callees, xrefs, strings, globals, structures, or target metadata for a registered reconstruction. Do not treat analysis output as exactness evidence or request database writes.
+description: Use target-attested IDA or Ghidra semantic analysis through the Touhou Reconstruction Factory. Query functions, xrefs, strings, globals, and structures; on a native IDA provider, also make useful database metadata edits. Never treat analysis state as exactness evidence.
 ---
 
 # Factory Analysis
@@ -33,9 +33,22 @@ credit until a separate canonical replay receipt is accepted.
    state is committed and a matching claim is discoverable.
    If no supported receipt covers the requested extent, report `unknown`.
 
-Do not seek native database mutation or bridge Bash through the analysis tool;
-they are outside its target-attested read surface. This does not restrict
-Python, file access, or Bash inside the separately registered game repository.
+For a provider advertising `database_metadata_writable=true`, discovered tools
+may rename functions or variables, set comments and types, and manage stack
+metadata. Use those atomic operations when they make the shared analysis state
+more useful. They never edit source or earn exactness credit. Target-byte
+patching is deliberately absent because it would invalidate target attestation.
+Legacy bridge Bash is also outside this surface; use broad Bash inside the
+separately registered game repository.
+
+## TH09 native example
+
+Select `th09-ida`. The shared Factory MCP starts the configured `ida-pro-mcp`
+stdio client itself; there is no TH09-local MCP server or URL. Discovery hashes
+the private `th09.exe`, checks the adapter identity and active IDA metadata,
+validates PE image base and entry point, and compares six distributed mapped
+`.text` samples before returning operations. If IDA has another database open,
+attestation must fail rather than silently analyze that game.
 
 ## TH105 example
 

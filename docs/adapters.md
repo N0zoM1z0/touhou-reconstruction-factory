@@ -54,7 +54,7 @@ Inputs:
 - optional `config/function-byte-ownership.toml`
 - optional TH095 `scripts/build-whole.py`
 
-The adapter currently covers the TH095 VC7.1 and TH105 VC8 LTCG ledger forms.
+The adapter covers the TH09 and TH095 VC7.1 plus TH105 VC8 LTCG ledger forms.
 It separates provisional boundary extents, origin, source presence, exact
 codegen, and physical ownership into independent claims. The TH105 ownership
 manifest is target-bound and validated for main size, exclusions, ordered
@@ -71,6 +71,14 @@ acceptance registry perform that independent operation.
 The Windows target identity is marked `manifest-declared`, not `hash-attested`,
 because the read adapter deliberately does not access or hash the private
 executable.
+
+TH09 validates the clean zero-state contract. Its bootstrap contains 2,159
+provisional nonzero IDA candidates, all with unknown origin and review state,
+while mappings, implemented rows, match rows, and exact units are empty. The
+adapter consequently imports boundary and unknown-origin claims but produces no
+oracle result and no exactness credit. Private executable rehashing belongs to
+the separately configured Factory-native analysis provider and controlled
+replay drivers, not this public repository reader.
 
 `vc8_runtime` is normalized to the generic `library` origin while the native
 value is retained in claim data. Unrecognized origin values produce error

@@ -94,6 +94,11 @@ Investigate and reconstruct:
    calling it. Require target attestation. Names, types, decompilation, xrefs,
    disassembly, and boundaries remain provisional source-hypothesis evidence
    with exactness_credit=none.
+   If a native provider advertises database_metadata_writable=true, use its
+   discovered atomic comment/name/prototype/type/stack operations when they
+   improve shared analysis state, then read back important edits. Such edits
+   remain provisional and never change source or exactness. Target-byte patching
+   is outside the Factory provider.
 2. Correlate analysis with current source, project history, and the strongest
    available repository-native evidence. Existing comments, ledgers, and prior
    agent work are candidates, not automatic truth.

@@ -45,15 +45,17 @@ git_author_email = "gpt-web@example.invalid"
 # ]
 shared_tool_roots = []
 
-# Optional semantic-analysis bridges must be loopback-only. The factory calls
-# only the backend's attested read tool and never forwards its host Bash tool.
+# The preferred IDA provider is Factory-native: the Factory owns the stdio
+# client process and attests the registered private target before every call.
+# These host paths remain private and are redacted from all public responses.
 [[analysis_providers]]
-id = "th105-ida"
-repository_id = "th105"
-target_identity_id = "target:th105-main"
-backend = "attested-ida-proxy-v1"
-endpoint = "http://127.0.0.1:8768/private-mcp-path"
-upstream_tool = "ida_call"
+id = "th09-ida"
+repository_id = "th09"
+target_identity_id = "target:th09-main"
+backend = "attested-ida-stdio-v1"
+command = "/opt/ida-python/python.exe"
+arguments = ["D:\\IDA\\python\\Lib\\site-packages\\ida_pro_mcp\\server.py"]
+target_path = "/srv/private-targets/th09.exe"
 timeout_seconds = 120
 
 [[repositories]]
@@ -85,6 +87,12 @@ adapter_id = "windows-pe-ledgers-v1"
 target_identity_ids = ["target:th095-main"]
 # work_environment = { WINEPREFIX = "/srv/reconstruction-state/th095/wine" }
 # work_state_roots = ["/srv/reconstruction-state/th095/wine"]
+
+[[repositories]]
+id = "th09"
+path = "/srv/reconstructions/th09"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:th09-main"]
 
 [[repositories]]
 id = "th105"

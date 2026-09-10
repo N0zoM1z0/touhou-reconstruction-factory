@@ -17,20 +17,27 @@ from .oracle_receipts import canonical_sha256
 SERVICE_CONFIG_SCHEMA_VERSION = 1
 _ID = re.compile(r"^[a-z0-9][a-z0-9._:-]*$")
 _ENVIRONMENT_NAME = re.compile(r"^[A-Z_][A-Z0-9_]*$")
-_ANALYSIS_BACKENDS = {"attested-ida-proxy-v1", "attested-ghidra-proxy-v1"}
+_ANALYSIS_BACKENDS = {
+    "attested-ida-stdio-v1",
+    "attested-ida-proxy-v1",
+    "attested-ghidra-proxy-v1",
+}
 
 
 @dataclass(frozen=True, slots=True)
 class AnalysisProviderRegistration:
-    """One operator-selected, loopback-only semantic analysis bridge."""
+    """One operator-selected, target-bound semantic analysis provider."""
 
     id: str
     repository_id: str
     target_identity_id: str
     backend: str
-    endpoint: str
-    upstream_tool: str
     timeout_seconds: int
+    endpoint: str | None = None
+    upstream_tool: str | None = None
+    command: Path | None = None
+    arguments: tuple[str, ...] = ()
+    target_path: Path | None = None
 
     def __post_init__(self) -> None:
         for label, value in (
@@ -41,14 +48,6 @@ class AnalysisProviderRegistration:
             _require_id(value, label)
         if self.backend not in _ANALYSIS_BACKENDS:
             raise ServiceConfigError("unsupported analysis provider backend")
-        expected_tool = {
-            "attested-ida-proxy-v1": "ida_call",
-            "attested-ghidra-proxy-v1": "ghidra_call",
-        }[self.backend]
-        if self.upstream_tool != expected_tool:
-            raise ServiceConfigError(
-                f"analysis backend {self.backend} requires upstream tool {expected_tool}"
-            )
         if (
             not isinstance(self.timeout_seconds, int)
             or isinstance(self.timeout_seconds, bool)
@@ -57,6 +56,23 @@ class AnalysisProviderRegistration:
             raise ServiceConfigError(
                 "analysis provider timeout_seconds must be from 1 through 3600"
             )
+        if self.backend == "attested-ida-stdio-v1":
+            self._validate_native_ida()
+            return
+        if self.command is not None or self.arguments or self.target_path is not None:
+            raise ServiceConfigError(
+                "loopback analysis backends do not accept stdio provider fields"
+            )
+        expected_tool = {
+            "attested-ida-proxy-v1": "ida_call",
+            "attested-ghidra-proxy-v1": "ghidra_call",
+        }[self.backend]
+        if self.upstream_tool != expected_tool:
+            raise ServiceConfigError(
+                f"analysis backend {self.backend} requires upstream tool {expected_tool}"
+            )
+        if self.endpoint is None:
+            raise ServiceConfigError("loopback analysis backend requires endpoint")
         parsed = urlsplit(self.endpoint)
         try:
             port = parsed.port
@@ -87,23 +103,59 @@ class AnalysisProviderRegistration:
                 "analysis endpoint must be an exact loopback HTTP URL with a non-root path"
             )
 
+    def _validate_native_ida(self) -> None:
+        if self.endpoint is not None or self.upstream_tool is not None:
+            raise ServiceConfigError(
+                "native IDA stdio backend does not accept a bridge endpoint or tool"
+            )
+        if self.command is None or not self.command.is_absolute() or not self.command.is_file():
+            raise ServiceConfigError(
+                "native IDA command must be an existing absolute file"
+            )
+        if not 1 <= len(self.arguments) <= 16 or any(
+            not isinstance(value, str) or not value or "\0" in value
+            for value in self.arguments
+        ):
+            raise ServiceConfigError(
+                "native IDA arguments must contain 1 through 16 non-empty strings"
+            )
+        if (
+            self.target_path is None
+            or not self.target_path.is_absolute()
+            or not self.target_path.is_file()
+        ):
+            raise ServiceConfigError(
+                "native IDA target_path must be an existing absolute file"
+            )
+
     def public_dict(self) -> dict[str, Any]:
+        native_ida = self.backend == "attested-ida-stdio-v1"
         return {
             "id": self.id,
             "repository_id": self.repository_id,
             "target_identity_id": self.target_identity_id,
             "backend": self.backend,
-            "read_only": True,
+            "read_only": not native_ida,
+            "database_metadata_writable": native_ida,
+            "target_bytes_writable": False,
             "authority": "provisional-semantic-analysis",
         }
 
     def identity_dict(self) -> dict[str, Any]:
-        return {
-            **self.public_dict(),
-            "endpoint": self.endpoint,
-            "upstream_tool": self.upstream_tool,
-            "timeout_seconds": self.timeout_seconds,
-        }
+        identity = {**self.public_dict(), "timeout_seconds": self.timeout_seconds}
+        if self.backend == "attested-ida-stdio-v1":
+            identity.update(
+                {
+                    "command": str(self.command),
+                    "arguments": list(self.arguments),
+                    "target_path": str(self.target_path),
+                }
+            )
+        else:
+            identity.update(
+                {"endpoint": self.endpoint, "upstream_tool": self.upstream_tool}
+            )
+        return identity
 
 
 @dataclass(frozen=True, slots=True)
@@ -787,44 +839,72 @@ def load_service_config(path: str | Path) -> ServiceConfig:
     if not isinstance(raw_analysis, list):
         raise ServiceConfigError("analysis_providers must be an array of tables")
     for index, raw in enumerate(raw_analysis):
-        item = _strict_object(
-            raw,
-            {
-                "id",
-                "repository_id",
-                "target_identity_id",
-                "backend",
-                "endpoint",
-                "upstream_tool",
-                "timeout_seconds",
-            },
-            f"analysis_providers[{index}]",
-        )
+        label = f"analysis_providers[{index}]"
+        if not isinstance(raw, dict):
+            raise ServiceConfigError(f"{label} must be an object")
+        backend = _string(raw.get("backend"), f"{label}.backend")
+        common_fields = {
+            "id",
+            "repository_id",
+            "target_identity_id",
+            "backend",
+            "timeout_seconds",
+        }
+        if backend == "attested-ida-stdio-v1":
+            item = _strict_object(
+                raw,
+                common_fields | {"command", "arguments", "target_path"},
+                label,
+            )
+            raw_arguments = item["arguments"]
+            if not isinstance(raw_arguments, list):
+                raise ServiceConfigError(f"{label}.arguments must be an array")
+            endpoint = None
+            upstream_tool = None
+            command = _resolve_path(
+                base, item["command"], f"{label}.command", must_exist=True
+            )
+            arguments = tuple(
+                _string(value, f"{label}.arguments[{argument_index}]")
+                for argument_index, value in enumerate(raw_arguments)
+            )
+            target_path = _resolve_path(
+                base, item["target_path"], f"{label}.target_path", must_exist=True
+            )
+        else:
+            item = _strict_object(
+                raw,
+                common_fields | {"endpoint", "upstream_tool"},
+                label,
+            )
+            endpoint = _string(item["endpoint"], f"{label}.endpoint")
+            upstream_tool = _string(
+                item["upstream_tool"], f"{label}.upstream_tool"
+            )
+            command = None
+            arguments = ()
+            target_path = None
         analysis_registrations.append(
             AnalysisProviderRegistration(
-                id=_string(item["id"], f"analysis_providers[{index}].id"),
+                id=_string(item["id"], f"{label}.id"),
                 repository_id=_string(
                     item["repository_id"],
-                    f"analysis_providers[{index}].repository_id",
+                    f"{label}.repository_id",
                 ),
                 target_identity_id=_string(
                     item["target_identity_id"],
-                    f"analysis_providers[{index}].target_identity_id",
+                    f"{label}.target_identity_id",
                 ),
-                backend=_string(
-                    item["backend"], f"analysis_providers[{index}].backend"
-                ),
-                endpoint=_string(
-                    item["endpoint"], f"analysis_providers[{index}].endpoint"
-                ),
-                upstream_tool=_string(
-                    item["upstream_tool"],
-                    f"analysis_providers[{index}].upstream_tool",
-                ),
+                backend=backend,
                 timeout_seconds=_positive_integer(
                     item["timeout_seconds"],
-                    f"analysis_providers[{index}].timeout_seconds",
+                    f"{label}.timeout_seconds",
                 ),
+                endpoint=endpoint,
+                upstream_tool=upstream_tool,
+                command=command,
+                arguments=arguments,
+                target_path=target_path,
             )
         )
     try:

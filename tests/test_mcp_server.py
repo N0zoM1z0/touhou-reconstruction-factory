@@ -196,6 +196,7 @@ target_identity_ids = ["target:th08-v1.00d-original"]
         )
 
         mutating = {
+            "factory_analysis_call": (False, False, False),
             "factory_create_workspace": (False, False, True),
             "factory_workspace_apply_patch": (False, False, False),
             "factory_workspace_run_shell": (False, True, False),

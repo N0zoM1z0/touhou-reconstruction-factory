@@ -172,9 +172,14 @@ See [`agent autonomy and tool composition`](docs/agent-autonomy.md), the
 special-purpose [`disposable workspace provider`](docs/workspace-provider.md).
 
 IDA and Ghidra remain separate provisional authorities. The MCP analysis
-gateway exposes only registered loopback bridges, factory-allowlisted read
-operations, independent target binding, bounded/redacted output, and zero
-exactness credit. See the [`attested analysis provider`](docs/analysis-provider.md).
+gateway now makes TH09 the first fully Factory-native instance: the single
+shared Factory MCP owns the `ida-pro-mcp` stdio client, binds the active IDA
+database to the registered target, and exposes composable semantic reads and
+IDA metadata edits without another per-game MCP service. Legacy loopback
+bridges remain temporary compatibility providers for earlier games. Every
+analysis result is bounded, redacted, and worth zero exactness credit. See the
+[`attested analysis provider`](docs/analysis-provider.md) and the
+[`new-game bootstrap`](docs/new-game-bootstrap.md).
 
 The repository also publishes a minimal plugin that combines the remote MCP
 connection with end-to-end reconstruction and semantic workflows plus separate
@@ -183,6 +188,8 @@ short prompts and complete standalone prompts live in
 [`prompts/gpt-web-reconstruction.md`](prompts/gpt-web-reconstruction.md).
 The ready-to-run TH095 semantic campaign is in
 [`prompts/gpt-web-semantic-reconstruction.md`](prompts/gpt-web-semantic-reconstruction.md).
+The first clean Factory-native exact campaign is in
+[`prompts/gpt-web-th09-exact-reconstruction.md`](prompts/gpt-web-th09-exact-reconstruction.md).
 Both prompts are complete without automatic skill injection and require the
 [`dirty-work recovery and analysis-artifact lifecycle`](docs/worktree-recovery-and-analysis-artifacts.md)
 before new edits.

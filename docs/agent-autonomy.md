@@ -131,6 +131,15 @@ analysis broker, with a separate project, target attestation, serialization
 scope, and mutable state root for each game. Reusing an executable never reuses
 or weakens target identity.
 
+TH09 proves the corresponding IDA migration shape. The shared Factory MCP
+launches `ida-pro-mcp` directly over stdio, while the private provider
+registration supplies the target-specific repository and executable identity.
+There is no `mcp_for_gptweb` checkout or per-game HTTP service. The native
+provider offers composable IDA reads and database metadata edits, but it
+re-attests the private PE and active mapped bytes on every request and never
+offers target-byte patching. Thus autonomy over useful analysis state does not
+weaken the target boundary.
+
 ## Migration principle
 
 The legacy repository layouts are evidence-bearing migration inputs, not the

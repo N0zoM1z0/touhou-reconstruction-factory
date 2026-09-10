@@ -7,7 +7,7 @@ Its live-repository surface exposes current game state, broad Bash, repo-local
 tools, and local Git checkpoints. Its replay surface submits durable jobs,
 observes state, pages evidence, and queries accepted knowledge. Its optional
 workspace surface provides capability-addressed disposable experiments. Its
-analysis surface routes target-attested IDA/Ghidra reads. None of these surfaces
+analysis surface routes target-attested IDA/Ghidra operations. None of these surfaces
 contains another definition of reconstruction success.
 
 This improves on the exploratory
@@ -99,9 +99,12 @@ the intended experiment. Their complete isolation contract remains in
 For semantic target analysis, first list providers for the repository and then
 list the selected provider's operation schemas. Pass one discovered operation
 and a JSON object string to `factory_analysis_call`. The response binds the
-current adapter target, bridge identity, operation, arguments, attestation, and
+current adapter target, provider identity, operation, arguments, attestation, and
 observation time while fixing `exactness_credit` to `none`. Native analysis
-writes and the legacy bridges' host Bash tools are unreachable. See
+for TH09 goes directly from the shared Factory process to `ida-pro-mcp` over
+stdio. Its discovered operations include reversible IDA database metadata
+edits, while target-byte patching and legacy bridges' host Bash tools remain
+absent. See
 [`analysis-provider.md`](analysis-provider.md).
 
 ## Tools
@@ -115,8 +118,8 @@ writes and the legacy bridges' host Bash tools are unreachable. See
 | `factory_repository_run_shell` | Run broad networkless Bash in the real registered worktree; edits and local commits persist. |
 | `factory_get_repository_command_output` | Resume bounded output paging for a durable live-repository command. |
 | `factory_list_analysis_providers` | List redacted target-bound IDA/Ghidra registrations. |
-| `factory_list_analysis_operations` | Page factory-approved read schemas and attestation state. |
-| `factory_analysis_call` | Run one bounded, read-only, target-bound semantic query. |
+| `factory_list_analysis_operations` | Page factory-approved atomic schemas and attestation state. |
+| `factory_analysis_call` | Run one bounded, target-bound semantic operation; native IDA may update database metadata but never target bytes. |
 | `factory_create_workspace`, `factory_get_workspace` | Create or resume an expiring committed-source capability. |
 | `factory_workspace_list_files`, `factory_workspace_read_file`, `factory_workspace_search` | Inspect source with bounded relative-path operations. |
 | `factory_workspace_apply_patch` | Transactionally apply a checked text diff to disposable source. |

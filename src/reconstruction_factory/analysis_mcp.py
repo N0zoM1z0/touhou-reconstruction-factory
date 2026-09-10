@@ -1,18 +1,21 @@
-"""Read-only, target-bound gateway to operator-registered analysis bridges."""
+"""Target-bound gateway to operator-registered semantic analysis providers."""
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import hashlib
 import json
 import math
 from pathlib import Path
 import re
+import struct
 from typing import Any
 from urllib.parse import urlsplit
 
 import anyio
-from mcp import Client
+from mcp import Client, ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
 from .adapters import inspect_repository
 from .errors import AnalysisError
@@ -27,7 +30,7 @@ _MAX_OUTPUT_BYTES = 262144
 _MAX_ACTIVE_ANALYSES = 2
 _ACTIVE_PROVIDERS: set[str] = set()
 
-_IDA_ALLOWED = frozenset(
+_IDA_READ_ALLOWED = frozenset(
     {
         "check_connection",
         "get_metadata",
@@ -63,8 +66,26 @@ _IDA_ALLOWED = frozenset(
         "data_read_word",
         "data_read_dword",
         "data_read_qword",
+        "data_read_string",
     }
 )
+_IDA_METADATA_WRITE_ALLOWED = frozenset(
+    {
+        "set_comment",
+        "rename_local_variable",
+        "rename_global_variable",
+        "set_global_variable_type",
+        "rename_function",
+        "set_function_prototype",
+        "declare_c_type",
+        "set_local_variable_type",
+        "rename_stack_frame_variable",
+        "create_stack_frame_variable",
+        "set_stack_frame_variable_type",
+        "delete_stack_frame_variable",
+    }
+)
+_IDA_NATIVE_ALLOWED = _IDA_READ_ALLOWED | _IDA_METADATA_WRITE_ALLOWED
 _GHIDRA_OPERATIONS = {
     "check": "Attest the configured Ghidra toolchain, project, and target.",
     "decompile": "Decompile one or more bounded function addresses.",
@@ -81,7 +102,7 @@ _ADDRESS = re.compile(r"^0x[0-9a-fA-F]{1,16}$")
 
 
 class AnalysisGateway:
-    """A provisional semantic-analysis surface with no mutation operations."""
+    """A target-bound provisional semantic-analysis surface."""
 
     def __init__(self, config: ServiceConfig) -> None:
         self.config = config
@@ -130,13 +151,20 @@ class AnalysisGateway:
             }
         async with _analysis_slot(provider.id):
             target = await self._target(provider)
-            metadata = await self._upstream(
-                provider,
-                "ida_call",
-                {"tool": "get_metadata", "arguments_json": "{}"},
-            )
-            attestation = _validate_ida_metadata(metadata["structured"], target)
-            tools = await self._ida_tool_inventory(provider, filter)
+            if provider.backend == "attested-ida-stdio-v1":
+                async with self._native_ida_session(provider) as session:
+                    attestation, _ = await self._attest_native_ida(
+                        provider, target, session
+                    )
+                    tools = await self._native_ida_tool_inventory(session, filter)
+            else:
+                metadata = await self._upstream(
+                    provider,
+                    "ida_call",
+                    {"tool": "get_metadata", "arguments_json": "{}"},
+                )
+                attestation = _validate_ida_metadata(metadata["structured"], target)
+                tools = await self._legacy_ida_tool_inventory(provider, filter)
         return {
             "analysis_provider": provider.public_dict(),
             "target": to_primitive(target),
@@ -151,8 +179,23 @@ class AnalysisGateway:
         arguments = _arguments(arguments_json)
         async with _analysis_slot(provider.id):
             target = await self._target(provider)
-            if provider.backend == "attested-ida-proxy-v1":
-                if operation not in _IDA_ALLOWED:
+            if provider.backend == "attested-ida-stdio-v1":
+                if operation not in _IDA_NATIVE_ALLOWED:
+                    raise AnalysisError(
+                        "IDA operation is not in the factory native allowlist"
+                    )
+                _validate_ida_arguments(operation, arguments)
+                async with self._native_ida_session(provider) as session:
+                    attestation, metadata = await self._attest_native_ida(
+                        provider, target, session
+                    )
+                    output = (
+                        metadata
+                        if operation == "get_metadata"
+                        else await self._native_ida_call(session, operation, arguments)
+                    )
+            elif provider.backend == "attested-ida-proxy-v1":
+                if operation not in _IDA_READ_ALLOWED:
                     raise AnalysisError(
                         "IDA operation is not in the factory read-only allowlist"
                     )
@@ -224,7 +267,7 @@ class AnalysisGateway:
 
         return await anyio.to_thread.run_sync(load)
 
-    async def _ida_tool_inventory(
+    async def _legacy_ida_tool_inventory(
         self, provider: AnalysisProviderRegistration, filter: str
     ) -> tuple[dict[str, Any], ...]:
         tools = []
@@ -257,7 +300,10 @@ class AnalysisGateway:
             if not isinstance(page, list):
                 raise AnalysisError("IDA operation inventory is missing its tools page")
             for tool in page:
-                if not isinstance(tool, dict) or tool.get("name") not in _IDA_ALLOWED:
+                if (
+                    not isinstance(tool, dict)
+                    or tool.get("name") not in _IDA_READ_ALLOWED
+                ):
                     continue
                 tools.append(
                     {
@@ -282,12 +328,163 @@ class AnalysisGateway:
             raise AnalysisError("IDA operation inventory was empty")
         return tuple(tools)
 
+    async def _native_ida_tool_inventory(
+        self, session: ClientSession, filter: str
+    ) -> tuple[dict[str, Any], ...]:
+        try:
+            result = await session.list_tools()
+        except Exception as error:
+            raise AnalysisError(
+                f"native IDA tool discovery failed: {type(error).__name__}"
+            ) from error
+        tools = []
+        query = filter.lower()
+        for tool in result.tools:
+            name = getattr(tool, "name", None)
+            description = getattr(tool, "description", None)
+            if name not in _IDA_NATIVE_ALLOWED:
+                continue
+            if query not in f"{name} {description or ''}".lower():
+                continue
+            tools.append(
+                {
+                    "name": name,
+                    "description": description,
+                    "input_schema": getattr(tool, "inputSchema", None),
+                    "mutates_analysis_database": name
+                    in _IDA_METADATA_WRITE_ALLOWED,
+                }
+            )
+        return tuple(tools)
+
+    @asynccontextmanager
+    async def _native_ida_session(self, provider: AnalysisProviderRegistration):
+        if provider.command is None or provider.target_path is None:
+            raise AnalysisError("native IDA provider is missing private configuration")
+        server = StdioServerParameters(
+            command=str(provider.command),
+            args=list(provider.arguments),
+            cwd=str(self.config.repository(provider.repository_id).path),
+        )
+        try:
+            with anyio.fail_after(provider.timeout_seconds):
+                async with stdio_client(server) as (read_stream, write_stream):
+                    async with ClientSession(read_stream, write_stream) as session:
+                        await session.initialize()
+                        yield session
+        except AnalysisError:
+            raise
+        except BaseExceptionGroup as error:
+            analysis_error = _contained_exception(error, AnalysisError)
+            if analysis_error is not None:
+                raise analysis_error from error
+            if _contained_exception(error, TimeoutError) is not None:
+                raise AnalysisError("native IDA provider timed out") from error
+            raise AnalysisError(
+                "native IDA provider connection failed: ExceptionGroup"
+            ) from error
+        except TimeoutError as error:
+            raise AnalysisError("native IDA provider timed out") from error
+        except Exception as error:
+            raise AnalysisError(
+                f"native IDA provider connection failed: {type(error).__name__}"
+            ) from error
+
+    async def _native_ida_call(
+        self, session: ClientSession, tool: str, arguments: dict[str, Any]
+    ) -> dict[str, Any]:
+        try:
+            result = await session.call_tool(tool, arguments)
+        except Exception as error:
+            raise AnalysisError(
+                f"native IDA operation failed: {type(error).__name__}"
+            ) from error
+        return _bounded_output(
+            content=result.content,
+            structured=getattr(
+                result,
+                "structured_content",
+                getattr(result, "structuredContent", None),
+            ),
+            is_error=bool(
+                getattr(result, "is_error", getattr(result, "isError", False))
+            ),
+            config=self.config,
+            rejection="native IDA provider rejected the request",
+        )
+
+    async def _attest_native_ida(
+        self,
+        provider: AnalysisProviderRegistration,
+        target: TargetIdentity,
+        session: ClientSession,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        if provider.target_path is None:
+            raise AnalysisError("native IDA provider has no private target path")
+        disk = await anyio.to_thread.run_sync(
+            _inspect_private_pe_target, provider.target_path, target
+        )
+        metadata = await self._native_ida_call(session, "get_metadata", {})
+        metadata_value = metadata["structured"]
+        attestation = _validate_ida_metadata(metadata_value, target)
+        if not isinstance(metadata_value, dict):
+            raise AnalysisError("native IDA metadata is not structured")
+        try:
+            observed_base = _number(metadata_value.get("base"))
+            observed_image_size = _number(metadata_value.get("size"))
+        except (TypeError, ValueError) as error:
+            raise AnalysisError("native IDA metadata has invalid PE layout") from error
+        if (
+            observed_base != disk["image_base"]
+            or observed_image_size != disk["size_of_image"]
+        ):
+            raise AnalysisError("active IDA image layout does not match the private target")
+
+        entry_output = await self._native_ida_call(session, "get_entry_points", {})
+        entry_values = _tool_result(entry_output["structured"])
+        if not isinstance(entry_values, list) or not any(
+            isinstance(item, dict)
+            and _safe_number(item.get("address")) == disk["entry_point"]
+            for item in entry_values
+        ):
+            raise AnalysisError("active IDA entry point does not match the private target")
+
+        observed_samples = []
+        for sample in disk["samples"]:
+            output = await self._native_ida_call(
+                session,
+                "read_memory_bytes",
+                {"memory_address": sample["address"], "size": len(sample["bytes"])},
+            )
+            observed = _parse_ida_bytes(_tool_result(output["structured"]))
+            if observed != sample["bytes"]:
+                raise AnalysisError(
+                    f"active IDA mapped bytes differ at {sample['address']}"
+                )
+            observed_samples.append(
+                {"address": sample["address"], "size": len(observed)}
+            )
+        attestation.update(
+            {
+                "provider_transport": "factory-native-stdio",
+                "private_target_file_attested": True,
+                "observed_image_base": f"0x{observed_base:x}",
+                "observed_image_size": observed_image_size,
+                "observed_entry_point": f"0x{disk['entry_point']:x}",
+                "mapped_byte_samples": observed_samples,
+                "mapped_byte_sample_count": len(observed_samples),
+            }
+        )
+        return attestation, metadata
+
     async def _upstream(
         self,
         provider: AnalysisProviderRegistration,
         tool: str,
         arguments: dict[str, Any],
     ) -> dict[str, Any]:
+        if provider.endpoint is None:
+            raise AnalysisError("loopback analysis provider is missing its endpoint")
         if tool != provider.upstream_tool:
             raise AnalysisError(
                 "analysis request tried to cross the registered tool boundary"
@@ -302,51 +499,209 @@ class AnalysisGateway:
             raise AnalysisError(
                 f"analysis provider connection failed: {type(error).__name__}"
             ) from error
-        text_blocks = [
-            item.text
-            for item in result.content
-            if getattr(item, "type", None) == "text"
-            and isinstance(getattr(item, "text", None), str)
-        ]
-        text = "\n".join(text_blocks)
-        if result.is_error:
-            detail = _redact(text, self.config).encode("utf-8")[:4096]
-            raise AnalysisError(
-                "registered analysis bridge rejected the request: "
-                + detail.decode("utf-8", "ignore")
+        return _bounded_output(
+            content=result.content,
+            structured=result.structured_content,
+            is_error=bool(result.is_error),
+            config=self.config,
+            rejection="registered analysis bridge rejected the request",
+        )
+
+
+def _bounded_output(
+    *,
+    content: Any,
+    structured: Any,
+    is_error: bool,
+    config: ServiceConfig,
+    rejection: str,
+) -> dict[str, Any]:
+    """Normalize one upstream MCP result into the Factory's bounded envelope."""
+
+    text_blocks = [
+        item.text
+        for item in content
+        if getattr(item, "type", None) == "text"
+        and isinstance(getattr(item, "text", None), str)
+    ]
+    text = "\n".join(text_blocks)
+    if is_error:
+        detail = _redact(text, config).encode("utf-8")[:4096]
+        raise AnalysisError(rejection + ": " + detail.decode("utf-8", "ignore"))
+    redacted = _redact(text, config)
+    observed_payload = redacted.encode("utf-8")
+    payload = observed_payload[:_MAX_OUTPUT_BYTES]
+    redacted = payload.decode("utf-8", "ignore")
+    truncated = len(observed_payload) > len(payload)
+    structured = _redact_value(structured, config)
+    try:
+        structured_payload = json.dumps(
+            structured,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as error:
+        raise AnalysisError(
+            "analysis provider returned non-JSON structured output"
+        ) from error
+    structured_omitted = len(structured_payload) > _MAX_OUTPUT_BYTES - len(payload)
+    if structured_omitted:
+        structured = None
+    return {
+        "text": redacted,
+        "structured": structured,
+        "factory_output_truncated": truncated,
+        "factory_structured_output_omitted": structured_omitted,
+        "observed_text_bytes": len(observed_payload),
+        "returned_bytes": len(payload),
+        "returned_sha256": hashlib.sha256(payload).hexdigest(),
+        "structured_bytes": len(structured_payload),
+        "structured_sha256": hashlib.sha256(structured_payload).hexdigest(),
+    }
+
+
+def _inspect_private_pe_target(path: Path, target: TargetIdentity) -> dict[str, Any]:
+    """Hash one private PE and derive deterministic mapped-byte probes."""
+
+    try:
+        data = path.read_bytes()
+    except OSError as error:
+        raise AnalysisError(
+            f"cannot read registered private target: {type(error).__name__}"
+        ) from error
+    sha256 = hashlib.sha256(data).hexdigest()
+    md5 = hashlib.md5(data, usedforsecurity=False).hexdigest()
+    if len(data) != target.size or sha256 != target.sha256:
+        raise AnalysisError(
+            "registered private target file does not match the adapter target identity"
+        )
+    if target.md5 is not None and md5 != target.md5:
+        raise AnalysisError(
+            "registered private target MD5 does not match the adapter target identity"
+        )
+    if target.format.lower() != "pe" or len(data) < 0x100 or data[:2] != b"MZ":
+        raise AnalysisError("native IDA v1 target must be a valid PE image")
+    try:
+        pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+        if data[pe_offset : pe_offset + 4] != b"PE\0\0":
+            raise ValueError("PE signature is absent")
+        section_count = struct.unpack_from("<H", data, pe_offset + 6)[0]
+        optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
+        optional_offset = pe_offset + 24
+        if struct.unpack_from("<H", data, optional_offset)[0] != 0x10B:
+            raise ValueError("only PE32 is supported by the v1 attestor")
+        entry_rva = struct.unpack_from("<I", data, optional_offset + 16)[0]
+        image_base = struct.unpack_from("<I", data, optional_offset + 28)[0]
+        size_of_image = struct.unpack_from("<I", data, optional_offset + 56)[0]
+        section_offset = optional_offset + optional_size
+        sections = []
+        for index in range(section_count):
+            offset = section_offset + index * 40
+            name = data[offset : offset + 8].split(b"\0", 1)[0].decode(
+                "ascii", "strict"
             )
-        redacted = _redact(text, self.config)
-        observed_payload = redacted.encode("utf-8")
-        payload = observed_payload[:_MAX_OUTPUT_BYTES]
-        redacted = payload.decode("utf-8", "ignore")
-        truncated = len(observed_payload) > len(payload)
-        structured = _redact_value(result.structured_content, self.config)
-        try:
-            structured_payload = json.dumps(
-                structured,
-                ensure_ascii=False,
-                allow_nan=False,
-                separators=(",", ":"),
-                sort_keys=True,
-            ).encode("utf-8")
-        except (TypeError, ValueError) as error:
+            virtual_size, rva, raw_size, raw_offset = struct.unpack_from(
+                "<IIII", data, offset + 8
+            )
+            if raw_offset + raw_size > len(data):
+                raise ValueError("section raw extent exceeds file")
+            sections.append(
+                {
+                    "name": name,
+                    "virtual_size": virtual_size,
+                    "rva": rva,
+                    "raw_size": raw_size,
+                    "raw_offset": raw_offset,
+                }
+            )
+    except (UnicodeDecodeError, ValueError, struct.error) as error:
+        raise AnalysisError(f"registered private target PE is malformed: {error}") from error
+    text = next((item for item in sections if item["name"] == ".text"), None)
+    if text is None or text["raw_size"] < 16 or text["virtual_size"] < 16:
+        raise AnalysisError("registered private PE has no probeable .text section")
+    text_start = image_base + text["rva"]
+    text_end = text_start + text["virtual_size"] - 1
+    entry_point = image_base + entry_rva
+    for label, observed in (
+        ("image_base", image_base),
+        ("entry_point", entry_point),
+        ("text_start", text_start),
+        ("text_end", text_end),
+    ):
+        declared = target.metadata.get(label)
+        if declared is not None and declared != "" and _safe_number(declared) != observed:
             raise AnalysisError(
-                "analysis provider returned non-JSON structured output"
-            ) from error
-        structured_omitted = len(structured_payload) > _MAX_OUTPUT_BYTES - len(payload)
-        if structured_omitted:
-            structured = None
-        return {
-            "text": redacted,
-            "structured": structured,
-            "factory_output_truncated": truncated,
-            "factory_structured_output_omitted": structured_omitted,
-            "observed_text_bytes": len(observed_payload),
-            "returned_bytes": len(payload),
-            "returned_sha256": hashlib.sha256(payload).hexdigest(),
-            "structured_bytes": len(structured_payload),
-            "structured_sha256": hashlib.sha256(structured_payload).hexdigest(),
-        }
+                f"adapter target {label} disagrees with the private PE"
+            )
+
+    raw_end = text_start + min(text["virtual_size"], text["raw_size"])
+    span = raw_end - text_start
+    addresses = {
+        text_start,
+        text_start + span // 4,
+        text_start + span // 2,
+        text_start + (3 * span) // 4,
+        raw_end - 16,
+    }
+    if text_start <= entry_point and entry_point + 16 <= raw_end:
+        addresses.add(entry_point)
+    samples = []
+    for address in sorted(addresses):
+        raw = text["raw_offset"] + address - text_start
+        samples.append(
+            {
+                "address": f"0x{address:x}",
+                "bytes": data[raw : raw + 16],
+            }
+        )
+    return {
+        "sha256": sha256,
+        "md5": md5,
+        "size": len(data),
+        "image_base": image_base,
+        "size_of_image": size_of_image,
+        "entry_point": entry_point,
+        "samples": samples,
+    }
+
+
+def _tool_result(value: Any) -> Any:
+    if isinstance(value, dict) and "result" in value:
+        return value["result"]
+    return value
+
+
+def _parse_ida_bytes(value: Any) -> bytes:
+    if not isinstance(value, str):
+        raise AnalysisError("native IDA memory result is not a hexadecimal byte string")
+    tokens = value.split()
+    if not 1 <= len(tokens) <= 256:
+        raise AnalysisError("native IDA memory result has an invalid byte count")
+    if any(re.fullmatch(r"0x[0-9a-fA-F]{1,2}", token) is None for token in tokens):
+        raise AnalysisError("native IDA memory result contains an invalid byte")
+    return bytes(int(token, 16) for token in tokens)
+
+
+def _safe_number(value: Any) -> int | None:
+    try:
+        return _number(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _contained_exception(
+    error: BaseExceptionGroup, expected: type[BaseException]
+) -> BaseException | None:
+    for child in error.exceptions:
+        if isinstance(child, expected):
+            return child
+        if isinstance(child, BaseExceptionGroup):
+            nested = _contained_exception(child, expected)
+            if nested is not None:
+                return nested
+    return None
 
 
 class _analysis_slot:
@@ -427,7 +782,13 @@ def _validate_ida_arguments(operation: str, arguments: dict[str, Any]) -> None:
             if not isinstance(value, str) or not _ADDRESS.fullmatch(value):
                 raise AnalysisError(f"{key} must be a bounded hexadecimal address")
         if key == "offset":
-            _bounded_integer(value, key, 0, 1_000_000)
+            if operation == "create_stack_frame_variable":
+                if not isinstance(value, str) or re.fullmatch(
+                    r"-?(?:0x[0-9a-fA-F]{1,16}|[0-9]{1,20})", value
+                ) is None:
+                    raise AnalysisError("stack-frame offset must be a bounded integer string")
+            else:
+                _bounded_integer(value, key, 0, 1_000_000)
         elif key in {"count", "limit"}:
             _bounded_integer(value, key, 1, 200)
         elif key == "size":
@@ -619,8 +980,14 @@ def _redact(value: str, config: ServiceConfig) -> str:
         *(str(item.path) for item in config.repositories),
     }
     for provider in config.analysis_providers:
-        parsed = urlsplit(provider.endpoint)
-        replacements.update({provider.endpoint, parsed.netloc, parsed.path})
+        if provider.endpoint is not None:
+            parsed = urlsplit(provider.endpoint)
+            replacements.update({provider.endpoint, parsed.netloc, parsed.path})
+        if provider.command is not None:
+            replacements.add(str(provider.command))
+        if provider.target_path is not None:
+            replacements.add(str(provider.target_path))
+        replacements.update(provider.arguments)
     result = value
     for path in sorted(replacements, key=len, reverse=True):
         result = result.replace(path, "<analysis-host-path>")

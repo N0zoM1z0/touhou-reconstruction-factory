@@ -3,8 +3,10 @@
 ## Purpose and authority
 
 The analysis provider gives GPT-web bounded semantic access to the target used
-by a reconstruction repository without exposing a native IDA/Ghidra endpoint,
-its host Bash tool, its local filesystem, or database mutation operations.
+by a reconstruction repository. The preferred architecture is one shared
+Factory MCP that owns its local analyzer client; a game repository does not run
+or expose a second MCP server. Private executable paths, target paths, mutable
+analysis projects, and host Bash stay outside the public protocol.
 
 Analysis output is always provisional. The response envelope fixes this
 semantics in machine-visible fields:
@@ -25,27 +27,44 @@ claims still require a factory-controlled canonical replay receipt.
 ## Registration boundary
 
 Each provider is operator-registered in the private service configuration with
-an ID, repository ID, target identity ID, backend, exact endpoint, one upstream
-tool name, and timeout. Configuration accepts only exact loopback HTTP URLs.
-Endpoints, ports, paths, and host files are omitted from public responses.
+an ID, repository ID, target identity ID, backend, and timeout. Private backend
+selection fields are part of the provider-binding digest but are omitted from
+public responses.
 
-Two bridge contracts are supported:
+Three contracts are supported during migration:
 
+- `attested-ida-stdio-v1` is Factory-native. It declares the shared IDA Python
+  executable, `ida-pro-mcp` server argument, and exact private target file. The
+  Factory launches stdio itself; there is no endpoint or upstream wrapper tool;
 - `attested-ida-proxy-v1` calls only upstream `ida_call`;
 - `attested-ghidra-proxy-v1` calls only upstream `ghidra_call`.
 
-The legacy bridges may also implement `run_command`, but the factory never
+The last two are legacy loopback compatibility contracts and accept only exact
+loopback HTTP URLs. Those bridges may also implement `run_command`, but the Factory never
 names or forwards that tool. The public MCP therefore cannot cross from an
 analysis request into legacy host Bash.
 
-The live single-operator configuration currently registers:
+TH09 is the first fully Factory-native game. It does not contain
+`mcp_for_gptweb`, a private HTTP bridge, or a game-specific Web URL. Its public
+repository declares target and workflow facts; the operator's private Factory
+configuration selects the shared analyzer installation and target path. Older
+games remain on compatibility providers only until their working analysis
+state can be migrated and re-attested.
+
+The private single-operator configuration staged for the next activation
+registers:
 
 | Provider | Repository | Backend | Target scope |
 | --- | --- | --- | --- |
 | `th04-ghidra` | `th04` | attested headless Ghidra | `target:th04-main` |
 | `th08-ida` | `th08` | attested IDA Pro | `target:th08-main` |
+| `th09-ida` | `th09` | Factory-native IDA Pro | `target:th09-main` |
 | `th095-ghidra` | `th095` | attested headless Ghidra | `target:th095-main` |
 | `th105-ida` | `th105` | attested IDA Pro | `target:th105-main` |
+
+The already-running public process intentionally remains on its pre-TH09 code
+and configuration while the TH095 Web campaign is active. TH09 must not be
+reported publicly available until a deliberate restart and public validation.
 
 This is operator configuration, not a cross-game claim that one backend is
 universally correct. A provider can be absent, offline, busy, or correctly fail
@@ -64,11 +83,24 @@ permission to share a Ghidra project or analysis identity.
 
 `factory_list_analysis_providers` returns configured IDs but deliberately marks
 availability `not-probed`. `factory_list_analysis_operations` returns bounded
-operation pages and input schemas. IDA operation discovery also invokes the
-registered bridge attestation and independently compares active IDA SHA-256,
-MD5, and file size with the factory adapter's current target identity. Ghidra
-operation schemas are fixed by the provider contract and remain `not-probed`
-until a real operation performs the bridge's toolchain/project/target checks.
+operation pages and input schemas. Native IDA discovery performs one fresh
+closed loop before exposing tools:
+
+1. reload the repository adapter and resolve exactly one registered target;
+2. hash the private executable and compare SHA-256, MD5, and size;
+3. parse the private PE and compare declared image base, image size, entry point,
+   and `.text` extent;
+4. start the shared `ida-pro-mcp` stdio client and compare active IDA metadata;
+5. confirm the active entry point and six deterministic distributed mapped
+   `.text` byte samples; and
+6. expose only tools actually advertised by that initialized session and
+   selected by the Factory contract.
+
+If another IDA database is open, the hash, layout, entry, or mapped-byte check
+fails. The Factory does not guess which game was intended. Legacy IDA discovery
+retains its bridge attestation. Ghidra operation schemas remain static and
+`not-probed` until a real operation performs that compatibility bridge's
+toolchain/project/target checks.
 
 `factory_analysis_call` accepts a provider ID, one discovered operation name,
 and a JSON object string containing only that operation's arguments. The JSON
@@ -76,11 +108,14 @@ envelope is used because IDA and Ghidra expose different evolving query schemas;
 it avoids dozens of transport-level MCP tools while retaining operation-level
 discovery and factory validation.
 
-Factory validation remains closed-world:
+Factory validation remains closed-world but preserves useful analyzer autonomy:
 
-- IDA operation names must be in the factory's versioned read allowlist;
-- all rename, create, delete, set, declare, patch, and other database mutation
-  tools are absent;
+- IDA operation names must be in the Factory's versioned atomic allowlist;
+- native IDA exposes semantic reads plus comments, renames, prototypes, type
+  declarations, and local/stack metadata edits;
+- native IDA never exposes target-byte patching; metadata edits remain
+  provisional analysis state and receive zero exactness credit;
+- legacy IDA remains read-only until migrated;
 - raw IDA memory reads are limited to 256 bytes per call;
 - list counts, offsets, strings, arrays, nesting, addresses, Ghidra instruction
   counts, and xref/search limits are bounded;
@@ -104,7 +139,8 @@ operation itself supplies adequate pagination or extent evidence.
 Analysis state is not granted authority merely because GPT-web also has broad
 repository Bash. A normal Web iteration composes both surfaces:
 
-1. inspect an attested target with read-only analysis operations;
+1. inspect an attested target with atomic analysis operations, optionally
+   improving native IDA metadata as hypotheses become clearer;
 2. inspect the selected live repository, including its current dirty and ignored
    state;
 3. edit source and run repository-native build, Wine, comparison, and diagnostic

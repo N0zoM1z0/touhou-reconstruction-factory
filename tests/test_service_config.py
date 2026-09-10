@@ -207,6 +207,43 @@ timeout_seconds = 120
         with self.assertRaisesRegex(ServiceConfigError, "loopback"):
             load_service_config(path)
 
+    def test_native_ida_provider_owns_stdio_and_redacts_private_paths(self) -> None:
+        command = self.root / "ida-python.exe"
+        target = self.root / "target.exe"
+        command.write_bytes(b"provider")
+        target.write_bytes(b"target")
+        path = self.write_config()
+        original = load_service_config(path)
+        document = (
+            path.read_text(encoding="utf-8")
+            + f'''
+
+[[analysis_providers]]
+id = "th08-ida-native"
+repository_id = "th08"
+target_identity_id = "target:th08-v1.00d-original"
+backend = "attested-ida-stdio-v1"
+command = "{command.as_posix()}"
+arguments = ["D:\\\\Tools\\\\ida_pro_mcp\\\\server.py"]
+target_path = "{target.as_posix()}"
+timeout_seconds = 120
+'''
+        )
+        path.write_text(document, encoding="utf-8")
+        changed = load_service_config(path)
+        provider = changed.analysis_provider("th08-ida-native")
+        public = provider.public_dict()
+        self.assertFalse(public["read_only"])
+        self.assertTrue(public["database_metadata_writable"])
+        self.assertFalse(public["target_bytes_writable"])
+        self.assertNotIn(str(command), json.dumps(public))
+        self.assertNotIn(str(target), json.dumps(public))
+        self.assertEqual(original.replay_sha256, changed.replay_sha256)
+
+        path.write_text(document + 'endpoint = "http://127.0.0.1:8767/mcp"\n')
+        with self.assertRaisesRegex(ServiceConfigError, "extra=.*endpoint"):
+            load_service_config(path)
+
     def test_analysis_provider_cannot_cross_repository_target(self) -> None:
         path = self.write_config()
         path.write_text(

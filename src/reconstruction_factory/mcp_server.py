@@ -116,6 +116,12 @@ _REPOSITORY_SHELL = ToolAnnotations(
     idempotentHint=False,
     openWorldHint=False,
 )
+_ANALYSIS_CALL = ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=False,
+)
 
 
 def build_mcp_server(config_path: str | Path) -> MCPServer:
@@ -124,7 +130,7 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     path = Path(config_path).expanduser().resolve(strict=True)
     server = MCPServer(
         "touhou-reconstruction-factory",
-        version="0.4.0",
+        version="0.5.0",
         instructions=(
             "Use registered repository IDs only. Prefer the live repository workflow "
             "for source reconstruction: it exposes the real worktree, broad composable "
@@ -302,8 +308,9 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
 
     @server.tool(
         description=(
-            "Page the factory-approved read-only operations for an analysis provider. "
-            "IDA discovery re-attests and independently checks active target metadata; "
+            "Page the factory-approved atomic operations for an analysis provider. "
+            "Native IDA includes semantic reads and reversible database-metadata edits, "
+            "but no target-byte patching. Discovery re-attests the active target; "
             "Ghidra schemas are static and report not-probed until invoked."
         ),
         annotations=_READ_ONLY,
@@ -326,12 +333,13 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
 
     @server.tool(
         description=(
-            "Run one factory-allowlisted, read-only semantic-analysis operation through "
-            "an operator-registered loopback bridge. Encode only the selected operation's "
-            "listed arguments as a JSON object. Every result is target-bound provisional "
-            "evidence with zero exactness credit; native writes and bridge Bash are unreachable."
+            "Run one discovered, factory-allowlisted semantic-analysis operation. Native "
+            "IDA talks directly over a Factory-owned stdio session and permits reversible "
+            "database-metadata edits; target-byte patching and bridge Bash remain absent. "
+            "Encode only the selected operation's listed arguments as one JSON object. "
+            "Every result is target-bound provisional evidence with zero exactness credit."
         ),
-        annotations=_READ_ONLY,
+        annotations=_ANALYSIS_CALL,
         structured_output=True,
     )
     async def factory_analysis_call(

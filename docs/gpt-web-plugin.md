@@ -275,6 +275,14 @@ both lanes, then portable products. The prompt intentionally lets live TH095
 evidence choose the first bounded family instead of freezing a stale filename or
 candidate count.
 
+The fresh TH09 exact-reconstruction campaign has a complete standalone prompt
+at
+[`gpt-web-th09-exact-reconstruction.md`](../prompts/gpt-web-th09-exact-reconstruction.md).
+It assumes no injected skill, reads both game and Factory guidance by explicit
+path, recovers dirty work first, uses the Factory-native IDA provider, and keeps
+exact, Windows i386 product, semantic, and port gates separate. Use it only
+after the staged provider is active and passes the public smoke test.
+
 ## TH095 semantic reconstruction campaign
 
 After syncing a plugin version containing `factory-semantic-reconstruction`,
@@ -561,3 +569,24 @@ current game-knowledge boundary checkpoint is recorded separately in
 [`validation.md`](validation.md). The installed MCP unit also reported
 `NoNewPrivileges=yes`, `PrivateTmp=yes`, a 768-task limit, a 3 GiB
 memory limit with swap disabled, a private umask, and core dumps disabled.
+
+## TH09 Factory-native provider checkpoint
+
+TH09 is the first new game that does not copy or run `mcp_for_gptweb`. The
+private Factory configuration registers `th09`, `target:th09-main`, one shared
+IDA Python/`ida-pro-mcp` stdio command, and the exact private target path. The
+public GPT-web URL remains unchanged.
+
+A separate local process loaded that staged configuration without restarting
+the active Factory or interrupting TH095. Native discovery completed in about
+2.6 seconds, exposed 47 atomic operations, and omitted the target-byte patch
+tool. It independently matched target SHA-256, MD5, size, PE image base and
+size, entry point, and six distributed mapped `.text` samples. A second fresh
+call resolved `0x47D45F` as `start`, size `0x1D5`, with provisional authority
+and zero exactness credit.
+
+Twelve discovered operations update reversible IDA database metadata: comments,
+function/global/local/stack names, prototypes, and types. This is intentional
+agent autonomy, not truth promotion. Their results remain target-bound analysis
+hypotheses. Activation and a public GPT-web smoke test are deferred until the
+active TH095 session can tolerate a Factory process restart.

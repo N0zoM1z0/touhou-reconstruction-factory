@@ -121,12 +121,14 @@ MCP tools while a skill is unavailable or not selected. The prompts still carry
 their complete operating rules inline for deployments that have not mounted the
 guidance paths.
 
-The current live TH04/TH08/TH095/TH105 registrations retain legacy layouts so
+The TH04/TH08/TH095/TH105 registrations retain legacy layouts so
 work can proceed before migration. TH08 maps its historical `~/.wineth08` home,
 TH095 maps its historical `~/.wine` prefix, and TH04/TH105 use repo-local
 prefixes. These are accurate bridge profiles, not the target format. New games
-should use a game-bound state root from the beginning, and existing games can be
-migrated one at a time after historical replay parity is demonstrated.
+should use a game-bound state root from the beginning. TH09 is the first clean
+instance: its repo is registered directly with the shared Factory MCP and its
+IDA provider is Factory-owned rather than copied into the game. Existing games
+can be migrated one at a time after historical replay parity is demonstrated.
 
 ## Checkpoint workflow
 
