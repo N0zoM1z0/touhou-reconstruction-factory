@@ -217,7 +217,8 @@ transactional patching, networkless shell execution, timeout rollback, and
 symlink-result rejection. Analysis tests enforce loopback-only registration,
 repository/target ownership, closed operation names, argument bounds, target
 metadata equality, and the absence of native mutation/bridge-shell authority.
-The 2026-09-10 release checkpoint passes all 105 tests.
+The current 2026-09-10 release checkpoint passes all 116 tests. The live
+29-tool inventory contains no game-knowledge publication or promotion tool.
 
 Read-only capability questions for future MCP regression runs are in
 [`factory-mcp.xml`](../evaluations/factory-mcp.xml). Live validation should also

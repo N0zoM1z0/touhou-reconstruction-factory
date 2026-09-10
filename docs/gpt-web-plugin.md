@@ -249,6 +249,8 @@ complete result for the selected target, claim type, and oracle. Materializing
 the accepted TH105 snapshot produced one oracle result and input fingerprint
 `e363a026621ad814bdbb1bd8e4afa935494a1811fe2f72ae261f8cc477c4651b`.
 
-The complete local suite passed all 105 tests. The installed MCP unit also
-reported `NoNewPrivileges=yes`, `PrivateTmp=yes`, a 768-task limit, a 3 GiB
+That initial checkpoint's complete local suite passed all 105 tests. The
+current game-knowledge boundary checkpoint is recorded separately in
+[`validation.md`](validation.md). The installed MCP unit also reported
+`NoNewPrivileges=yes`, `PrivateTmp=yes`, a 768-task limit, a 3 GiB
 memory limit with swap disabled, a private umask, and core dumps disabled.

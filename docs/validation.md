@@ -67,12 +67,13 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
 
 ## Recorded run: 2026-09-10
 
-The MCP-enabled release gate passed all 108 tests with no skips. Ruff, bytecode
-compilation, Git whitespace, three CLI construction checks, 29 JSON documents,
-two TOML documents, two ten-scenario evaluation XML documents, and the isolated
-wheel build also passed. The plugin manifest and all four bundled skills passed
-the plugin-creator and skill-creator validators after cachebuster version
-`0.3.0+codex.20260910004949` was generated.
+The MCP-enabled release gate passed all 116 tests with no skips. Ruff, bytecode
+compilation, Git whitespace, three CLI construction checks, 32 JSON documents,
+two TOML documents, the 11-scenario MCP and 12-scenario reconstruction
+evaluation XML documents, and the isolated wheel build also passed. The plugin
+manifest and both modified bundled skills passed the plugin-creator and
+skill-creator validators after cachebuster version
+`0.3.0+codex.20260910020626` was generated.
 
 The final public `--all` run observed the following adapter state:
 
@@ -81,14 +82,14 @@ The final public `--all` run observed the following adapter state:
 | TH04 | `th04-pc98-v1` | 4,393 | 0 | 4 |
 | TH08 | `th08-vc7-ledgers-v1` | 6,925 | 0 | 2 |
 | TH095 | `windows-pe-ledgers-v1` | 5,153 | 0 | 1 |
-| TH105 | `windows-pe-ledgers-v1` | 10,735 | 2 | 4 |
+| TH105 | `windows-pe-ledgers-v1` | 10,735 | 1 | 4 |
 
 Every adapter continued to import zero native `OracleResult` objects. The live
-registry contained eight receipt candidates: two accepted, six rejected as
-stale, and zero invalid. The two accepted TH105 results are separate fresh
-receipts for the same narrow canonical claim; they are repeated evidence, not
-two reconstructed functions. TH04, TH08, and TH095 still have no accepted live
-oracle result.
+registry contained nine receipt candidates: one accepted, eight rejected as
+stale, and zero invalid. The older receipts were rejected for changed runner,
+driver, oracle, and source bindings after the Factory update. They were not
+grandfathered into the new epoch. TH04, TH08, and TH095 still have no accepted
+live oracle result.
 
 Analysis probes succeeded with target attestation for `th04-ghidra`,
 `th095-ghidra`, and `th105-ida`; all retained
@@ -98,21 +99,19 @@ attest as TH08. The run recorded this as accurately unavailable rather than
 substituting another target.
 
 The final disposable-session check used workspace
-`workspace:e3aac033403a4b17891c2e9e817e665d` and command
-`command:59947db7670743bd8b85aaa2e78dc621`. It resumed through a new MCP
-connection, recovered output and diff, returned to a zero-byte diff, and ended
-discarded. A separate server-process restart test used workspace
-`workspace:f499c79bb132477b84f8dc5b1f9bc572` and command
-`command:fb774e27679f40efb1918a53f92ce685`; after restarting the MCP service it
-recovered the same idempotent capability, command output, and diff, then also
-returned to zero bytes and was discarded.
+`workspace:a2bdf85aead440d2955c8d456bb85988` and command
+`command:7cc472ee8b204712af31c415593cd1e8`. It exercised the corrected
+same-UID process-limit headroom through the public endpoint, resumed through a
+new MCP connection, recovered output and diff, returned to a zero-byte diff,
+and ended discarded.
 
-The accepted replay was recovered idempotently rather than submitted again:
+The Factory update changed the runner implementation binding, so the accepted
+replay was newly submitted rather than recovered from an obsolete pass:
 
 - claim: `claim:th105-main:function:00401000:codegen-exact`;
-- job: `job:45a319b18ad54f5cbf074699b87838d1`;
-- receipt: `receipt:fb8ef9db855bab54bd46ac39398d477ddb40bb7d27a8ee2b4737ad985ada5878`;
-- registry: `registry:c21f9a94ff6a52cb7e95cbee33395027a0590b7bddb14210d3dc52366f63517f`;
+- job: `job:95488603014a48f68801a34ab6a76dd2`;
+- receipt: `receipt:fc2c738464c6373f35665ec8ab270b2d61f440bc59c83b90c05d6a8f9e92f825`;
+- registry: `registry:cf86b181b3f46eec42072eb72b9963bc7c3e41e94ceea429589075a036f1bc20`;
 - state/verdict/decision: `completed` / `pass` / `accepted`;
 - durable evidence: four ordered job events and four content-addressed
   artifacts.
@@ -132,7 +131,7 @@ claim above. It does not prove whole-image closure, LTCG physical ownership,
 runtime equivalence, game completeness, or any exact claim for TH04, TH08, or
 TH095. Those remain unknown until a supported factory-controlled replay produces
 a fresh receipt accepted by policy. Local validators prove the prompt assets,
-plugin structure, and ten behavioral scenarios; they cannot prove that a
+plugin structure, and recorded behavioral scenarios; they cannot prove that a
 particular ChatGPT account has refreshed the new plugin version or will
 automatically select the orchestration skill. Test that UI behavior in a new
 conversation after refreshing the installed plugin, preferably by selecting it
