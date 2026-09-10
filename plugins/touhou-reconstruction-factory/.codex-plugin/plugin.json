@@ -1,6 +1,6 @@
 {
   "name": "touhou-reconstruction-factory",
-  "version": "0.4.0+codex.20260910093008",
+  "version": "0.4.0+codex.20260910124147",
   "description": "Touhou Reconstruction Factory plugin",
   "author": {
     "name": "N0zoM1z0",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Touhou Reconstruction Factory",
     "shortDescription": "Develop source and verify reconstruction evidence.",
-    "longDescription": "Run autonomous evidence-first reconstruction and semantic reconstruction sessions in registered live game repositories: combine broad Bash with target-attested IDA/Ghidra, preserve exact and historical-platform product/runtime baselines, use repo-local Wine and toolchains, create reviewable local Git checkpoints, submit canonical replays, and query only facts admitted by the Factory Truth Kernel.",
+    "longDescription": "Run autonomous evidence-first reconstruction and persistent semantic campaigns in registered live game repositories: combine broad Bash with target-attested IDA/Ghidra, preserve exact and historical-platform product/runtime feedback, use repo-local Wine and toolchains, create reviewable local Git checkpoints, submit milestone replays, and query only facts admitted by the Factory Truth Kernel.",
     "developerName": "N0zoM1z0",
     "category": "Developer Tools",
     "capabilities": [
@@ -29,7 +29,7 @@
     ],
     "websiteURL": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
     "defaultPrompt": [
-      "Begin one evidence-backed TH095 semantic batch under the exact and Windows i386 product oracles.",
+      "Continue TH095 semantic reconstruction autonomously across bounded batches under the exact and Windows i386 feedback lanes.",
       "Verify the known TH105 smoke-test claim and report only accepted evidence.",
       "List current accepted reconstruction facts."
     ]

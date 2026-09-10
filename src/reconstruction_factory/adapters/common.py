@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from functools import lru_cache
 import hashlib
 import io
 import json
@@ -51,7 +52,7 @@ class RepositoryReader:
 
     def toml(self, relative: str) -> dict[str, Any]:
         try:
-            return tomllib.loads(self.bytes(relative).decode("utf-8"))
+            return _parse_toml_payload(self.bytes(relative))
         except (UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
             raise AdapterError(f"invalid TOML input {relative}: {error}") from error
 
@@ -85,6 +86,13 @@ class RepositoryReader:
             digest.update(len(payload).to_bytes(8, "big"))
             digest.update(payload)
         return digest.hexdigest()
+
+
+@lru_cache(maxsize=64)
+def _parse_toml_payload(payload: bytes) -> dict[str, Any]:
+    """Parse identical immutable adapter input bytes once per worker process."""
+
+    return tomllib.loads(payload.decode("utf-8"))
 
 
 def canonical_digest(value: Any) -> str:

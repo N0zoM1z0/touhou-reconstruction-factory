@@ -41,8 +41,9 @@ knowledge or bypass replay-receipt acceptance.
   coordinates autonomous live source work, Bash/analysis/toolchain composition,
   local `gpt-web:` checkpoints, and evidence boundaries.
 - [`factory-semantic-reconstruction/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-semantic-reconstruction/SKILL.md)
-  runs one bounded evidence-backed owner/field/protocol batch under independent
-  exact and historical-platform product/runtime feedback.
+  runs a persistent campaign of bounded evidence-backed owner/field/protocol
+  batches under independent exact and historical-platform product/runtime
+  feedback.
 - [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md) provides a
   short installed-plugin invocation and a complete standalone prompt under the
   machine-readable `gpt-web-reconstruction-session-v4` contract. Version 4 adds
@@ -52,7 +53,10 @@ knowledge or bypass replay-receipt acceptance.
   remain committed as historical contracts.
 - [`gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md)
   provides a ready-to-run TH095 prompt and standalone fallback under
-  `gpt-web-semantic-reconstruction-session-v1`.
+  `gpt-web-semantic-reconstruction-session-v2`. Version 2 adds the autonomous
+  outer campaign loop, layered feedback cadence, milestone receipt policy, and
+  durable context-boundary handoff. Version 1 remains as the historical
+  one-batch contract.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
@@ -214,9 +218,10 @@ workspace GitHub import:
 4. Install the plugin. After a repository update, use **Sync now** on the
    marketplace before reinstalling or retesting.
 5. Start a new ChatGPT conversation. The plugin detail page should list
-   **Factory Analysis**, **Factory Reconstruction**, **Factory Replay**, and
-   **Factory Workspace** under Skills.
-6. Invoke **Factory Reconstruction** explicitly or use the short prompt below.
+   **Factory Analysis**, **Factory Reconstruction**, **Factory Semantic
+   Reconstruction**, **Factory Replay**, and **Factory Workspace** under Skills.
+6. Invoke **Factory Reconstruction** or **Factory Semantic Reconstruction**
+   explicitly, or use the corresponding short prompt below.
 
 The GitHub connection in this procedure distributes and updates the plugin
 package only. Reconstruction work does not use GitHub tools and the Factory MCP
@@ -270,13 +275,13 @@ both lanes, then portable products. The prompt intentionally lets live TH095
 evidence choose the first bounded family instead of freezing a stale filename or
 candidate count.
 
-## TH095 semantic reconstruction start
+## TH095 semantic reconstruction campaign
 
 After syncing a plugin version containing `factory-semantic-reconstruction`,
 start a new GPT-web conversation, select **@Touhou Reconstruction Factory**, and
-paste the short prompt from
+paste the campaign prompt from
 [`gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md).
-The intended first sequence is:
+The intended campaign sequence is:
 
 1. discover `th095` and inspect its real HEAD and dirty/untracked state;
 2. read the repository's semantic phase plan and run target, tracking, and
@@ -287,9 +292,20 @@ The intended first sequence is:
    and target-local Ghidra evidence;
 5. choose one small owner/field family, preserve both exact and reconstructed
    Windows i386 product/runtime feedback, document the evidence classes, and
-   create a local English `gpt-web:` checkpoint; and
-6. report runtime receipt status as `unknown` while no deterministic Factory
+   create a local English `gpt-web:` checkpoint;
+6. refresh the live state and immediately continue with the next named bounded
+   family instead of treating the first successful checkpoint as the session
+   stop; and
+7. report runtime receipt status as `unknown` while no deterministic Factory
    runtime provider exists, even when repo-native runtime feedback passes.
+
+The campaign uses repo-native exact and historical-platform checks for its fast
+dirty-tree inner loop. It closes broad cold gates immediately for shared or
+cross-object risk and at campaign milestones. It does not replay the complete
+accepted Factory receipt set after every private checkpoint when the next
+planned source commit would immediately stale those receipts; milestone
+receipts always bind the current committed source, and any deferred plane is
+reported as non-current.
 
 The current TH095 worktree may contain pre-existing untracked runtime
 experiments. Web must inspect and preserve them. It may use repo-native checks

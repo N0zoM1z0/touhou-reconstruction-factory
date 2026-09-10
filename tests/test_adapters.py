@@ -4,9 +4,13 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from reconstruction_factory.adapters import inspect_repository
-from reconstruction_factory.adapters.common import RepositoryReader
+from reconstruction_factory.adapters.common import (
+    RepositoryReader,
+    _parse_toml_payload,
+)
 from reconstruction_factory.errors import AdapterError
 from reconstruction_factory.factory import kit_for_snapshot
 from reconstruction_factory.ontology import ClaimType, ExtentRole
@@ -279,6 +283,25 @@ sha256 = "{HASH_B}"
 
 
 class AdapterTests(unittest.TestCase):
+    def test_toml_cache_is_keyed_by_exact_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write(root, "config/value.toml", 'value = "first-cache-test"\n')
+            reader = RepositoryReader(root)
+            _parse_toml_payload.cache_clear()
+            with patch(
+                "reconstruction_factory.adapters.common.tomllib.loads",
+                wraps=__import__("tomllib").loads,
+            ) as loads:
+                self.assertEqual(reader.toml("config/value.toml")["value"], "first-cache-test")
+                self.assertEqual(reader.toml("config/value.toml")["value"], "first-cache-test")
+                write(root, "config/value.toml", 'value = "second-cache-test"\n')
+                self.assertEqual(
+                    reader.toml("config/value.toml")["value"],
+                    "second-cache-test",
+                )
+            self.assertEqual(loads.call_count, 2)
+
     def test_th08_name_aliases_count_source_presence_by_address(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

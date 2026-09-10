@@ -9,7 +9,7 @@ not a new path into the Truth Kernel and not a repository-wide beautification
 pass.
 
 The normative Web contract is
-[`gpt-web-semantic-reconstruction-session-v1`](../contracts/gpt-web-semantic-reconstruction-session-v1.json).
+[`gpt-web-semantic-reconstruction-session-v2`](../contracts/gpt-web-semantic-reconstruction-session-v2.json).
 It extends the general live-repository
 [`gpt-web-reconstruction-session-v4`](../contracts/gpt-web-reconstruction-session-v4.json)
 contract, so autonomous Bash, target-attested analysis, local Git checkpoints,
@@ -37,6 +37,9 @@ product and runtime environment. A known exact residual may remain honestly
   range, or unnamed protocol. It is not evidence that the source is wrong.
 - A **semantic batch** is one coherent owner, field, representation, or
   protocol family changed and validated as a reviewable unit.
+- A **semantic campaign** is the autonomous outer loop that commits successive
+  bounded batches against one user objective without requesting permission
+  after every successful batch.
 - An **evidence record** separates observed, corroborated, inferred, and unknown
   meaning, with target addresses and limitations.
 - A **regression baseline** records the live pre-edit state of every applicable
@@ -46,6 +49,9 @@ product and runtime environment. A known exact residual may remain honestly
 - A **semantic checkpoint** is a local `gpt-web:` commit containing a coherent
   batch and its evidence record. It is durable review state, not an Oracle
   verdict.
+- A **campaign milestone** is a committed source state at which broad native
+  gates and Factory receipts are closed once for that state rather than
+  redundantly before another planned edit.
 - **Semantic completion** is a qualitative game-local exit audit. Candidate
   counts, checked boxes, or an arbitrary number of batches never imply it.
 
@@ -56,7 +62,7 @@ policy. Exact and product receipts created during a semantic batch may be
 accepted for their own narrow claims; that acceptance does not certify a name,
 type, protocol interpretation, or semantic milestone.
 
-## One bounded loop
+## One campaign of bounded loops
 
 ```mermaid
 flowchart LR
@@ -70,7 +76,10 @@ flowchart LR
     V2 --> D
     D -->|"No"| X["Keep or revert experiment<br/>record contradiction or unknown<br/>do not broaden silently"]
     X --> E
-    D -->|"Yes"| K["Evidence record + local gpt-web: commit<br/>report planes separately<br/>select next bounded batch later"]
+    D -->|"Yes"| K["Evidence record + local gpt-web: commit<br/>report planes separately"]
+    K --> S{"Campaign stop condition<br/>independently audited?"}
+    S -->|"No: continue without asking"| R
+    S -->|"Yes / real blocker / context boundary"| H["Close milestone gates<br/>durable handoff + exact next batch"]
 ```
 
 The two validation branches are coupled feedback but independent truth. A byte-
@@ -86,6 +95,16 @@ lifetime, and exercised behavior that function exactness cannot see. Requiring
 a semantic change to preserve both substantially narrows the space of plausible
 but wrong refactors. Their agreement still does not prove an English name, so
 the evidence record remains mandatory.
+
+The outer campaign loop is the throughput mechanism. A batch remains small
+enough to inspect, validate, commit, revert, and bisect, but its successful
+checkpoint is not a reason to stop the Web session. The agent refreshes live
+state and proceeds to the next family without asking for permission. It stops
+only after an independent exit audit supports the supplied campaign condition,
+a concrete blocker prevents useful work, a materially different scope decision
+is needed, or remaining context cannot safely close another batch. At a context
+boundary it first finishes or reverts the active experiment and writes the
+evidence and next batch into repository state.
 
 ## Select the batch
 
@@ -145,7 +164,7 @@ unrelated control-flow and API redesign.
 
 | Actual change surface | Exact lane | Product, format, and runtime lane |
 | --- | --- | --- |
-| Private field/name/expression in one object | Replay every accepted unit in the affected object. | Compile the complete declared production graph or repository-defined equivalent. |
+| Private field/name/expression in one object | Run every affected exact unit. | Compile the smallest affected historical-platform surface; keep broad product closure explicitly pending until a campaign milestone unless the repository requires it immediately. |
 | Shared header, class layout, inline body, PCH, or owner | Replay every affected object, then the repository-required cold aggregate exact gate. | Cold compile/link; run a bounded runtime transition when identity, lifetime, initialization, or behavior can change. |
 | Serialization, protocol, persistence, callback, rendering, input, or audio | Strictly compare every touched function. | Run focused format/protocol tests, cold compile/link, and the smallest relevant runtime/output check when available. |
 
@@ -153,6 +172,26 @@ When the repository has no accepted unit or no deterministic runtime provider,
 say `unknown` or `not applicable` with the reason. Never substitute a nearby
 green check. Factory replay requires eligible committed source; repo-native
 checks may still guide dirty work, but they are not accepted receipts.
+
+Use a four-level feedback ladder:
+
+1. During an edit, run syntax/layout checks and the smallest affected compile,
+   object comparison, or target query.
+2. Before a batch checkpoint, close every affected exact unit and native
+   compile/link, format, or runtime surface.
+3. Run aggregate exact and whole-product gates immediately for shared headers,
+   layouts, PCH/inline bodies, ownership, sensitive protocols, or any focused
+   failure that exposes cross-object risk.
+4. At a campaign milestone and final handoff, close remaining repository-
+   required aggregate exact, historical-platform product, and available runtime
+   gates once for the current committed source.
+
+Do not cold-replay the entire accepted Factory receipt set after every private
+checkpoint when another planned source commit would immediately stale it. Use
+repo-native Oracles for the rapid dirty-tree loop and issue current-source
+receipts at meaningful committed milestones. A deferred or stale receipt plane
+must be reported as non-current; batching receipt work changes cadence, not
+truth.
 
 ## Record and checkpoint
 
@@ -178,11 +217,13 @@ local session. Neither location publishes cross-game knowledge.
 
 Create a local English `gpt-web:` commit after one coherent checked batch.
 Inspect status, the full diff, and the staged diff; exclude unrelated existing
-work. Do not push. Always hand off the starting and ending commit/dirty state,
-selected and excluded scope, report profile and limitations, evidence classes,
-layout facts, changed files, tests actually run, every verification plane,
+work. Do not push. Then refresh live state and begin the next batch. At a real
+terminal condition, hand off the starting and ending commit/dirty state, all
+completed checkpoints, selected and excluded scope, report profile and
+limitations, evidence classes, layout facts, changed files, tests by feedback
+level, broad gates run or explicitly deferred, every verification plane,
 accepted receipts separately from semantic interpretation, retained unknowns,
-and the next useful batch.
+and the exact next batch.
 
 ## Historical derivation from TH08
 

@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ElementTree
 
 ROOT = Path(__file__).parents[1]
 CONTRACT_ID = "gpt-web-reconstruction-session-v4"
-SEMANTIC_CONTRACT_ID = "gpt-web-semantic-reconstruction-session-v1"
+SEMANTIC_CONTRACT_ID = "gpt-web-semantic-reconstruction-session-v2"
 PLUGIN_ROOT = ROOT / "plugins" / "touhou-reconstruction-factory"
 FACTORY_APP_ID = "asdk_app_6aa21bec66888191bd24c118e47ddee6"
 
@@ -109,7 +109,7 @@ class WebWorkflowAssetTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(contract["schema_version"], 1)
+        self.assertEqual(contract["schema_version"], 2)
         self.assertEqual(contract["id"], SEMANTIC_CONTRACT_ID)
         self.assertEqual(contract["extends"], CONTRACT_ID)
         self.assertEqual(
@@ -146,6 +146,12 @@ class WebWorkflowAssetTests(unittest.TestCase):
         self.assertFalse(
             contract["checkpoint_rules"]["commit_is_semantic_or_exactness_proof"]
         )
+        continuation = contract["continuation_policy"]
+        self.assertTrue(continuation["continue_after_successful_batch"])
+        self.assertFalse(continuation["ask_permission_after_successful_batch"])
+        self.assertFalse(continuation["batch_completion_is_session_stop"])
+        self.assertIn("campaign_milestone", contract["feedback_ladder"])
+        self.assertIn("receipt_cadence", contract["feedback_ladder"])
 
     def test_semantic_prompt_skill_and_manifest_publish_the_same_workflow(self) -> None:
         prompt = (ROOT / "prompts" / "gpt-web-semantic-reconstruction.md").read_text(
@@ -175,6 +181,7 @@ class WebWorkflowAssetTests(unittest.TestCase):
             self.assertIn("factory_repository_run_shell", document)
             self.assertIn("gpt-web:", document)
             self.assertIn("unknown", document)
+            self.assertIn("campaign", document.lower())
         for field in ("GAME_ID", "SEMANTIC_OBJECTIVE", "STOP_CONDITION"):
             self.assertIn(field, prompt)
         for document in (prompt, skill, reference):
@@ -182,6 +189,8 @@ class WebWorkflowAssetTests(unittest.TestCase):
             self.assertIn("exact", document.lower())
             self.assertIn("semantic", document.lower())
         self.assertIn("name: factory-semantic-reconstruction", skill)
+        self.assertIn("without asking", prompt)
+        self.assertIn("after every private checkpoint", prompt)
         defaults = "\n".join(manifest["interface"]["defaultPrompt"])
         self.assertIn("TH095 semantic", defaults)
 
@@ -267,12 +276,12 @@ class WebWorkflowAssetTests(unittest.TestCase):
             self.assertGreaterEqual(len(short_description), 25)
             self.assertLessEqual(len(short_description), 64)
 
-    def test_workflow_evaluation_has_eighteen_independent_scenarios(self) -> None:
+    def test_workflow_evaluation_has_twenty_two_independent_scenarios(self) -> None:
         root = ElementTree.parse(
             ROOT / "evaluations" / "gpt-web-reconstruction.xml"
         ).getroot()
         pairs = root.findall("qa_pair")
-        self.assertEqual(len(pairs), 18)
+        self.assertEqual(len(pairs), 22)
         questions = [pair.findtext("question") for pair in pairs]
         answers = [pair.findtext("answer") for pair in pairs]
         self.assertEqual(len(questions), len(set(questions)))

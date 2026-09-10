@@ -281,3 +281,40 @@ The registry still scales linearly with receipt documents and their unique
 artifacts. If the retained store grows enough for that cost to matter, the next
 safe step is a content-addressed per-repository observation index and scoped
 query surface, not disabling live freshness.
+
+## Fail-fast and Web projection acceleration: 2026-09-10
+
+A second profile showed that the remaining steady-state cost came primarily
+from rebuilding large Windows adapter snapshots and rehashing toolchain
+directories for receipts whose runner digest was already stale. Such a receipt
+cannot become accepted through any later freshness check. Registry and accepted-
+fact paths now stop that candidate at the exact runner mismatch before adapter,
+source, target, toolchain, environment, driver, and invocation observation.
+Receipt document and artifact integrity still run first, and current-runner
+receipts still pass the complete freshness pipeline.
+
+The runner identity is now the explicit replay-execution import closure instead
+of every Python file in the Factory package. It includes every adapter, artifact
+and receipt semantics, ontology, replay driver, identity observer, and runner
+source. Control-plane modules such as MCP presentation, workspaces, knowledge,
+and acceptance response projection are excluded because they cannot change the
+native execution or receipt envelope. This prevents unrelated Web changes from
+forcing all games through a new cold replay. After generating the final 14
+TH095 receipts, the acceptance and MCP projection code was changed and the
+service restarted; the same registry ID and all 14 accepted facts remained
+current without replay. Changes to replay or adapter code still change the
+runner digest and fail closed.
+
+The public MCP now defaults to compact projections. With all 59 receipts stale,
+`factory_get_acceptance_registry(detail="summary")` took 0.459--0.582 seconds
+and returned 307 JSON bytes; full detail took 1.155 seconds and returned 42,153
+bytes. After cold-replaying the active TH095 checkpoint, the store contained 73
+candidates: 14 accepted and 59 rejected. Five steady-state summary reads had a
+0.757-second median and returned 308 bytes. Three full reads took
+1.118--1.530 seconds and returned 51,496 bytes.
+
+For the same 14 current TH095 facts, compact accepted-fact responses returned
+11,561 bytes with a five-read median of 1.097 seconds. Full responses returned
+27,039 bytes with a 1.415-second median. Both modes performed identical live
+artifact and freshness checks and returned the same registry ID. Summary is a
+context and serialization optimization, never a weaker truth query.

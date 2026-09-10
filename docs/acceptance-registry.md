@@ -22,6 +22,12 @@ entry with a content hash and size when their bytes can be read. The registry
 ID hashes the policy identity, policy digest, complete decision list, candidate
 content identities, and counts.
 
+The MCP surface returns `detail="summary"` by default. It contains the same
+content-addressed registry ID and complete partition counts while omitting the
+potentially large entry array. Request `detail="full"` only when candidate-level
+rejection diagnostics are needed. Summary mode changes response size, not the
+classification work or registry identity.
+
 All supplied repositories are held under shared factory locks for the complete
 registry evaluation. Replays take the corresponding exclusive lock. This
 prevents two factory operations from observing a half-completed native replay,
@@ -33,6 +39,31 @@ before revalidating any fact, so a factory replay cannot produce a mixed-time
 multi-repository answer. Artifact objects must be regular files opened without
 following symlinks; matching bytes reached through an alias are not accepted as
 immutable store evidence.
+
+## Fast fail-closed evaluation
+
+The live evaluator orders checks by decisive cost. Receipt document and
+artifact integrity remain mandatory. During freshness evaluation, a stale
+runner implementation digest is terminal for acceptance, so registry and query
+paths return that exact rejection without parsing repository adapters or
+rehashing targets and toolchains that cannot restore the receipt. Current-runner
+receipts continue through every source, claim, target, toolchain, environment,
+driver, invocation, and coverage check.
+
+The runner digest covers an explicit replay-execution import closure: adapter
+normalization, artifact storage, ontology and receipt semantics, replay drivers,
+identity observation, and the runner itself. MCP presentation, workspace,
+knowledge, and other control-plane modules are deliberately outside that
+closure because they cannot change native replay output or receipt semantics.
+The file list is code-reviewed and regression-tested. This avoids cold-replaying
+every game merely because a Web tool description or unrelated service surface
+changed, while changes to any evidence-producing dependency still invalidate
+receipts.
+
+Repository adapter TOML and replay manifests are parsed through process-local
+caches keyed by their exact bytes. No mtime, file size, TTL, or pathname-only
+shortcut participates. Later bytes are reparsed; live observations and
+acceptance decisions are never retained across requests.
 
 ## Explicit policy
 
@@ -88,6 +119,19 @@ target identity, claim type, or oracle ID. Before returning a fact, it checks
 the referenced artifacts and live freshness again. A registry object is not a
 permanent authorization: changing source, target, toolchain, environment,
 driver, runner, or evidence after registry construction makes the query fail.
+
+The MCP query uses `detail="summary"` by default and returns receipt, claim,
+subject, target, toolchain, source snapshot, Oracle, verdict, and coverage
+identity without verbose claim metadata, diagnostics, and evidence arrays.
+Use `detail="full"` when those complete bindings are needed. Both projections
+perform the same artifact and freshness checks before projecting the result.
+
+The service builds the registry and projects facts atomically under the same
+repository lock set. It therefore consumes the integrity and freshness pass
+that just admitted those receipts instead of releasing the locks and repeating
+the same observations inside one MCP call. An `AcceptanceRegistry` object used
+later still rechecks artifacts and freshness before returning facts; the reuse
+applies only to the point-in-time build-and-query operation.
 
 This command is intentionally separate from `knowledge`. The latter is the
 reviewed cross-game catalog backed by historical regression fixtures. A live

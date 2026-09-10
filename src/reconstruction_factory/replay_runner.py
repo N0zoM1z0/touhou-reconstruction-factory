@@ -63,6 +63,23 @@ from .replay_identity import (
 )
 
 
+_RUNNER_IMPLEMENTATION_RELATIVE_PATHS = (
+    "adapters/__init__.py",
+    "adapters/base.py",
+    "adapters/common.py",
+    "adapters/th04.py",
+    "adapters/th08.py",
+    "adapters/windows.py",
+    "artifact_store.py",
+    "errors.py",
+    "ontology.py",
+    "oracle_receipts.py",
+    "replay_drivers.py",
+    "replay_identity.py",
+    "replay_runner.py",
+)
+
+
 @dataclass(frozen=True, slots=True)
 class ReplayRun:
     receipt: OracleReceipt
@@ -101,7 +118,7 @@ class FreshnessObservationCache:
         default_factory=dict
     )
     driver_versions: dict[
-        tuple[str, str, str, tuple[Path, ...]], str
+        tuple[str, str, str, Path, tuple[Path, ...]], str
     ] = field(default_factory=dict)
     runner_sha256: str | None = None
 
@@ -165,6 +182,7 @@ class FreshnessObservationCache:
             plan.driver_id,
             plan.oracle_id,
             plan.coldness.value,
+            plan.stages[0].cwd.resolve(strict=True),
             tuple(path.resolve(strict=True) for path in plan.oracle_inputs),
         )
         if key not in self.driver_versions:
@@ -640,18 +658,21 @@ def verify_live_freshness(
     repository: str | Path,
     *,
     observations: FreshnessObservationCache | None = None,
+    stop_on_runner_mismatch: bool = False,
 ) -> tuple[str, ...]:
     """Compare a verified receipt document with the current normalized graph."""
 
     root = Path(repository).expanduser().resolve(strict=True)
     live = observations or FreshnessObservationCache()
-    snapshot = live.snapshot(root)
     errors: list[str] = []
-    if document.get("repository_adapter_id") != snapshot.adapter_id:
-        errors.append("adapter-id-changed")
     current_runner = live.runner()
     if document.get("runner_implementation_sha256") != current_runner:
         errors.append("runner-implementation-stale")
+        if stop_on_runner_mismatch:
+            return tuple(errors)
+    snapshot = live.snapshot(root)
+    if document.get("repository_adapter_id") != snapshot.adapter_id:
+        errors.append("adapter-id-changed")
     claim_doc = document.get("claim")
     if not isinstance(claim_doc, dict):
         return ("claim-binding-malformed",)
@@ -761,19 +782,23 @@ def runner_implementation_sha256() -> str:
 
     package_root = Path(__file__).resolve(strict=True).parent
     records = []
-    for path in sorted(package_root.rglob("*.py")):
+    for relative in _RUNNER_IMPLEMENTATION_RELATIVE_PATHS:
+        path = package_root / relative
         if path.is_symlink() or not path.is_file():
             raise ReplayError(f"runner implementation input is not a regular file: {path}")
         records.append(
             {
-                "path": path.relative_to(package_root).as_posix(),
+                "path": relative,
                 "sha256": file_sha256(path),
                 "size": path.stat().st_size,
             }
         )
-    if not records:
-        raise ReplayError("runner implementation contains no Python sources")
-    return canonical_sha256(records)
+    return canonical_sha256(
+        {
+            "scope": "replay-execution-import-closure-v1",
+            "files": records,
+        }
+    )
 
 
 def _bind_stages(

@@ -11,7 +11,10 @@ import time
 from typing import Any, Callable
 import uuid
 
-from .acceptance import build_acceptance_registry
+from .acceptance import (
+    build_acceptance_registry,
+    build_acceptance_registry_and_facts,
+)
 from .adapters import inspect_repository
 from .artifact_store import ArtifactStore
 from .errors import (
@@ -374,8 +377,13 @@ class FactoryService:
             tuple(item.to_dict() for item in events),
         )
 
-    def accepted_registry(self) -> dict[str, Any]:
-        return self._registry().to_dict()
+    def accepted_registry(self, *, detail: str = "full") -> dict[str, Any]:
+        registry = self._registry()
+        if detail == "summary":
+            return registry.summary_dict()
+        if detail == "full":
+            return registry.to_dict()
+        raise ValueError("acceptance registry detail must be summary or full")
 
     def accepted_snapshot(self, repository_id: str) -> dict[str, Any]:
         registration = self.config.repository(repository_id)
@@ -388,18 +396,23 @@ class FactoryService:
         target_identity_id: str | None = None,
         claim_type: ClaimType | None = None,
         oracle_id: str | None = None,
+        detail: str = "full",
         limit: int = 20,
         offset: int = 0,
     ) -> dict[str, Any]:
         _page_bounds(limit, offset, maximum=100)
-        registry = self._registry()
-        facts = registry.accepted_facts(
+        registry, facts = build_acceptance_registry_and_facts(
+            self.store,
+            self.config.policy,
+            self.config.repository_map(),
             target_identity_id=target_identity_id,
             claim_type=claim_type,
             oracle_id=oracle_id,
+            detail=detail,
         )
         return {
             "registry_id": registry.registry_id,
+            "detail": detail,
             **_page_dict(len(facts), offset, limit, facts[offset : offset + limit]),
         }
 

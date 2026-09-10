@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from dataclasses import replace
 import json
 import os
@@ -9,6 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import reconstruction_factory.replay_runner as replay_runner_module
 from reconstruction_factory.artifact_store import ArtifactStore
 from reconstruction_factory.errors import ReplayCancelled, ReplayError
 from reconstruction_factory.ontology import (
@@ -44,6 +46,7 @@ from reconstruction_factory.replay_runner import (
     FreshnessObservationCache,
     ReplayExpectation,
     ReplayRunner,
+    _RUNNER_IMPLEMENTATION_RELATIVE_PATHS,
     runner_implementation_sha256,
     verify_live_freshness,
 )
@@ -317,6 +320,58 @@ print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
         inspection.assert_called_once_with(self.root.resolve(strict=True))
         source_observation.assert_called_once_with(self.root.resolve(strict=True))
         version_observation.assert_called_once()
+
+    def test_stale_runner_short_circuits_repository_observation(self) -> None:
+        driver = FakeDriver()
+        run = self.run_with(driver)
+        document = self.store.verify_receipt_document(run.receipt_path)
+        document["runner_implementation_sha256"] = "0" * 64
+        with patch(
+            "reconstruction_factory.replay_runner.inspect_repository"
+        ) as inspection:
+            self.assertEqual(
+                verify_live_freshness(
+                    document,
+                    self.root,
+                    stop_on_runner_mismatch=True,
+                ),
+                ("runner-implementation-stale",),
+            )
+        inspection.assert_not_called()
+
+    def test_runner_fingerprint_has_an_auditable_execution_scope(self) -> None:
+        paths = set(_RUNNER_IMPLEMENTATION_RELATIVE_PATHS)
+        self.assertIn("replay_runner.py", paths)
+        self.assertIn("replay_drivers.py", paths)
+        self.assertIn("oracle_receipts.py", paths)
+        self.assertIn("adapters/windows.py", paths)
+        self.assertNotIn("mcp_server.py", paths)
+        self.assertNotIn("acceptance.py", paths)
+        self.assertNotIn("workspaces.py", paths)
+
+        package_root = Path(replay_runner_module.__file__).parent
+        missing = set()
+        for relative in paths:
+            source = package_root / relative
+            package_parts = ["reconstruction_factory", *Path(relative).parts[:-1]]
+            for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
+                if not isinstance(node, ast.ImportFrom):
+                    continue
+                if node.level:
+                    prefix = package_parts[: len(package_parts) - node.level + 1]
+                    module = prefix + (node.module or "").split(".")
+                elif node.module and node.module.startswith("reconstruction_factory"):
+                    module = node.module.split(".")
+                else:
+                    continue
+                if module[0] != "reconstruction_factory":
+                    continue
+                module_path = "/".join(module[1:])
+                candidates = (f"{module_path}.py", f"{module_path}/__init__.py")
+                for candidate in candidates:
+                    if (package_root / candidate).is_file() and candidate not in paths:
+                        missing.add((relative, candidate))
+        self.assertEqual(missing, set())
 
     def test_product_replay_uses_driver_declared_nonbyte_coverage(self) -> None:
         self.snapshot = product_snapshot(self.root)

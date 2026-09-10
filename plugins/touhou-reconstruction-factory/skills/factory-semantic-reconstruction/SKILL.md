@@ -1,11 +1,11 @@
 ---
 name: factory-semantic-reconstruction
-description: Recover evidence-backed types, names, owners, representations, and protocols in an already reconstructed Touhou game while preserving its applicable exact, product, format, and runtime baselines. Use for a bounded semantic reconstruction batch in a registered live repository. Do not use for broad beautification, new-game scaffolding, or cross-game knowledge publication.
+description: Run an autonomous campaign of bounded semantic reconstruction batches in an already reconstructed Touhou game while preserving applicable exact, historical-platform product, format, and runtime feedback. Use to recover evidence-backed types, names, owners, representations, and protocols in a registered live repository. Do not use for broad beautification, new-game scaffolding, ports, or cross-game knowledge publication.
 ---
 
 # Factory Semantic Reconstruction
 
-Follow `gpt-web-semantic-reconstruction-session-v1`, which extends
+Follow `gpt-web-semantic-reconstruction-session-v2`, which extends
 `gpt-web-reconstruction-session-v4`. Work autonomously in the registered live
 game repository. The Factory supplies routing, target-bound analysis,
 composable Bash, and independent replay; it does not decide meaning for you.
@@ -13,22 +13,25 @@ composable Bash, and independent replay; it does not decide meaning for you.
 When the selected game is TH095, read
 [`references/th095-start.md`](references/th095-start.md) before changing source.
 
-## Establish the semantic session
+## Establish the semantic campaign
 
-Require a game ID, one semantic objective, and a measurable stop condition. A
+Require a game ID, one semantic objective, and a measurable campaign stop condition. A
 scope hint, prior checkpoint, and evidence seed are optional.
 
 1. Call `factory_describe`, `factory_list_repositories`, and
    `factory_get_repository_status`. Report the real branch, HEAD, upstream, and
    dirty/staged/untracked state. Preserve existing work.
 2. Read `AGENTS.md`, the current handoff, architecture/workflow documents,
-   semantic plan, relevant source, ledgers, build scripts, and recent relevant
-   history through `factory_repository_run_shell`.
+   semantic plan, latest committed semantic batch and named next batch,
+   relevant source, ledgers, build scripts, and recent relevant history through
+   `factory_repository_run_shell`. Do not redo a committed batch without new
+   contradictory evidence.
 3. Run the repository's target and tracking preflight. Attest the selected
    IDA/Ghidra provider before relying on it.
 4. Record the live status of function/extent exactness, production closure,
    runtime storage, and runtime scenario planes separately. Historical numbers
-   orient the session but never replace a live check.
+   orient the campaign but never replace a live check. Capture broad orientation
+   once; later refresh only state invalidated by intervening changes.
 
 Semantic reconstruction does not require a false whole-project exactness claim:
 an explicit residual may remain unknown. It does require a target-specific
@@ -38,7 +41,20 @@ reconstructed Windows i386 product; for PC-98 it is the corresponding 16-bit
 product/runtime environment. A modern port cannot substitute for either
 prerequisite.
 
-## Route, then bound one batch
+## Run a campaign of bounded batches
+
+One batch is an inner transaction, not the session stop. After a successful
+batch, refresh HEAD and worktree state, read the just-committed next-batch note,
+and immediately select the next coherent family without asking the user for
+permission. Continue until the supplied stop condition passes an independent
+exit audit, a concrete evidence/tool boundary prevents useful progress,
+continuation requires a materially different scope decision, or remaining
+context cannot safely close another batch.
+
+Under context pressure, finish or revert the active experiment, run its required
+checks, write durable evidence, create a coherent checkpoint when warranted,
+name the exact next batch, and only then hand off. Never leave useful work only
+in chat context.
 
 Call `factory_report_semantic_debt` for a repository-relative source scope when
 useful. Its raw-member, absolute-address, anonymous-identifier, and opaque-
@@ -50,7 +66,8 @@ Supplement the router with broad composable Bash searches. It does not find all
 numeric opcodes and operand selectors, stable resource IDs, flag namespaces,
 duplicate owners, representation boundaries, or lifetime mistakes.
 
-Select one coherent owner, field, representation, or protocol family. Prefer
+For each loop, select one coherent owner, field, representation, or protocol
+family. Prefer
 multiple independent target-local consumers, bounded caller/owner scope,
 existing focused exact units, high owner or pointer-width value, and no required
 behavior change. State which adjacent files and families are excluded.
@@ -100,7 +117,7 @@ investigation. Broad Bash remains the primary composition surface; the semantic
 router and other atomic tools add identity and convenience without restricting
 your choices.
 
-## Close the affected regression surface
+## Close the affected regression surface efficiently
 
 Treat the target exact lane and the reconstructed historical-platform
 product/runtime lane as the two independent semantic regression oracles. A
@@ -109,9 +126,10 @@ positives but does not prove the chosen English interpretation. Portable
 products are later consumers after semantic readiness, not prerequisite
 oracles.
 
-- For a private field/name/expression change, replay every accepted unit in the
-  affected object and compile the complete declared production graph or the
-  repository-defined equivalent.
+- For a private field/name/expression change, run every affected exact unit and
+  the smallest historical-platform compile/link surface that can expose the
+  change. Keep broader product closure explicitly pending until the next
+  campaign milestone when the repository does not require it immediately.
 - For a shared header, layout, inline body, PCH, or owner change, replay every
   affected object, run the repository-required cold aggregate exact gate, cold
   compile/link the product, and exercise a bounded runtime transition when
@@ -131,6 +149,27 @@ If a broader regression fails, classify the failure before changing source.
 Do not silently broaden the batch, weaken an oracle, or publish aggregate totals
 from a stale baseline.
 
+Use four feedback levels instead of rerunning the most expensive gate after
+every edit:
+
+1. **Edit loop:** syntax, layout assertions, smallest affected compile/object
+   comparison, and only the analysis query needed to answer the current
+   question.
+2. **Batch closure:** every affected exact unit plus the affected native compile,
+   link, format, or runtime surface.
+3. **Immediate broad closure:** cold aggregate exact and whole-product gates for
+   shared header/layout/PCH/inline/owner changes, sensitive protocols, or any
+   focused result exposing cross-object risk.
+4. **Campaign milestone:** close remaining repository-required aggregate exact,
+   historical-platform product, and available runtime gates once for the current
+   committed state.
+
+Do not replay the full accepted Factory receipt set after every private
+checkpoint when the next planned source commit would immediately stale it.
+Issue claim-specific receipts at a meaningful current-source milestone and
+query the registry in summary mode unless candidate-level rejection diagnostics
+are needed. A deferred or stale receipt plane must remain explicitly non-current.
+
 ## Record and checkpoint
 
 After checks pass, append one concise game-local batch record containing scope
@@ -147,12 +186,16 @@ English local commit whose subject begins `gpt-web:`. Exclude unrelated existing
 work. Do not push. The checkpoint is review/resume state, not semantic or
 exactness proof.
 
+After the checkpoint, return to batch selection and continue. Do not turn the
+normal completion of one reviewable unit into a campaign handoff.
+
 ## Handoff
 
-Report session status; game/objective; starting and ending commit and dirty
-state; selected and excluded scope; router profile/scope/counts/limitations;
+Report the actual terminal condition; game/campaign objective; starting and
+ending commit and dirty state; every completed checkpoint; selected and
+excluded scope; router profile/scope/counts/limitations;
 target and analysis attestation; observed/corroborated/inferred/unknown evidence;
 layout/ABI facts; changed files; checkpoint commits; tests actually run;
-affected-oracle closure; every verification plane; accepted receipt facts
-separately from semantic interpretation; retained unknowns; and the next useful
-batch.
+affected-oracle closure and explicitly deferred broad gates; every verification
+plane; accepted receipt facts separately from semantic interpretation; retained
+unknowns; and the exact next batch.

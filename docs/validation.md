@@ -264,15 +264,42 @@ passed with all 33 tools and all four configured game adapters. These are
 observed timings on the single-user live host, not portable performance
 guarantees.
 
+## Recorded campaign and fail-fast run: 2026-09-10
+
+The second release suite passed 148 tests and parsed 38 JSON, two TOML, and two
+XML documents. It added exact-byte adapter TOML caching, terminal runner-stale
+short-circuit tests, an auditable replay-execution fingerprint scope, compact
+registry and accepted-fact projections, the semantic campaign v2 contract, and
+22 independent GPT-web workflow scenarios. The semantic skill passed the
+current quick validator. The local plugin validator retained its documented
+schema mismatch for the current `.app.json` `required: true` field; the field
+was intentionally preserved because it is the current ChatGPT app dependency
+contract.
+
+The final public MCP read-only validation passed with 33 tools and all four
+configured adapters. TH095 remained at 14 accepted results after a controlled
+runner rollover: 13 function-exact results and one 88-source Windows i386
+product-closure result. The final store contained 73 candidates, 59 rejected
+historical receipts, and zero invalid candidates.
+
+The 73-candidate registry summary had a 0.757-second five-read median and a
+308-byte response. Compact TH095 accepted facts had a 1.097-second five-read
+median and an 11,561-byte response; full facts had a 1.415-second median and a
+27,039-byte response. A later acceptance/MCP-only change and service restart did
+not invalidate the final receipts, directly exercising the new separation
+between replay-execution identity and control-plane presentation.
+
 ## Deliberate limitations
 
-This run proves the current service contract and only the narrow TH105 replay
-claim above. It does not prove whole-image closure, LTCG physical ownership,
-runtime equivalence, game completeness, or any exact claim for TH04, TH08, or
-TH095. Those remain unknown until a supported factory-controlled replay produces
-a fresh receipt accepted by policy. Local validators prove the prompt assets,
-plugin structure, and recorded behavioral scenarios; they cannot prove that a
-particular ChatGPT account has refreshed the new plugin version or will
-automatically select the orchestration skill. Test that UI behavior in a new
-conversation after refreshing the installed plugin, preferably by selecting it
-explicitly with `@` for the first run.
+These runs prove only their explicitly listed receipt claims. The latest live
+store admits 13 TH095 function-exact claims and one TH095 Windows i386 product-
+closure claim; it does not thereby prove whole-image equality, every initialized-
+data owner, runtime equivalence, semantic correctness, or game completion.
+Unreceipted claims for TH04, TH08, TH095, and TH105 remain unknown until a
+supported factory-controlled replay produces a fresh receipt accepted by policy.
+Local validators prove the prompt assets, plugin structure, and recorded
+behavioral scenarios; they cannot prove that a particular ChatGPT account has
+refreshed the new plugin version or will automatically select the orchestration
+skill. Test that UI behavior in a new conversation after refreshing the
+installed plugin, preferably by selecting it explicitly with `@` for the first
+run.

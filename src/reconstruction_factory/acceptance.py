@@ -359,14 +359,65 @@ class AcceptanceRegistry:
             "schema_version": self.schema_version,
         }
 
+    def summary_dict(self) -> dict[str, Any]:
+        """Return the authenticated registry identity and counts without entries."""
+
+        document = self.to_dict()
+        document.pop("entries")
+        document["detail"] = "summary"
+        return document
+
     def accepted_facts(
         self,
         *,
         target_identity_id: str | None = None,
         claim_type: ClaimType | None = None,
         oracle_id: str | None = None,
+        detail: str = "full",
     ) -> tuple[dict[str, Any], ...]:
-        receipts = tuple(
+        if detail not in {"summary", "full"}:
+            raise AcceptanceError("accepted fact detail must be summary or full")
+        receipts = self._select_receipts(
+            target_identity_id=target_identity_id,
+            claim_type=claim_type,
+            oracle_id=oracle_id,
+        )
+        repositories = []
+        for receipt in receipts:
+            repository = self._repositories.get(receipt.target.identity_id)
+            if repository is None:
+                raise AcceptanceError(
+                    f"accepted receipt lost repository binding: {receipt.receipt_id}"
+                )
+            repositories.append(repository)
+        with ExitStack() as locks:
+            for repository in sorted(set(repositories), key=str):
+                locks.enter_context(repository_lock(repository, exclusive=False))
+            freshness_observations = FreshnessObservationCache()
+            for receipt in receipts:
+                self._verify_artifacts(receipt)
+                repository = self._repositories[receipt.target.identity_id]
+                errors = verify_live_freshness(
+                    receipt.to_dict(),
+                    repository,
+                    observations=freshness_observations,
+                    stop_on_runner_mismatch=True,
+                )
+                if errors:
+                    raise AcceptanceError(
+                        f"accepted receipt became stale: {receipt.receipt_id}: "
+                        + ", ".join(errors)
+                    )
+            return self._project_facts(receipts, detail=detail)
+
+    def _select_receipts(
+        self,
+        *,
+        target_identity_id: str | None,
+        claim_type: ClaimType | None,
+        oracle_id: str | None,
+    ) -> tuple[OracleReceipt, ...]:
+        return tuple(
             self._receipts[receipt_id]
             for receipt_id in sorted(self._receipts)
             if (
@@ -383,44 +434,37 @@ class AcceptanceRegistry:
                 or self._receipts[receipt_id].oracle_id == oracle_id
             )
         )
-        repositories = []
+
+    def _project_facts(
+        self,
+        receipts: tuple[OracleReceipt, ...],
+        *,
+        detail: str,
+    ) -> tuple[dict[str, Any], ...]:
+        facts = []
         for receipt in receipts:
-            repository = self._repositories.get(receipt.target.identity_id)
-            if repository is None:
-                raise AcceptanceError(
-                    f"accepted receipt lost repository binding: {receipt.receipt_id}"
-                )
-            repositories.append(repository)
-        with ExitStack() as locks:
-            for repository in sorted(set(repositories), key=str):
-                locks.enter_context(repository_lock(repository, exclusive=False))
-            facts = []
-            freshness_observations = FreshnessObservationCache()
-            for receipt in receipts:
-                self._verify_artifacts(receipt)
-                repository = self._repositories[receipt.target.identity_id]
-                errors = verify_live_freshness(
-                    receipt.to_dict(),
-                    repository,
-                    observations=freshness_observations,
-                )
-                if errors:
-                    raise AcceptanceError(
-                        f"accepted receipt became stale: {receipt.receipt_id}: "
-                        + ", ".join(errors)
-                    )
-                facts.append(
-                    {
-                        "receipt_id": receipt.receipt_id,
-                        "claim": to_primitive(receipt.claim),
-                        "target_identity_id": receipt.target.identity_id,
-                        "toolchain_identity_id": receipt.toolchain.identity_id,
-                        "source_snapshot_sha256": receipt.source_after.snapshot_sha256,
-                        "oracle_id": receipt.oracle_id,
-                        "oracle_version": receipt.oracle_version,
-                        "result": to_primitive(receipt.result),
-                    }
-                )
+            fact = {
+                "receipt_id": receipt.receipt_id,
+                "claim": to_primitive(receipt.claim),
+                "target_identity_id": receipt.target.identity_id,
+                "toolchain_identity_id": receipt.toolchain.identity_id,
+                "source_snapshot_sha256": receipt.source_after.snapshot_sha256,
+                "oracle_id": receipt.oracle_id,
+                "oracle_version": receipt.oracle_version,
+                "result": to_primitive(receipt.result),
+            }
+            if detail == "summary":
+                fact["claim"] = {
+                    "claim_id": receipt.claim.claim_id,
+                    "claim_type": receipt.claim.claim_type,
+                    "subject_id": receipt.claim.subject_id,
+                }
+                fact["result"] = {
+                    "result_id": receipt.result.id,
+                    "verdict": receipt.result.verdict.value,
+                    "coverage": to_primitive(receipt.result.coverage),
+                }
+            facts.append(fact)
         return tuple(facts)
 
     def _materialize_snapshot(
@@ -491,6 +535,7 @@ class AcceptanceRegistry:
                     receipt.to_dict(),
                     root,
                     observations=freshness_observations,
+                    stop_on_runner_mismatch=True,
                 )
                 if errors:
                     raise AcceptanceError(
@@ -614,6 +659,38 @@ def build_acceptance_registry(
         for repository in sorted(set(repository_map.values()), key=str):
             locks.enter_context(repository_lock(repository, exclusive=False))
         return _build_acceptance_registry_locked(store, policy, repository_map)
+
+
+def build_acceptance_registry_and_facts(
+    store: ArtifactStore,
+    policy: AcceptancePolicy,
+    repositories: Mapping[str, str | Path],
+    *,
+    target_identity_id: str | None = None,
+    claim_type: ClaimType | None = None,
+    oracle_id: str | None = None,
+    detail: str = "full",
+) -> tuple[AcceptanceRegistry, tuple[dict[str, Any], ...]]:
+    """Build and project facts under one point-in-time repository lock set."""
+
+    if detail not in {"summary", "full"}:
+        raise AcceptanceError("accepted fact detail must be summary or full")
+    repository_map = {
+        target_id: Path(path).expanduser().resolve(strict=True)
+        for target_id, path in repositories.items()
+    }
+    for target_id in repository_map:
+        _require_id(target_id, "repository target identity")
+    with ExitStack() as locks:
+        for repository in sorted(set(repository_map.values()), key=str):
+            locks.enter_context(repository_lock(repository, exclusive=False))
+        registry = _build_acceptance_registry_locked(store, policy, repository_map)
+        receipts = registry._select_receipts(
+            target_identity_id=target_identity_id,
+            claim_type=claim_type,
+            oracle_id=oracle_id,
+        )
+        return registry, registry._project_facts(receipts, detail=detail)
 
 
 def _build_acceptance_registry_locked(
@@ -742,6 +819,7 @@ def _build_acceptance_registry_locked(
                         document,
                         repository,
                         observations=freshness_observations,
+                        stop_on_runner_mismatch=True,
                     )
                 )
             except (FactoryError, OSError, TypeError, ValueError):

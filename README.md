@@ -86,9 +86,11 @@ flowchart LR
     X["Target-specific exact baseline<br/>explicit residuals may remain unknown"] --> N["Historical-platform product closure<br/>Windows i386 or corresponding 16-bit product<br/>compile · link · initialized owners · runtime"]
     X --> O1["Exact regression Oracle"]
     N --> O2["Native product/runtime Oracle"]
-    O1 --> S["Semantic reconstruction<br/>one evidenced owner/field/protocol batch"]
+    O1 --> S["Semantic reconstruction campaign<br/>one bounded evidenced batch at a time"]
     O2 --> S
-    S --> P["Portable products<br/>modern Windows · Linux · Web"]
+    S --> K["Local gpt-web: checkpoint<br/>refresh live state"]
+    K -->|"stop condition not audited"| S
+    K -->|"semantic exit audit passes"| P["Portable products<br/>modern Windows · Linux · Web"]
 ```
 
 The two independent semantic feedback lanes are the key false-positive defense:
@@ -179,7 +181,7 @@ connection with end-to-end reconstruction and semantic workflows plus separate
 analysis, optional-workspace, and evidence-preserving replay skills. Reusable
 short prompts and complete standalone prompts live in
 [`prompts/gpt-web-reconstruction.md`](prompts/gpt-web-reconstruction.md).
-The ready-to-run TH095 semantic session is in
+The ready-to-run TH095 semantic campaign is in
 [`prompts/gpt-web-semantic-reconstruction.md`](prompts/gpt-web-semantic-reconstruction.md).
 The single-user deployment
 and first TH105 web test are documented in

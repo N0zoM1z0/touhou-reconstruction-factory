@@ -46,9 +46,9 @@ If it prevents Factory replay eligibility, use repo-native checks and report the
 receipt plane as unavailable for that worktree; never delete work merely to make
 a receipt green.
 
-## First-batch routing
+## Campaign routing
 
-Begin with:
+On a fresh semantic history, begin with:
 
 ```text
 factory_report_semantic_debt(
@@ -64,10 +64,15 @@ Follow `next_offset` only as needed to compare promising files. Supplement the
 lexical report with `rg`, mappings, match-unit definitions, target-attested
 Ghidra xrefs/decompilation/disassembly, and relevant TH08 source/history.
 
-Choose a small high-evidence canonical-owner or field family. Avoid starting
-with the largest ECL interpreter, a persistent score/replay/archive redesign,
-or an anonymous-field sweep. TH08 is workflow and corroboration only; require
-TH095-local evidence for every accepted interpretation.
+When one or more semantic batches are already committed, first read the latest
+entry and its named next batch. Continue from it when current TH095 evidence
+still supports the choice; do not repeat a completed family merely because this
+reference describes the original entry point. Choose another small
+high-evidence canonical-owner or field family after each checkpoint. Avoid the
+largest ECL interpreter, a persistent score/replay/archive redesign, or an
+anonymous-field sweep until prior bounding makes that scope coherent. TH08 is
+workflow and corroboration only; require TH095-local evidence for every
+accepted interpretation.
 
 ## Native regression commands
 
@@ -105,5 +110,12 @@ until a deterministic target-bound Factory runtime provider exists.
 
 Append a completed entry to `docs/SEMANTIC_RECONSTRUCTION.md` only after the
 batch's applicable checks pass, then create one focused local English
-`gpt-web:` checkpoint. Report exactness, product closure, runtime storage, and
-runtime scenario planes independently.
+`gpt-web:` checkpoint. Refresh the live state and immediately start the next
+named batch unless a campaign terminal condition is real. Report exactness,
+product closure, runtime storage, and runtime scenario planes independently.
+
+Use repository-native checks for the rapid inner loop. Do not cold-replay the
+entire accepted Factory receipt set after every private checkpoint when another
+planned source commit would immediately stale it. Close current-source Factory
+receipts at a meaningful campaign milestone; shared owner/layout/header changes
+still require their broad cold exact and product gates immediately.

@@ -131,9 +131,9 @@ writes and the legacy bridges' host Bash tools are unreachable. See
 | `factory_cancel_job` | Cancel queued work or request process-group termination. |
 | `factory_get_job_events` | Page append-only transition history. |
 | `factory_get_job_output_page` | List receipt artifacts or page exact bytes. |
-| `factory_get_acceptance_registry` | Classify every receipt candidate. |
+| `factory_get_acceptance_registry` | Classify every receipt candidate; return compact identity/counts by default or full candidate diagnostics on request. |
 | `factory_get_accepted_snapshot` | Materialize accepted results for one repository. |
-| `factory_query_accepted_facts` | Query only live accepted receipt facts. |
+| `factory_query_accepted_facts` | Query only live accepted receipt facts; use compact identity/coverage summaries by default or full bindings on request. |
 | `factory_query_knowledge` | Page only Factory-published cross-game knowledge; it never reads or promotes game-local input. |
 | `factory_list_historical_fixtures` | Page hash-pinned counterexamples. |
 

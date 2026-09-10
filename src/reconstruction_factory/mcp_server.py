@@ -70,6 +70,7 @@ SemanticDebtCategory = Literal[
     "anonymous-identifier",
     "opaque-storage",
 ]
+RegistryDetail = Literal["summary", "full"]
 UnifiedPatch = Annotated[str, Field(min_length=1, max_length=4194304)]
 ShellScript = Annotated[str, Field(min_length=1, max_length=65536)]
 CommandTimeout = Annotated[int, Field(ge=1, le=3600)]
@@ -688,14 +689,16 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
 
     @server.tool(
         description=(
-            "Build and return the current acceptance registry. Every stored receipt is "
-            "classified as accepted, rejected, or invalid; none are silently omitted."
+            "Build the current acceptance registry. Summary mode returns its identity and "
+            "counts with minimal context; full mode returns every classified candidate."
         ),
         annotations=_READ_ONLY,
         structured_output=True,
     )
-    async def factory_get_acceptance_registry() -> dict[str, Any]:
-        return await invoke(lambda: service().accepted_registry())
+    async def factory_get_acceptance_registry(
+        detail: RegistryDetail = "summary",
+    ) -> dict[str, Any]:
+        return await invoke(lambda: service().accepted_registry(detail=detail))
 
     @server.tool(
         description=(
@@ -712,8 +715,8 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
 
     @server.tool(
         description=(
-            "Page through only fresh facts admitted by the acceptance registry. This is "
-            "the authoritative receipt-backed knowledge query, not the imported claim list."
+            "Page through only fresh facts admitted by the acceptance registry. Summary "
+            "mode minimizes context; full mode includes complete claim and result bindings."
         ),
         annotations=_READ_ONLY,
         structured_output=True,
@@ -722,6 +725,7 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
         target_identity_id: NormalizedId | None = None,
         claim_type: ClaimType | None = None,
         oracle_id: NormalizedId | None = None,
+        detail: RegistryDetail = "summary",
         limit: PageLimit = 20,
         offset: Offset = 0,
     ) -> dict[str, Any]:
@@ -730,6 +734,7 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
                 target_identity_id=target_identity_id,
                 claim_type=claim_type,
                 oracle_id=oracle_id,
+                detail=detail,
                 limit=limit,
                 offset=offset,
             )

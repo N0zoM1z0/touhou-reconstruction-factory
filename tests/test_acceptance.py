@@ -11,6 +11,7 @@ from reconstruction_factory.acceptance import (
     AcceptanceDecision,
     AcceptancePolicy,
     build_acceptance_registry,
+    build_acceptance_registry_and_facts,
     load_acceptance_policy,
 )
 from reconstruction_factory.artifact_store import ArtifactStore
@@ -278,8 +279,24 @@ class AcceptanceRegistryTests(unittest.TestCase):
             ),
         ):
             facts = registry.accepted_facts(claim_type=ClaimType.CODEGEN_EXACT)
+            summaries = registry.accepted_facts(
+                claim_type=ClaimType.CODEGEN_EXACT,
+                detail="summary",
+            )
             materialized = registry.materialize_live_snapshot(self.repository)
         self.assertEqual(len(facts), 1)
+        self.assertEqual(
+            summaries[0]["claim"],
+            {
+                "claim_id": self.receipt.claim.claim_id,
+                "claim_type": self.receipt.claim.claim_type,
+                "subject_id": self.receipt.claim.subject_id,
+            },
+        )
+        self.assertEqual(
+            set(summaries[0]["result"]),
+            {"result_id", "verdict", "coverage"},
+        )
         self.assertEqual(materialized.oracle_results, (self.receipt.result,))
         self.assertNotIn("result:untrusted-import", {
             item.id for item in materialized.oracle_results
@@ -290,6 +307,39 @@ class AcceptanceRegistryTests(unittest.TestCase):
         left = self.build()
         right = self.build()
         self.assertEqual(left.registry_id, right.registry_id)
+
+    def test_registry_summary_omits_candidate_entries(self) -> None:
+        registry = self.build()
+        summary = registry.summary_dict()
+        self.assertEqual(summary["registry_id"], registry.registry_id)
+        self.assertEqual(summary["counts"], registry.to_dict()["counts"])
+        self.assertEqual(summary["detail"], "summary")
+        self.assertNotIn("entries", summary)
+
+    def test_atomic_registry_fact_query_reuses_the_registry_freshness_pass(self) -> None:
+        with (
+            patch(
+                "reconstruction_factory.acceptance.repository_lock",
+                return_value=nullcontext(),
+            ),
+            patch(
+                "reconstruction_factory.acceptance.verify_live_freshness",
+                return_value=(),
+            ) as freshness,
+        ):
+            registry, facts = build_acceptance_registry_and_facts(
+                self.store,
+                policy(),
+                {self.receipt.target.identity_id: self.repository},
+                detail="summary",
+            )
+        self.assertEqual(registry.accepted_count, 1)
+        self.assertEqual(len(facts), 1)
+        freshness.assert_called_once()
+
+    def test_accepted_facts_reject_unknown_detail(self) -> None:
+        with self.assertRaisesRegex(AcceptanceError, "detail"):
+            self.build().accepted_facts(detail="compact")
 
     def test_registry_shares_one_live_observation_snapshot(self) -> None:
         second = replace(

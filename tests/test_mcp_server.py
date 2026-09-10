@@ -176,6 +176,24 @@ target_identity_ids = ["target:th08-v1.00d-original"]
             semantic_debt.input_schema["properties"]["limit"]["maximum"], 100
         )
         self.assertTrue(semantic_debt.annotations.read_only_hint)
+        registry = next(
+            tool
+            for tool in discovered.tools
+            if tool.name == "factory_get_acceptance_registry"
+        )
+        self.assertEqual(
+            registry.input_schema["properties"]["detail"]["default"],
+            "summary",
+        )
+        facts = next(
+            tool
+            for tool in discovered.tools
+            if tool.name == "factory_query_accepted_facts"
+        )
+        self.assertEqual(
+            facts.input_schema["properties"]["detail"]["default"],
+            "summary",
+        )
 
         mutating = {
             "factory_create_workspace": (False, False, True),
@@ -203,6 +221,12 @@ target_identity_ids = ["target:th08-v1.00d-original"]
     async def test_structured_read_and_model_visible_error(self) -> None:
         async with Client(build_mcp_server(self.config)) as client:
             description = await client.call_tool("factory_describe")
+            registry_summary = await client.call_tool(
+                "factory_get_acceptance_registry"
+            )
+            registry_full = await client.call_tool(
+                "factory_get_acceptance_registry", {"detail": "full"}
+            )
             failure = await client.call_tool(
                 "factory_get_job", {"job_id": "job:" + "0" * 32}
             )
@@ -213,6 +237,11 @@ target_identity_ids = ["target:th08-v1.00d-original"]
                 "factory_query_knowledge", {"limit": 1, "offset": 0}
             )
         self.assertFalse(description.is_error)
+        self.assertFalse(registry_summary.is_error)
+        self.assertNotIn("entries", registry_summary.structured_content)
+        self.assertEqual(registry_summary.structured_content["detail"], "summary")
+        self.assertFalse(registry_full.is_error)
+        self.assertIn("entries", registry_full.structured_content)
         self.assertEqual(description.structured_content["policy_id"], "strict-live-v1")
         self.assertTrue(description.structured_content["workspace"]["enabled"])
         self.assertTrue(description.structured_content["repository_work"]["enabled"])
