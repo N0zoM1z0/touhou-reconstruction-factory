@@ -37,6 +37,12 @@ git_author_email = "gpt-web@example.invalid"
 # Prefer one immutable Factory-managed installation for reusable executables
 # such as Ghidra/JDK/toolchain packages. Per-game repositories select versions,
 # wrappers, Wine prefixes, analysis projects, and Oracle workflows.
+# Also mount the Factory contracts and docs read-only so Web prompts can read
+# their named guidance paths even when ChatGPT does not inject plugin skills:
+# shared_tool_roots = [
+#   "/srv/touhou-reconstruction-factory/contracts",
+#   "/srv/touhou-reconstruction-factory/docs",
+# ]
 shared_tool_roots = []
 
 # Optional semantic-analysis bridges must be loopback-only. The factory calls

@@ -183,6 +183,9 @@ short prompts and complete standalone prompts live in
 [`prompts/gpt-web-reconstruction.md`](prompts/gpt-web-reconstruction.md).
 The ready-to-run TH095 semantic campaign is in
 [`prompts/gpt-web-semantic-reconstruction.md`](prompts/gpt-web-semantic-reconstruction.md).
+Both prompts are complete without automatic skill injection and require the
+[`dirty-work recovery and analysis-artifact lifecycle`](docs/worktree-recovery-and-analysis-artifacts.md)
+before new edits.
 The single-user deployment
 and first TH105 web test are documented in
 [`GPT-web plugin and Funnel deployment`](docs/gpt-web-plugin.md).

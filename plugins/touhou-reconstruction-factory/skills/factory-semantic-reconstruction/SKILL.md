@@ -10,6 +10,11 @@ Follow `gpt-web-semantic-reconstruction-session-v2`, which extends
 game repository. The Factory supplies routing, target-bound analysis,
 composable Bash, and independent replay; it does not decide meaning for you.
 
+Also follow `worktree-recovery-and-analysis-artifacts-v1`. Do not assume this
+skill was injected merely because the MCP app is connected. Read the Factory
+contract/documentation paths named by the launch prompt when mounted; otherwise
+the complete inline prompt remains authoritative.
+
 When the selected game is TH095, read
 [`references/th095-start.md`](references/th095-start.md) before changing source.
 
@@ -21,14 +26,27 @@ scope hint, prior checkpoint, and evidence seed are optional.
 1. Call `factory_describe`, `factory_list_repositories`, and
    `factory_get_repository_status`. Report the real branch, HEAD, upstream, and
    dirty/staged/untracked state. Preserve existing work.
-2. Read `AGENTS.md`, the current handoff, architecture/workflow documents,
+2. Any non-clean state triggers a mandatory recovery review before a new batch
+   is selected or edited, regardless of whether a disconnect is known. Inspect porcelain-v2
+   status, complete staged/unstaged diffs, every relevant untracked path, the
+   latest handoff and recent history, tests, and artifact manifests. Classify
+   each path as recoverable current work, unrelated pre-existing work, generated
+   ephemeral output, or unknown origin/intent. Finish/checkpoint recoverable work
+   first; preserve/exclude unrelated work; never reset, delete, overwrite, or
+   stage unknown work. Re-run this gate after a timeout, interrupted command, or
+   unexpected status change. If an overlapping unknown cannot be isolated,
+   report a concrete blocker.
+3. Read `AGENTS.md`, the current handoff, architecture/workflow documents,
    semantic plan, latest committed semantic batch and named next batch,
    relevant source, ledgers, build scripts, and recent relevant history through
    `factory_repository_run_shell`. Do not redo a committed batch without new
    contradictory evidence.
-3. Run the repository's target and tracking preflight. Attest the selected
+4. Run the repository's target and tracking preflight. Attest the selected
    IDA/Ghidra provider before relying on it.
-4. Record the live status of function/extent exactness, production closure,
+5. Inventory `.analysis/` total/top-level size without trusting its contents.
+   Earlier artifacts are leads until their HEAD, target, database, tool, and
+   command bindings are checked or reproduced.
+6. Record the live status of function/extent exactness, production closure,
    runtime storage, and runtime scenario planes separately. Historical numbers
    orient the campaign but never replace a live check. Capture broad orientation
    once; later refresh only state invalidated by intervening changes.
@@ -117,6 +135,15 @@ investigation. Broad Bash remains the primary composition surface; the semantic
 router and other atomic tools add identity and convenience without restricting
 your choices.
 
+Use command-local temporary storage for one-shot analysis output. For multi-
+command work, reuse one `.analysis/gpt-web/<campaign-id>/` scratch root and
+create a manifest before its first large output. Record campaign/game identity,
+starting/current HEAD, state, and each artifact's path, class, producer, input
+binding, size, references, and disposition. Treat 256 MiB as a soft campaign
+review budget and 64 MiB as the large-artifact threshold. Prefer bounded
+provider queries and registered Ghidra/IDA/Wine state; do not copy a provider
+database, Wine prefix, whole-program dump, or worktree per probe.
+
 ## Close the affected regression surface efficiently
 
 Treat the target exact lane and the reconstructed historical-platform
@@ -177,6 +204,13 @@ and addresses; observed, corroborated, inferred, and unknown evidence; layout
 and ABI facts; exact results; product/format/runtime results or unavailable
 state; and the raw forms removed. Make no project-wide percentage claim.
 
+Measure `.analysis/` growth before the checkpoint. Retain compact conclusions
+in tracked evidence and delete only explicit current-session scratch paths whose
+ownership, inactive producer, reproducibility/non-need, and lack of references
+are established. Never bulk-delete `.analysis/`, delete by age alone, or touch
+legacy-unknown/shared provider state. Update the manifest and report retained
+bytes and large artifacts.
+
 Update `.reconstruction/game-knowledge.json` only for a durable game-local fact,
 recipe, pitfall, decision, or unknown. Keep `factory_publication="none"`. Never
 edit or publish Factory cross-game knowledge.
@@ -194,6 +228,8 @@ normal completion of one reviewable unit into a campaign handoff.
 Report the actual terminal condition; game/campaign objective; starting and
 ending commit and dirty state; every completed checkpoint; selected and
 excluded scope; router profile/scope/counts/limitations;
+recovery classifications/actions/unknowns; starting and ending `.analysis/`
+bytes, scratch-manifest state, and retained/removed artifact disposition;
 target and analysis attestation; observed/corroborated/inferred/unknown evidence;
 layout/ABI facts; changed files; checkpoint commits; tests actually run;
 affected-oracle closure and explicitly deferred broad gates; every verification

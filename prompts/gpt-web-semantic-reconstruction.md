@@ -4,15 +4,29 @@ This prompt starts a persistent semantic campaign in a game repository
 registered by the shared Touhou Reconstruction Factory MCP. The campaign is a
 sequence of small, independently reviewable batches under
 `gpt-web-semantic-reconstruction-session-v2`, which extends
-`gpt-web-reconstruction-session-v4`.
+`gpt-web-reconstruction-session-v4`. The mandatory companion contract is
+`worktree-recovery-and-analysis-artifacts-v1`; no prompt assumes that ChatGPT
+successfully loaded a bundled skill.
 
 ## Ready-to-run TH095 campaign with the plugin installed
 
 Select **@Touhou Reconstruction Factory**, then send:
 
 ```text
-Use $factory-semantic-reconstruction to continue TH095 semantic reconstruction
-as an autonomous campaign through the shared Factory workflow.
+Continue TH095 semantic reconstruction as an autonomous campaign through the
+shared Factory workflow. Use $factory-semantic-reconstruction if it is actually
+available, but do not depend on the skill body being loaded.
+
+Before editing, try to read these Factory-controlled paths through
+factory_repository_run_shell:
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v2.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/semantic-reconstruction.md
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
+If those read-only paths are not mounted, report that once and continue under
+this complete inline prompt. Never invent missing rules or stop merely because
+automatic skill loading failed.
 
 GAME_ID: th095
 SEMANTIC_OBJECTIVE: Continue from the live committed semantic history. Repeatedly
@@ -58,8 +72,24 @@ it; issue current-source receipts at meaningful committed milestones and report
 deferred or stale receipt planes accurately.
 
 Use factory_report_semantic_debt only as a heuristic router and supplement it
-with repository search, history, ledgers, and target evidence. Preserve all
-existing dirty or untracked files and never stage unrelated work. Do not push.
+with repository search, history, ledgers, and target evidence. Any non-clean
+worktree is a mandatory recovery gate even when no disconnect is known. Before a
+new batch, review complete staged/unstaged diffs, relevant untracked files,
+handoff/history, tests, and manifests; classify every path as recoverable,
+unrelated, generated-ephemeral, or unknown. Finish/checkpoint recoverable work
+first, preserve/exclude unrelated work, and never delete/reset/overwrite/stage
+unknown work. Do not push.
+
+Treat `.analysis/` as non-authoritative bounded workspace. Inventory its size at
+campaign start. Use command-local temporary storage for one-shot output or one
+manifested `.analysis/gpt-web/<campaign-id>/` root for multi-command work. Reuse
+bounded queries/provider state instead of accumulating whole-program exports,
+Wine-prefix copies, analysis-database copies, or probe worktrees. At each
+checkpoint retain compact tracked conclusions and remove only proven current-
+session ephemeral paths with no active producer or reference. Never bulk-delete
+`.analysis/` or touch legacy-unknown/shared provider state. Report starting and
+ending bytes plus every retained large artifact.
+
 Keep semantic interpretation, Git checkpoints, exact receipts, production
 closure, runtime storage, and runtime scenarios as separate states. Unknown is
 an accurate result. Portable Windows, Linux, and Web work begins only after
@@ -77,7 +107,16 @@ next; the prompt does not freeze a stale address or candidate count.
 ```text
 Run an autonomous evidence-first semantic reconstruction campaign under
 gpt-web-semantic-reconstruction-session-v2, extending the general
-gpt-web-reconstruction-session-v4 live-repository contract.
+gpt-web-reconstruction-session-v4 live-repository contract, with mandatory
+worktree-recovery-and-analysis-artifacts-v1. Do not assume a bundled skill was
+loaded. Before editing, try to read these Factory-controlled paths through
+factory_repository_run_shell:
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v2.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/semantic-reconstruction.md
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
+If unavailable, report that once and continue under this complete inline prompt.
 
 Inputs
 - GAME_ID: th095
@@ -102,11 +141,26 @@ Campaign start
 1. Call factory_describe, factory_list_repositories, and
    factory_get_repository_status for th095. Record the actual branch, HEAD,
    upstream relation, and dirty/staged/untracked state. Preserve existing work.
-2. Through factory_repository_run_shell, read AGENTS.md, the current handoff,
+2. If the tree is non-clean, complete a recovery review before selecting or
+   editing a new batch. Inspect porcelain-v2 status, complete staged and
+   unstaged diffs, every relevant untracked path, the latest handoff/history,
+   tests, and artifact manifests. Classify paths as recoverable current work,
+   unrelated pre-existing work, generated ephemeral output, or unknown. Adopt
+   and finish/checkpoint recoverable work first; preserve/exclude unrelated
+   work; never delete, reset, overwrite, or stage unknown work. Re-run this gate
+   after interrupted commands or unexpected status changes.
+3. Through factory_repository_run_shell, read AGENTS.md, the current handoff,
    architecture/workflow documents, semantic record, relevant source and
    ledgers, build/oracle scripts, and recent semantic commits. Run the live
    target, tracking, and target-attested Ghidra preflight required by the repo.
-3. Capture the live function/extent exactness, production closure, runtime
+4. Inventory `.analysis/` total/top-level size without trusting old contents.
+   Use temporary one-shot output or one manifested
+   `.analysis/gpt-web/<campaign-id>/` scratch root. Treat 256 MiB as a soft
+   campaign review budget and 64 MiB as the large-artifact threshold. Reuse
+   bounded provider queries and never copy Wine prefixes or analysis databases
+   per probe. Only delete proven current-session ephemeral paths with no active
+   producer/reference; leave shared and legacy-unknown content untouched.
+5. Capture the live function/extent exactness, production closure, runtime
    storage, and runtime scenario planes separately. Historical totals orient
    work only. Do this broad orientation once and refresh only what a later
    source/tool/target change can invalidate.
@@ -134,8 +188,9 @@ Repeated bounded batch
    layout, PCH, inline bodies, ownership, persistence, callbacks, rendering,
    input, or audio trigger their broader cold gates immediately.
 6. Record concise durable evidence and retained unknowns, inspect status and the
-   complete working/staged diff, stage only intended files, and create one local
-   English `gpt-web:` commit. Do not push.
+   complete working/staged diff, measure `.analysis/` growth, remove only proven
+   current-session ephemeral scratch, stage only intended files, and create one
+   local English `gpt-web:` commit. Do not push.
 7. Refresh the live HEAD and worktree, read the just-committed next-batch note,
    and immediately begin the next coherent batch. Do not ask whether to continue
    merely because the previous batch passed.
@@ -162,5 +217,7 @@ commit and dirty state; every completed checkpoint; selected and excluded
 scope; target attestation; evidence classes and retained unknowns; checks by
 feedback level; broad gates run or explicitly deferred; all verification planes;
 accepted facts separately from semantic interpretation; and the exact next
-batch. Never infer semantic completion from router counts or number of commits.
+batch. Include recovery classifications/actions, starting/ending `.analysis/`
+bytes, manifest state, and retained/removed artifact disposition. Never infer
+semantic completion from router counts or number of commits.
 ```

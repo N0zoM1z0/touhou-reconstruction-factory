@@ -4,39 +4,36 @@ This prompt starts one autonomous, evidence-first reconstruction session in a
 game repository registered by the shared Touhou Reconstruction Factory MCP. The
 session contract is `gpt-web-reconstruction-session-v4`.
 
-## Short prompt with the plugin installed
+The mandatory companion contract is
+`worktree-recovery-and-analysis-artifacts-v1`. Automatic skill loading is an
+optional convenience; this prompt is designed to work without it.
 
-Select **@Touhou Reconstruction Factory**, then send:
+## Ready-to-run prompt
 
-```text
-Run an autonomous evidence-first reconstruction session using the bundled
-factory-reconstruction workflow.
-
-GAME_ID: th105
-OBJECTIVE: <one concrete source-reconstruction objective>
-SCOPE_HINT: <files, symbols, addresses, or subsystem; use "discover" if unknown>
-STOP_CONDITION: <a measurable result for this session>
-RESUME_COMMIT: <prior gpt-web checkpoint hash, or "current">
-
-Communicate with me in Chinese. Write source, documentation, identifiers, and
-Git commit messages in English. Work in the registered live game repository,
-use Bash and the available IDA/Ghidra/Wine/toolchain paths autonomously, and
-create local `gpt-web:` Git checkpoints after coherent tested units. Do not
-push. Accuracy is more important than completeness: preserve unknown whenever
-the evidence cannot prove a claim. A commit or successful build is not Oracle
-proof; report accepted Truth Kernel facts separately.
-```
+Select **@Touhou Reconstruction Factory**, then paste the complete prompt below.
+Do not shorten it to a skill name: the Web client may expose the MCP app without
+injecting the skill body.
 
 The repository and its Git history are the durable resume state. `RESUME_COMMIT`
 is orientation for the agent, not authority to reset current work.
 
-## Standalone prompt
-
-Use this version when testing without automatic skill selection.
+## Complete standalone prompt
 
 ```text
 Run one autonomous evidence-first Touhou source-reconstruction session under
-contract gpt-web-reconstruction-session-v4.
+contract gpt-web-reconstruction-session-v4 plus mandatory companion contract
+worktree-recovery-and-analysis-artifacts-v1. Do not assume any bundled skill was
+loaded.
+
+Factory guidance paths on this host:
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
+
+Before editing, try to read those paths with factory_repository_run_shell. If
+the operator has not mounted them into the repository-work sandbox, report that
+fact once and continue under this complete inline prompt; do not invent omitted
+rules and do not stop merely because automatic skill loading is unavailable.
 
 Task:
 - GAME_ID: th105
@@ -73,11 +70,21 @@ Start:
    staged/unstaged/untracked counts, and dirty state. If RESUME_COMMIT names an
    earlier checkpoint, inspect history and changes since it; do not reset or
    discard newer work merely to match the prompt.
-3. Use factory_repository_run_shell to read the repository's current AGENTS.md
+3. Treat any non-clean state as a mandatory recovery gate, regardless of whether
+   a disconnect is known. Before selecting or editing a new packet, inspect
+   porcelain-v2 status, complete staged and unstaged diffs, every relevant
+   untracked path, the latest handoff, recent relevant history, and available
+   tests or manifests. Classify each path as recoverable current work, unrelated
+   pre-existing work, generated ephemeral output, or unknown origin/intent.
+   Finish and checkpoint recoverable work first; preserve and exclude unrelated
+   work; never delete, reset, overwrite, or stage unknown work. If overlap cannot
+   be isolated, report a concrete blocker. Staged does not mean complete and
+   mtime does not prove provenance.
+4. Use factory_repository_run_shell to read the repository's current AGENTS.md
    or equivalent instructions, architecture, build/oracle scripts, ledgers, and
    relevant recent commits. Existing local changes are part of the live context:
    understand and preserve them, and distinguish them from changes made now.
-4. Turn the objective into one bounded work packet. State the candidate
+5. Turn the objective into one bounded work packet. State the candidate
    functions/addresses/extents/files, evidence already available, unknowns, and
    measurable stop condition. Do not invent a completion percentage without an
    independently established boundary and denominator.
@@ -105,6 +112,29 @@ Investigate and reconstruct:
    replay and product closure; neither result grants the other. If command output
    is truncated, page it with factory_get_repository_command_output instead of
    guessing the omitted result.
+
+Analysis artifact lifecycle:
+1. Treat `.analysis/` as ignored, non-authoritative working storage, never as a
+   knowledge base or current evidence by itself. At preflight, inventory its
+   total and top-level size without hashing every large file. Old outputs are
+   leads until their source HEAD, target, database, tool, and command inputs are
+   checked or reproduced.
+2. Use command-local temporary directories with cleanup for one-shot outputs.
+   For multi-command work, reuse one `.analysis/gpt-web/<campaign-id>/` scratch
+   root and create `manifest.json` before the first large output. Record campaign,
+   game, starting/current HEAD, state, and each artifact's path, class, producer,
+   input binding, size, references, and disposition. Do not create a fresh whole-
+   program export, copied Wine prefix, copied IDA/Ghidra project, or worktree for
+   every probe.
+3. Use 256 MiB per campaign as a soft review budget and 64 MiB as a large-
+   artifact threshold. Crossing either requires a reason and cleanup disposition,
+   not automatic deletion. Prefer bounded analysis queries, registered provider
+   state, one reused worktree, and paged output.
+4. Before each checkpoint, measure growth and retain compact conclusions in
+   tracked evidence. Delete only explicit current-session scratch paths whose
+   ownership, inactive producer, reproducibility/non-need, and lack of references
+   are established. Never bulk-delete `.analysis/`, delete by age alone, or touch
+   legacy-unknown/shared provider databases, toolchains, or Wine prefixes.
 
 Checkpoint:
 1. Create local Git commits after coherent reviewable units; checkpoints are a
@@ -145,6 +175,9 @@ Final handoff:
 - Game and objective
 - Starting and ending commit
 - Starting and ending staged/unstaged/untracked state
+- Dirty-work recovery classifications, actions, and retained unknowns
+- Starting and ending `.analysis/` bytes, current scratch/manifest state, and
+  every retained large artifact or removed current-session artifact
 - Bounded scope completed and excluded
 - Analysis provider, target attestation, evidence, and exactness limitations
 - Changed files and rationale

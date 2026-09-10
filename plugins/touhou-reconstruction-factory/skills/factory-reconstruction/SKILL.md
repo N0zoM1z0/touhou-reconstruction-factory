@@ -10,6 +10,11 @@ feedback speed, and resumability; it does not replace your engineering judgment
 with a rigid sequence of narrow tools. Prefer broad composable repository Bash
 plus the target-attested analysis and replay tools.
 
+Also follow `worktree-recovery-and-analysis-artifacts-v1`. Skill injection is
+not a workflow prerequisite: when the launch prompt provides readable Factory
+contract/documentation paths, read them directly. The complete launch prompt
+remains authoritative if a path is not mounted.
+
 When the objective is semantic reconstruction of already recovered source, use
 `factory-semantic-reconstruction`. Its specialized contract preserves the
 historical-platform order: target exact baseline, corresponding native product
@@ -22,11 +27,20 @@ closure/runtime feedback, semantic reconstruction, then portable products.
 2. Call `factory_describe`, `factory_list_repositories`, and
    `factory_get_repository_status`. Work only in the returned game ID. Report the
    actual branch, `HEAD`, dirty/staged/untracked counts, and upstream relation.
-3. Read the repository's current instructions, architecture, build scripts,
+3. Before new edits, treat every non-clean state as a mandatory recovery gate,
+   whether or not a disconnect is known. Inspect porcelain-v2 status, complete
+   staged and unstaged diffs, every relevant untracked path, the latest handoff,
+   recent relevant history, tests, and artifact manifests. Classify each path as
+   recoverable current work, unrelated pre-existing work, generated ephemeral
+   output, or unknown origin/intent. Finish and checkpoint recoverable work
+   first; preserve/exclude unrelated work; never reset, delete, overwrite, or
+   stage unknown work. If overlap cannot be isolated, report a concrete blocker.
+   Re-run the gate after any timeout, interruption, or unexpected status change.
+4. Read the repository's current instructions, architecture, build scripts,
    ledgers, and recent relevant Git history with
    `factory_repository_run_shell`. Existing dirty and untracked work is part of
    the live context: understand and preserve it; do not pretend it is absent.
-4. Bound one useful work packet. State the candidate functions, addresses,
+5. Bound one useful work packet. State the candidate functions, addresses,
    extents, files, evidence, unknowns, and stop condition. Do not invent a
    percentage when the denominator is not independently known.
 
@@ -55,6 +69,31 @@ closure/runtime feedback, semantic reconstruction, then portable products.
 6. A live command is not transactional. Nonzero exit, timeout, or disconnect may
    leave useful or partial changes. Inspect status and diffs before retrying or
    changing direction.
+
+## Bound analysis storage
+
+Treat `.analysis/` as ignored, non-authoritative workspace rather than a
+knowledge base. Inventory its total and top-level size at preflight, but do not
+trust or hash every old artifact. Earlier outputs are only leads until their
+source HEAD, target, database, tool, and command input bindings are current or
+reproduced.
+
+Use an OS temporary directory with command-local cleanup for one-shot output.
+For multi-command work, reuse one `.analysis/gpt-web/<campaign-id>/` directory
+and create a manifest before the first large artifact. Record the campaign,
+game, starting/current HEAD, state, and each artifact's path, class, producer,
+input binding, size, references, and cleanup disposition. Use 256 MiB as a soft
+campaign review budget and 64 MiB as the large-artifact threshold. Prefer
+bounded provider queries, registered IDA/Ghidra and Wine state, one reused
+worktree, and paged output over copied providers or repeated whole-program dumps.
+
+At each checkpoint measure growth and retain compact conclusions in tracked
+evidence. Delete only explicit paths inside the current session scratch root
+when ownership is established, the producer is inactive, the artifact is
+reproducible or no longer needed, and no tracked or active reference remains.
+Never bulk-delete `.analysis/`, delete by age alone, or remove legacy-unknown or
+shared provider databases, toolchains, and Wine prefixes. Report starting and
+ending bytes plus all retained large artifacts and removed session artifacts.
 
 ## Create real Git checkpoints
 
@@ -114,6 +153,9 @@ why the replay is not eligible instead of claiming verification.
 
 Always report the session status; game and objective; starting and ending
 commit; starting and ending dirty state; bounded scope completed and excluded;
+dirty-work recovery classifications, actions, and retained unknowns; starting
+and ending `.analysis/` bytes, scratch-manifest state, and retained/removed
+artifact disposition;
 analysis provider, target attestation, evidence, and limitations; changed files;
 checkpoint commit hashes and English subjects; game-local knowledge changes;
 tests and commands actually run; the status of every verification plane;

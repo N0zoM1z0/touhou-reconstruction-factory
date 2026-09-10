@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "id": "worktree-recovery-and-analysis-artifacts-v1",
+  "purpose": "Recover persistent live-repository work before new edits and bound non-authoritative analysis storage without deleting ambiguous evidence",
+  "applies_to": [
+    "gpt-web-reconstruction-session-v4",
+    "gpt-web-semantic-reconstruction-session-v2"
+  ],
+  "skill_independence": {
+    "automatic_skill_loading_required": false,
+    "rule": "Every launch prompt names the readable Factory contract and documentation paths and remains operationally complete when no skill is selected or injected.",
+    "on_guidance_path_unavailable": "Report the unavailable path and follow the complete inline prompt. Never invent omitted guidance or stop merely because automatic skill loading failed."
+  },
+  "recovery_gate": {
+    "run": "at session start, after any reconnect or resume, after a timed-out or interrupted command, and whenever live status changes unexpectedly",
+    "clean_tree_action": "record the observed clean state and continue",
+    "dirty_tree_action": "finish the recovery review before selecting or editing a new batch",
+    "required_observations": [
+      "branch-head-upstream-and-porcelain-v2-status",
+      "complete-staged-diff",
+      "complete-unstaged-diff",
+      "every-relevant-untracked-path",
+      "latest-committed-handoff-and-recent-relevant-history",
+      "available-tests-logs-and-artifact-manifests-that-explain-the-work"
+    ],
+    "path_classifications": [
+      "recoverable-current-work",
+      "unrelated-preexisting-work",
+      "generated-ephemeral-output",
+      "unknown-origin-or-intent"
+    ],
+    "decisions": {
+      "recoverable-current-work": "Adopt it as the first batch: understand the partial intent, finish or narrow it, run the required checks, and checkpoint it before unrelated work.",
+      "unrelated-preexisting-work": "Preserve it and exclude it from staging, tests that rewrite it, and overlapping edits.",
+      "generated-ephemeral-output": "Remove it only after proving the producer, reproducibility, absence of durable references, and absence of an active process that still owns it.",
+      "unknown-origin-or-intent": "Do not delete, reset, overwrite, or stage it. Avoid overlap; if the requested batch cannot be isolated, report a concrete blocker."
+    },
+    "prohibitions": [
+      "assume-dirty-work-belongs-to-another-session-and-ignore-it",
+      "assume-staged-work-is-complete-or-intended",
+      "reset-clean-stash-delete-or-commit-before-review",
+      "start-a-new-overlapping-batch-before-recovery-classification",
+      "infer-provenance-from-mtime-alone"
+    ],
+    "required_record": "Record the observed paths, classification, evidence, action, retained unknowns, and post-review status in durable batch evidence or the final handoff."
+  },
+  "analysis_root": {
+    "path": ".analysis/",
+    "authority": "non-authoritative-reproducible-workspace",
+    "git_expectation": "ignored",
+    "never_implies": [
+      "current-target-binding",
+      "current-source-binding",
+      "semantic-correctness",
+      "exactness",
+      "truth-kernel-admission"
+    ]
+  },
+  "artifact_classes": {
+    "session-scratch": "Outputs created by the current campaign for an active experiment; normally deleted after compact evidence is retained.",
+    "reproducible-cache": "Regenerable outputs keyed by their real inputs; may be removed when no active command needs them.",
+    "durable-analysis-evidence": "An exceptional raw artifact with a current binding, a tracked reference, and a reason compact evidence is insufficient.",
+    "shared-provider-state": "Operator-managed IDA/Ghidra databases, toolchains, Wine prefixes, or other reusable provider state; not session cleanup scope and preferably stored outside .analysis.",
+    "legacy-unknown": "Pre-existing or unmanifested content whose ownership, reproducibility, or references are not established; never automatically removed or trusted."
+  },
+  "creation_policy": {
+    "one_shot_outputs": "Use an OS temporary directory with command-local cleanup when the output is not needed after the command.",
+    "multi_command_outputs": "Reuse one bounded .analysis/gpt-web/<campaign-id>/ scratch root rather than creating a new directory or whole-program export for every query.",
+    "manifest_required": true,
+    "manifest_path": ".analysis/gpt-web/<campaign-id>/manifest.json",
+    "manifest_fields": [
+      "schema_version",
+      "campaign_id",
+      "game_id",
+      "created_at",
+      "updated_at",
+      "starting_head",
+      "current_head",
+      "state",
+      "artifacts"
+    ],
+    "artifact_fields": [
+      "path",
+      "class",
+      "producer",
+      "input_binding",
+      "size_bytes",
+      "referenced_by",
+      "disposition"
+    ],
+    "soft_campaign_budget_bytes": 268435456,
+    "large_artifact_threshold_bytes": 67108864,
+    "budget_rule": "Crossing either threshold requires a manifest reason and an explicit checkpoint cleanup disposition; it never authorizes deletion of shared or unknown content.",
+    "avoid": [
+      "duplicate-whole-program-decompiler-exports",
+      "copied-wine-prefixes-inside-session-scratch",
+      "copied-ida-or-ghidra-projects-per-query",
+      "one-new-worktree-per-probe-without-retirement",
+      "unbounded-command-output-dumps"
+    ]
+  },
+  "cleanup_policy": {
+    "at_batch_checkpoint": [
+      "inventory-analysis-growth-since-preflight",
+      "promote-only-compact-durable-conclusions-to-tracked-game-evidence",
+      "remove-current-session-ephemeral-outputs-that-are-reproducible-and-unreferenced",
+      "retain-only-the-minimum-current-failure-reproducer-needed-by-the-next-batch",
+      "update-the-session-manifest-and-report-retained-bytes"
+    ],
+    "at_campaign_handoff": [
+      "mark-the-session-complete-or-interrupted",
+      "remove-owned-ephemeral-artifacts-after-reference-review",
+      "name-every-retained-large-artifact-and-its-reason",
+      "leave-shared-provider-state-and-legacy-unknown-content-untouched"
+    ],
+    "delete_only_if_all": [
+      "current-session-ownership-is-established",
+      "the-producing-process-is-not-running",
+      "the-artifact-is-reproducible-or-no-longer-needed",
+      "no-tracked-record-or-active-batch-references-it",
+      "the-target-path-is-explicit-and-inside-the-session-scratch-root"
+    ],
+    "never": [
+      "bulk-delete-.analysis",
+      "delete-by-age-alone",
+      "delete-unmanifested-preexisting-content",
+      "delete-provider-databases-toolchains-or-wine-prefixes",
+      "treat-cleanup-as-evidence-that-the-worktree-is-clean"
+    ]
+  },
+  "freshness_rule": "An analysis artifact from an earlier HEAD, target, database, tool version, or command input is only a lead until its binding is checked or the observation is reproduced. Cleanup classification never grants evidence authority.",
+  "handoff_fields": [
+    "recovery-review-trigger-and-result",
+    "preexisting-path-classifications-and-actions",
+    "analysis-root-starting-and-ending-bytes",
+    "current-session-scratch-root-and-manifest-state",
+    "removed-current-session-artifacts",
+    "retained-large-artifacts-with-class-binding-reference-and-reason",
+    "legacy-unknown-or-shared-provider-content-left-untouched"
+  ]
+}

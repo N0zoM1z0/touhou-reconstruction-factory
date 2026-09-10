@@ -283,20 +283,24 @@ paste the campaign prompt from
 [`gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md).
 The intended campaign sequence is:
 
-1. discover `th095` and inspect its real HEAD and dirty/untracked state;
-2. read the repository's semantic phase plan and run target, tracking, and
+1. discover `th095`, inspect its real HEAD and dirty/untracked state, and finish
+   the mandatory recovery review before new edits whenever it is non-clean;
+2. inventory `.analysis/`, establish one bounded manifested scratch root, and
+   treat all old artifacts as non-authoritative until their bindings are current;
+3. read the repository's semantic phase plan and run target, tracking, and
    target-attested Ghidra preflight;
-3. call `factory_report_semantic_debt` for `src`, preserving its HEAD/status
+4. call `factory_report_semantic_debt` for `src`, preserving its HEAD/status
    binding and routing-only limitations;
-4. supplement the lexical candidates with Bash, ledgers, exact-unit mappings,
+5. supplement the lexical candidates with Bash, ledgers, exact-unit mappings,
    and target-local Ghidra evidence;
-5. choose one small owner/field family, preserve both exact and reconstructed
+6. choose one small owner/field family, preserve both exact and reconstructed
    Windows i386 product/runtime feedback, document the evidence classes, and
    create a local English `gpt-web:` checkpoint;
-6. refresh the live state and immediately continue with the next named bounded
+7. measure and retire proven current-session analysis scratch, refresh the live
+   state, and immediately continue with the next named bounded
    family instead of treating the first successful checkpoint as the session
    stop; and
-7. report runtime receipt status as `unknown` while no deterministic Factory
+8. report runtime receipt status as `unknown` while no deterministic Factory
    runtime provider exists, even when repo-native runtime feedback passes.
 
 The campaign uses repo-native exact and historical-platform checks for its fast
@@ -308,9 +312,30 @@ receipts always bind the current committed source, and any deferred plane is
 reported as non-current.
 
 The current TH095 worktree may contain pre-existing untracked runtime
-experiments. Web must inspect and preserve them. It may use repo-native checks
-while the tree is dirty, but it must not delete or silently commit unrelated
-files merely to make a Factory replay eligible.
+experiments. Web cannot know whether they are intentional experiments or an
+interrupted prior batch, so it must inspect and classify them before new work.
+Recoverable partial work is completed first; unrelated and unknown work is
+preserved and excluded. Repo-native checks remain available while the tree is
+dirty, but Web must not delete or silently commit files merely to make a Factory
+replay eligible.
+
+Prompts never depend on skill injection. Both ready-to-run prompt documents name
+the exact Factory contract and documentation paths and contain a complete inline
+fallback. To let `factory_repository_run_shell` read those paths, mount the
+Factory `contracts/` and `docs/` directories as read-only `shared_tool_roots` in
+the operator configuration. If they are not mounted, the model reports that
+once and continues from the inline prompt. See
+[`worktree recovery and analysis artifacts`](worktree-recovery-and-analysis-artifacts.md)
+for the mandatory behavior and the observed legacy storage footprint.
+
+The single-user deployment now mounts
+`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts` and
+`.../docs` through `repository_work.shared_tool_roots`. A TH04 repository-shell
+probe read both new guidance files successfully through Bubblewrap. The service
+loads this operator configuration for each tool call, so adding these read-only
+roots required no process restart and did not interrupt the active TH095 Web
+campaign. The roots expose guidance only; the Factory evidence/job store and
+other game repositories remain outside the command namespace.
 
 ## TH105 acceptance smoke test
 

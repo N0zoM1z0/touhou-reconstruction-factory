@@ -93,7 +93,11 @@ command_timeout_seconds = 3600
 max_command_output_bytes = 8388608
 git_author_name = "N0zoM1z0"
 git_author_email = "operator@example.invalid"
-shared_tool_roots = ["/srv/touhou-factory/tools"]
+shared_tool_roots = [
+  "/srv/touhou-factory/tools",
+  "/srv/touhou-reconstruction-factory/contracts",
+  "/srv/touhou-reconstruction-factory/docs",
+]
 
 [[repositories]]
 id = "th09"
@@ -109,6 +113,13 @@ profile or wrapper chooses an exact tool/version and records its content
 identity. `work_state_roots` are mutable and bound to one repository. Environment
 values and host paths are redacted from discovery responses; only names and
 counts are public.
+
+Mounting the Factory `contracts/` and `docs/` directories through the same
+read-only mechanism lets standalone GPT-web prompts name exact guidance paths.
+This is deliberately independent of ChatGPT skill injection: the app may expose
+MCP tools while a skill is unavailable or not selected. The prompts still carry
+their complete operating rules inline for deployments that have not mounted the
+guidance paths.
 
 The current live TH04/TH08/TH095/TH105 registrations retain legacy layouts so
 work can proceed before migration. TH08 maps its historical `~/.wineth08` home,

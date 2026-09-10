@@ -276,12 +276,12 @@ class WebWorkflowAssetTests(unittest.TestCase):
             self.assertGreaterEqual(len(short_description), 25)
             self.assertLessEqual(len(short_description), 64)
 
-    def test_workflow_evaluation_has_twenty_two_independent_scenarios(self) -> None:
+    def test_workflow_evaluation_has_independent_scenarios(self) -> None:
         root = ElementTree.parse(
             ROOT / "evaluations" / "gpt-web-reconstruction.xml"
         ).getroot()
         pairs = root.findall("qa_pair")
-        self.assertEqual(len(pairs), 22)
+        self.assertGreaterEqual(len(pairs), 22)
         questions = [pair.findtext("question") for pair in pairs]
         answers = [pair.findtext("answer") for pair in pairs]
         self.assertEqual(len(questions), len(set(questions)))

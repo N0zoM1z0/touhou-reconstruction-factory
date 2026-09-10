@@ -225,6 +225,25 @@ level, broad gates run or explicitly deferred, every verification plane,
 accepted receipts separately from semantic interpretation, retained unknowns,
 and the exact next batch.
 
+## Recover before starting and bound analysis storage
+
+Every campaign start or resume applies the
+[`worktree recovery and analysis artifact lifecycle`](worktree-recovery-and-analysis-artifacts.md).
+Web cannot know whether an earlier conversation disconnected, so any non-clean
+state requires a full review before a new semantic batch is selected. The review
+classifies partial work instead of automatically preserving it as unrelated:
+recoverable work becomes the first batch, unrelated work is excluded, generated
+ephemera is removed only after proof, and unknown work is neither changed nor
+staged.
+
+The same contract treats `.analysis/` as bounded non-authoritative workspace.
+One-shot outputs use command-local temporary storage; longer work reuses one
+manifested campaign directory. Each checkpoint measures growth, retains compact
+tracked evidence, and removes only proven current-session scratch. Shared
+provider state and unclassified legacy artifacts remain untouched. This avoids
+both silent loss and the older pattern of accumulating a new full export,
+worktree, or Wine prefix for every probe.
+
 ## Historical derivation from TH08
 
 TH08 established the reusable workflow in commit `5592d853` and then exercised

@@ -40,8 +40,12 @@ x86-64, Linux, and Web products begin only after semantic readiness and cannot
 stand in for the i386 owner/runtime baseline.
 
 The same dated worktree contained four pre-existing untracked experiment files.
-Inspect and preserve any current dirty/untracked work. Do not stage it with a
-semantic batch unless its purpose and inclusion are independently established.
+Because Web cannot know whether a prior conversation disconnected, any current
+dirty/untracked state requires the full recovery review before a new semantic
+batch. Inspect its complete diffs/content, handoff/history, tests, and manifests;
+classify every path and adopt recoverable partial work as the first batch. Do
+not stage it with a semantic batch unless its purpose and inclusion are
+independently established.
 If it prevents Factory replay eligibility, use repo-native checks and report the
 receipt plane as unavailable for that worktree; never delete work merely to make
 a receipt green.
