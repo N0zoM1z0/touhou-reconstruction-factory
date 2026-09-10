@@ -1,0 +1,8 @@
+{
+  "apps": {
+    "touhou-reconstruction-factory": {
+      "id": "asdk_app_6aa21bec66888191bd24c118e47ddee6",
+      "required": true
+    }
+  }
+}

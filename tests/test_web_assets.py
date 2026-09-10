@@ -8,6 +8,8 @@ import xml.etree.ElementTree as ElementTree
 
 ROOT = Path(__file__).parents[1]
 CONTRACT_ID = "gpt-web-reconstruction-session-v2"
+PLUGIN_ROOT = ROOT / "plugins" / "touhou-reconstruction-factory"
+FACTORY_APP_ID = "asdk_app_6aa21bec66888191bd24c118e47ddee6"
 
 
 class WebWorkflowAssetTests(unittest.TestCase):
@@ -94,6 +96,50 @@ class WebWorkflowAssetTests(unittest.TestCase):
         self.assertIn("name: factory-reconstruction", skill)
         defaults = "\n".join(manifest["interface"]["defaultPrompt"])
         self.assertIn("reconstruction", defaults.lower())
+
+    def test_plugin_binds_registered_chatgpt_app_without_desktop_only_mcp(self) -> None:
+        manifest = json.loads(
+            (PLUGIN_ROOT / ".codex-plugin" / "plugin.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        app_manifest = json.loads(
+            (PLUGIN_ROOT / ".app.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["apps"], "./.app.json")
+        self.assertNotIn("mcpServers", manifest)
+        self.assertFalse((PLUGIN_ROOT / ".mcp.json").exists())
+        self.assertFalse((PLUGIN_ROOT / "mcp.json").exists())
+        self.assertEqual(
+            set(app_manifest["apps"]), {"touhou-reconstruction-factory"}
+        )
+        app = app_manifest["apps"]["touhou-reconstruction-factory"]
+        self.assertEqual(app, {"id": FACTORY_APP_ID, "required": True})
+        self.assertTrue(app["id"].startswith("asdk_app_"))
+        self.assertFalse(app["id"].startswith("plugin_"))
+        self.assertNotIn("asdk_app_v_", app["id"])
+
+    def test_bundled_skills_have_consistent_ui_metadata(self) -> None:
+        expected = {
+            "factory-analysis": "Factory Analysis",
+            "factory-reconstruction": "Factory Reconstruction",
+            "factory-replay": "Factory Replay",
+            "factory-workspace": "Factory Workspace",
+        }
+        for skill_name, display_name in expected.items():
+            metadata = (
+                PLUGIN_ROOT / "skills" / skill_name / "agents" / "openai.yaml"
+            ).read_text(encoding="utf-8")
+            self.assertIn(f'display_name: "{display_name}"', metadata)
+            self.assertIn(f"${skill_name}", metadata)
+            short_line = next(
+                line
+                for line in metadata.splitlines()
+                if "short_description:" in line
+            )
+            short_description = json.loads(short_line.split(":", 1)[1].strip())
+            self.assertGreaterEqual(len(short_description), 25)
+            self.assertLessEqual(len(short_description), 64)
 
     def test_workflow_evaluation_has_twelve_independent_scenarios(self) -> None:
         root = ElementTree.parse(

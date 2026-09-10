@@ -1,6 +1,6 @@
 {
   "name": "touhou-reconstruction-factory",
-  "version": "0.3.0+codex.20260910020626",
+  "version": "0.3.0+codex.20260910033939",
   "description": "Touhou Reconstruction Factory plugin",
   "author": {
     "name": "N0zoM1z0",
@@ -15,6 +15,7 @@
     "verification",
     "mcp"
   ],
+  "apps": "./.app.json",
   "skills": "./skills/",
   "interface": {
     "displayName": "Touhou Reconstruction Factory",
@@ -32,6 +33,5 @@
       "Verify the known TH105 smoke-test claim and report only accepted evidence.",
       "List current accepted reconstruction facts."
     ]
-  },
-  "mcpServers": "./.mcp.json"
+  }
 }

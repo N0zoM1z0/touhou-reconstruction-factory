@@ -19,8 +19,9 @@ is in [`docs/ontology.md`](docs/ontology.md).
 
 ```mermaid
 flowchart LR
-    H["Human<br/>scope · stop condition · release"]:::human --> W["GPT-web agent<br/>factory-reconstruction skill<br/>resumable bounded session"]:::agent
-    K[("Factory repository memory<br/>ontology · providers · adapters<br/>fixtures · knowledge · prompt · skills")]:::memory --> W
+    H["Human<br/>scope · stop condition · release"]:::human --> I["Installed Factory Plugin<br/>four bundled skills<br/>registered ChatGPT app binding"]:::control
+    K[("Factory repository memory<br/>ontology · providers · adapters<br/>fixtures · knowledge · prompt · skills")]:::memory --> I
+    I --> W["GPT-web agent<br/>factory-reconstruction skill<br/>resumable bounded session"]:::agent
     W --> D["One shared Factory MCP<br/>discover IDs · read adapter snapshot<br/>candidate claims · knowledge · resume"]:::control
     K --> D
     D --> C["Selected canonical game repository<br/>committed HEAD + machine-readable ledgers<br/>original target identity"]:::repo

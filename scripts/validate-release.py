@@ -30,7 +30,8 @@ def _tracked_files() -> tuple[Path, ...]:
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         cwd=ROOT,
     ).decode("utf-8")
-    return tuple(ROOT / value for value in output.split("\0") if value)
+    candidates = tuple(ROOT / value for value in output.split("\0") if value)
+    return tuple(path for path in candidates if path.exists() or path.is_symlink())
 
 
 def _validate_documents() -> None:

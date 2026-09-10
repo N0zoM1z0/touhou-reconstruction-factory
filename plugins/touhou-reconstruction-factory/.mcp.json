@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "touhou-reconstruction-factory": {
-      "type": "http",
-      "url": "https://laptop-9d3a7045.taile42c02.ts.net/touhou-reconstruction-factory-mcp"
-    }
-  }
-}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Factory Reconstruction"
+  short_description: "Run a bounded resumable reconstruction session"
+  default_prompt: "Use $factory-reconstruction to continue one bounded th105 reconstruction task."

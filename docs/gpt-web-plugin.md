@@ -29,8 +29,8 @@ is not wanted.
 
 - [`.codex-plugin/plugin.json`](../plugins/touhou-reconstruction-factory/.codex-plugin/plugin.json)
   describes the installable plugin.
-- [`.mcp.json`](../plugins/touhou-reconstruction-factory/.mcp.json) binds the
-  plugin to the fixed remote URL without credentials.
+- [`.app.json`](../plugins/touhou-reconstruction-factory/.app.json) binds the
+  Web-capable plugin to the already registered no-auth ChatGPT app.
 - [`factory-replay/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-replay/SKILL.md)
   teaches the model the factory's trust states and resume workflow.
 - [`factory-workspace/SKILL.md`](../plugins/touhou-reconstruction-factory/skills/factory-workspace/SKILL.md)
@@ -54,6 +54,89 @@ is not wanted.
   executes queued replays independently of chat connections.
 - [`configure-funnel.sh`](../scripts/configure-funnel.sh) maps the fixed public
   path to the same path on the loopback server.
+
+## Bind skills to the registered ChatGPT app
+
+An MCP server does not install skills through the MCP protocol. The installable
+unit is a plugin: the plugin packages the skills and references an MCP-backed
+ChatGPT app that was registered separately in Developer mode. A raw custom MCP
+connection proves that the tools work, but it does not install this repository's
+skill bundle.
+
+For GPT-web, use `.app.json`; do not declare `mcp.json`, `.mcp.json`, or
+`mcpServers` in this plugin. ChatGPT marks a plugin imported from a GitHub
+marketplace as **Desktop only** when it declares an MCP server directly, even
+when that server uses a remote HTTPS URL. The registered app reference is the
+Web-capable indirection.
+
+ChatGPT exposes three similar identifiers. They are not interchangeable:
+
+| Value | Example or current value | Use |
+| --- | --- | --- |
+| Plugin-page identifier | `plugin_asdk_app_...` | Appears in the browser URL. Remove only the leading `plugin_` to obtain the app ID. |
+| App Id | `asdk_app_6aa21bec66888191bd24c118e47ddee6` | Commit this value as `.app.json` `apps.<alias>.id`. |
+| Version Id | `asdk_app_v_6aa21bec66988191a434524226c15aee` | Identifies one app version. Record it only for diagnostics; never use it in `.app.json`. |
+
+The current development registration was checked on 2026-09-10:
+
+| Field | Value |
+| --- | --- |
+| URL | `https://laptop-9d3a7045.taile42c02.ts.net/touhou-reconstruction-factory-mcp` |
+| Authorization supported / used | `None` / `None` |
+| App Id | `asdk_app_6aa21bec66888191bd24c118e47ddee6` |
+| Version Id at observation time | `asdk_app_v_6aa21bec66988191a434524226c15aee` |
+| Review status | `development` |
+
+The committed binding is deliberately small:
+
+```json
+{
+  "apps": {
+    "touhou-reconstruction-factory": {
+      "id": "asdk_app_6aa21bec66888191bd24c118e47ddee6",
+      "required": true
+    }
+  }
+}
+```
+
+`.codex-plugin/plugin.json` points `apps` to `./.app.json` and `skills` to
+`./skills/`. Each skill also has `agents/openai.yaml` presentation metadata so
+the host can show a readable name, short description, and starting prompt. The
+skill instructions remain the source of workflow behavior; UI metadata does
+not grant tools, authentication, or truth-promotion authority.
+
+To create this binding again for another MCP-backed plugin:
+
+1. Enable **Settings > Security and login > Developer mode** in ChatGPT.
+2. Open the Plugins page, select the plus button, and register the remote MCP
+   URL and its actual authorization mode.
+3. Verify the connection with its tools before packaging it.
+4. Open the connection details and copy the **App Id**. If only the page URL is
+   available, convert `plugin_asdk_app_...` to `asdk_app_...` by removing the
+   leading `plugin_`. Do not use **Version Id**.
+5. Add `.app.json`, reference it with `"apps": "./.app.json"`, and package the
+   skills under `skills/<skill-name>/SKILL.md`.
+6. Keep direct MCP manifests out of a plugin that must work on GPT-web.
+7. Update the plugin cachebuster, validate every skill and the plugin, import or
+   sync the marketplace, install the plugin, and start a new chat.
+
+The App Id is a reference, not an authorization secret. The referenced app
+still controls service availability, permissions, authentication, and action
+policy.
+
+### Validator compatibility note
+
+As observed on 2026-09-10, the locally installed `plugin-creator` validator
+still accepts only its older `.app.json` entry shape and reports `required` as
+an unknown field. Current [OpenAI package validation](https://developers.openai.com/plugins/deploy/submission-errors#mcp-server-reference-errors)
+explicitly accepts boolean `required` and `optional` fields, and the current
+plugin-management guidance says to use `required: true` when the plugin depends
+on the app. Do not remove
+`required` merely to satisfy that older local validator. The Factory release
+tests enforce the current binding shape, App Id grammar, and absence of a
+Desktop-only MCP manifest. Re-run the external validator after its schema is
+updated and remove this dated note when the mismatch disappears.
 
 ## Local deployment
 
@@ -109,21 +192,50 @@ tailscale funnel \
 
 ## Install in GPT-web
 
-The repository marketplace lives at `.agents/plugins/marketplace.json`. Import
-`N0zoM1z0/touhou-reconstruction-factory` as a plugin marketplace, install
-**Touhou Reconstruction Factory**, and begin a new conversation so the newly
-installed skill is available. The plugin should connect directly to the fixed
-MCP URL and should not ask for a bearer token.
+The repository marketplace lives at `.agents/plugins/marketplace.json`. For a
+workspace GitHub import:
 
-The exact marketplace controls available in ChatGPT can vary by account and
-workspace. If repository marketplace import is not available, first create a
-custom plugin from the same fixed MCP URL to test the tool connection. That
-fallback tests MCP but does not necessarily install the bundled skill.
+1. Open **Admin > Plugins > Add > Import marketplace**.
+2. Use source `https://github.com/N0zoM1z0/touhou-reconstruction-factory`, leave
+   **Path** empty because the marketplace is at the repository root, and select
+   branch `main` for updateable imports.
+3. Review the import result and make **Touhou Reconstruction Factory** available
+   to the intended role. Confirm that its required app resolves to the existing
+   no-auth Factory connection.
+4. Install the plugin. After a repository update, use **Sync now** on the
+   marketplace before reinstalling or retesting.
+5. Start a new ChatGPT conversation. The plugin detail page should list
+   **Factory Analysis**, **Factory Reconstruction**, **Factory Replay**, and
+   **Factory Workspace** under Skills.
+6. Invoke **Factory Reconstruction** explicitly or use the short prompt below.
+
+The GitHub connection in this procedure distributes and updates the plugin
+package only. Reconstruction work does not use GitHub tools and the Factory MCP
+does not receive GitHub authority.
+
+If marketplace import is unavailable, keep the existing raw custom MCP
+connection for tool testing. That fallback confirms the endpoint but cannot
+install the repository's skills by itself. A personal/local marketplace can be
+authored through ChatGPT Work or Codex in the desktop app and then installed
+from the Personal source where that surface is available.
+
+### Rotate or repair the binding
+
+- A worker/server deployment behind the same URL does not require an App Id
+  change.
+- Updating the registered connection while retaining the same App Id does not
+  require an `.app.json` change.
+- Deleting and recreating the ChatGPT app produces a new App Id. Replace only
+  `.app.json` `id`, update the plugin cachebuster, run validation, push, select
+  **Sync now**, confirm the required app, and test in a new chat.
+- A new Version Id alone is not a reason to edit the plugin.
+- If the plugin appears as **Desktop only**, first check for `mcp.json`,
+  `.mcp.json`, or `mcpServers` inside the imported plugin package.
 
 OpenAI's current product documentation describes remote MCP connections and
-plugin packaging in [MCP](https://learn.chatgpt.com/docs/extend/mcp),
-[Build plugins](https://learn.chatgpt.com/docs/build-plugins), and
-[Skills & Plugins](https://learn.chatgpt.com/docs/skills-and-plugins).
+plugin packaging in [Package your plugin](https://developers.openai.com/plugins/build/plugins),
+[Plugin management](https://learn.chatgpt.com/docs/enterprise/plugin-management),
+and [Build skills](https://learn.chatgpt.com/docs/build-skills).
 
 ## Reconstruction session prompt
 

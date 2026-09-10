@@ -1,0 +1,4 @@
+interface:
+  display_name: "Factory Analysis"
+  short_description: "Inspect target semantics without claiming exactness"
+  default_prompt: "Use $factory-analysis to inspect one bounded target question for th105."

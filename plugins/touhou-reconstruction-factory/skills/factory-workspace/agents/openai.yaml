@@ -1,0 +1,4 @@
+interface:
+  display_name: "Factory Workspace"
+  short_description: "Edit and test source in a disposable workspace"
+  default_prompt: "Use $factory-workspace to inspect and test a bounded th105 source change."

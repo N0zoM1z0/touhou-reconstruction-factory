@@ -1,0 +1,4 @@
+interface:
+  display_name: "Factory Replay"
+  short_description: "Replay claims and query accepted exactness facts"
+  default_prompt: "Use $factory-replay to verify the known th105 smoke-test claim."
