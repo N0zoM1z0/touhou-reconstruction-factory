@@ -105,6 +105,26 @@ exactly that claim/receipt pair. The complete measured overnight campaign and
 its preserved dirty recovery state are recorded in
 [`overnight-web-pilot-2026-09-11.md`](overnight-web-pilot-2026-09-11.md).
 
+### Recorded GPT-web reconnect boundary: 2026-09-11
+
+A GPT-web semantic campaign attempted after the 0.6.0 deployment reported a
+connection error for both `factory_list_repositories` and `factory_describe` and
+correctly stopped without touching TH095. At diagnosis time both user services
+were active with zero automatic failure restarts, a new public Streamable HTTP
+handshake returned Factory 0.6.0 and all 33 tools, and the MCP journal contained
+no failed or denied request from that Web attempt. The established evidence did
+not support a repository, tool-schema, or server-handler failure; it located the
+interruption before MCP ingress. It could not distinguish a call made during the
+short restart interval from stale client-side connection state.
+
+The operational repair is to retain the fixed private URL and App Id, require a
+passing public validator after every deployment, then select **Refresh** on the
+Developer-mode connection and begin a new conversation. The detailed decision
+tree is recorded in
+[`Restart and reconnect contract`](gpt-web-plugin.md#restart-and-reconnect-contract).
+No second server restart or Factory version change is required for this
+recovery.
+
 ## Recorded semantic-workflow run: 2026-09-10
 
 The MCP-enabled release gate passed all 139 tests with no skips. Ruff, bytecode

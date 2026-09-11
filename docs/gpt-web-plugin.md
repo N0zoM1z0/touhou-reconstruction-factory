@@ -193,6 +193,40 @@ journalctl --user -u touhou-reconstruction-factory-worker.service -n 100
 tailscale funnel status
 ```
 
+### Restart and reconnect contract
+
+Treat server readiness and GPT-web connection readiness as two separate gates.
+After changing MCP code, tool schemas, annotations, or version metadata:
+
+1. wait until no replay job is running, then restart the worker and MCP service;
+2. require both user services to be active and run the read-only live validator
+   against the public URL, not merely loopback;
+3. open the existing connection in ChatGPT Developer mode and select
+   **Refresh**;
+4. confirm the refreshed server version and tool inventory, then start a new
+   conversation for the reconstruction campaign.
+
+The URL and App Id remain unchanged during an ordinary in-place deployment.
+Refreshing is still required because ChatGPT caches the connection's tool
+metadata, and a conversation whose first tool call occurred during the short
+restart interval does not become a successful tool run retroactively. Do not
+rotate the URL, recreate the app, bump the Factory again, or ask the agent to
+bypass Factory merely to recover that conversation. This follows OpenAI's
+[connection testing and metadata refresh procedure](https://developers.openai.com/plugins/deploy/connect-chatgpt).
+
+Diagnose the boundary before changing code:
+
+- if the public validator also fails, inspect the MCP service and Funnel;
+- if the public validator passes but a ChatGPT retry produces no MCP journal
+  ingress, refresh the Developer-mode connection, verify its registered URL,
+  and use a new conversation;
+- if the request reaches the MCP journal and returns an error, preserve the
+  request evidence and repair that concrete server/tool failure.
+
+Do not repeatedly restart a healthy service while diagnosing a client-side
+connection cache. Report GPT-web ready only after the public validator passes;
+the operator then performs the one UI-only Refresh step.
+
 To remove only this public route while leaving other Funnel mappings intact:
 
 ```bash
