@@ -124,3 +124,29 @@ error, while exact, build, runtime, and accepted-fact states stayed separate.
 The remaining gaps are substantive rather than transport-related: checkpoint
 and replay the two preserved batches, establish a durable TH095 runtime Oracle,
 and continue closing TH09 exact and historical-platform product ownership.
+
+## Release 0.6.0 maintenance result
+
+The portable release gate passed 152 tests, Ruff, bytecode compilation, Git
+whitespace checks, 39 JSON documents, two TOML documents, two evaluation XML
+documents, three CLI construction probes, and an isolated 0.6.0 wheel build.
+The two changed bundled skills passed their validator. The plugin cachebuster is
+`0.6.0+codex.20260911021613`; the older local plugin validator retains its known
+stale-schema objection to the official `.app.json` `required` field.
+
+The worker and MCP restarted in place behind the unchanged operator-private
+route. Read-only live validation returned 33 tools, all five repositories, 76
+older policy/runner-stale receipts rejected, and zero invalid receipts. TH04 and
+TH095 Ghidra plus the active TH09 native IDA provider passed target attestation.
+All 47 advertised TH09 IDA operations carried a real input schema. TH08 and
+TH105 IDA accurately reported unavailable because the single active Windows IDA
+database was TH09; the validator now distinguishes this expected target state
+from a provider failure.
+
+A public MCP submission for the existing TH09 exact claim at `0x00401340`
+completed as job `job:068b629593934851ba515422222f3d97`. Receipt
+`receipt:2090a0819180d51f6ef1bc13b6ae1ad1d331cd0ec326b158af308971c1a85396`
+reported `pass`, the strict registry decision was `accepted`, and the current
+accepted-facts query returned exactly that claim/receipt pair. This closes the
+previous TH09 import-only gap without granting product, runtime, or historical-
+fixture credit.

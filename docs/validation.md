@@ -78,6 +78,33 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --replay-idempotency-key <existing-identical-key>
 ```
 
+## Recorded 0.6.0 and overnight-pilot deployment: 2026-09-11
+
+The portable release gate passed all 152 tests with no skips. Ruff, bytecode
+compilation, Git whitespace, three CLI construction checks, 39 JSON documents,
+two TOML documents, two evaluation XML documents, and an isolated 0.6.0 wheel
+build passed. The two changed reconstruction skills passed validation. The
+plugin cachebuster is `0.6.0+codex.20260911021613`; the older local plugin
+validator still reports only its known stale-schema objection to the official
+`.app.json` `required` field.
+
+The no-auth MCP and worker restarted behind the unchanged operator-private
+route. Read-only validation passed with 33 tools and five registered games. The
+new policy/runner epoch classified all 76 earlier receipt candidates as stale
+and none as invalid. Analysis validation target-attested TH04 and TH095 Ghidra
+and the active TH09 Factory-native IDA provider. All 47 TH09 operations exposed
+non-null input schemas. TH08 and TH105 IDA accurately reported unavailable
+because the one active Windows IDA database was TH09.
+
+The first durable public TH09 replay selected the existing exact claim at
+`0x00401340`. Job `job:068b629593934851ba515422222f3d97` completed on its first
+attempt; receipt
+`receipt:2090a0819180d51f6ef1bc13b6ae1ad1d331cd0ec326b158af308971c1a85396`
+passed, strict-live-v1 accepted it, and the current accepted-facts query returned
+exactly that claim/receipt pair. The complete measured overnight campaign and
+its preserved dirty recovery state are recorded in
+[`overnight-web-pilot-2026-09-11.md`](overnight-web-pilot-2026-09-11.md).
+
 ## Recorded semantic-workflow run: 2026-09-10
 
 The MCP-enabled release gate passed all 139 tests with no skips. Ruff, bytecode
