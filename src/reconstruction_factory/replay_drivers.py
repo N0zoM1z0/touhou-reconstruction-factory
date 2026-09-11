@@ -483,6 +483,150 @@ class Th095FunctionDriver(ReplayDriver):
         return _decode_linear_function_report(report, subject, unit=str(plan.metadata["unit"]), size_key="size")
 
 
+class Th09FunctionDriver(ReplayDriver):
+    """Recompile and relocation-replay one canonical TH09 function unit."""
+
+    driver_id = "th09-vc71-function-v1"
+    adapter_id = "windows-pe-ledgers-v1"
+    oracle_id = "windows.msvc71.function-exact"
+
+    def supports(self, snapshot: RepositorySnapshot, claim: Claim) -> bool:
+        return (
+            snapshot.project.id == "th09"
+            and snapshot.adapter_id == self.adapter_id
+            and claim.type is ClaimType.CODEGEN_EXACT
+            and claim.value.get("exact") is True
+        )
+
+    def prepare(
+        self,
+        root: Path,
+        snapshot: RepositorySnapshot,
+        claim: Claim,
+        subject: Subject,
+        run_id: str,
+    ) -> ReplayPlan:
+        start, size = _extent(subject)
+        unit_name = _unit_name(claim)
+        manifest = _toml(root, "config/match-units.toml")
+        units = manifest.get("units")
+        if (
+            not isinstance(units, dict)
+            or unit_name not in units
+            or not isinstance(units[unit_name], dict)
+        ):
+            raise ReplayError(f"TH09 claim unit is absent from manifest: {unit_name}")
+        unit = units[unit_name]
+        if (
+            not isinstance(unit.get("target_address"), int)
+            or unit["target_address"] != int(start, 0)
+            or not isinstance(unit.get("size"), int)
+            or unit["size"] != size
+        ):
+            raise ReplayError(
+                f"TH09 claim extent differs from manifest unit: {unit_name}"
+            )
+
+        build = _repo_file(root, "scripts/build-match-unit.py")
+        compare = _repo_file(root, "scripts/compare-coff-function.py")
+        tool_root = Path(
+            os.environ.get("TH09_MSVC71_ROOT", str(root / ".tools/msvc710"))
+        ).expanduser()
+        vc7 = tool_root / "Vc7"
+        specs = (
+            ComponentSpec(
+                "vc71-compiler",
+                vc7 / "bin/cl.exe",
+                "$TH09_MSVC71_ROOT/Vc7/bin/cl.exe",
+                "native-attestation",
+            ),
+            ComponentSpec(
+                "vc71-bin", vc7 / "bin", "$TH09_MSVC71_ROOT/Vc7/bin"
+            ),
+            ComponentSpec(
+                "vc71-include", vc7 / "include", "$TH09_MSVC71_ROOT/Vc7/include"
+            ),
+            ComponentSpec(
+                "vc71-platformsdk-include",
+                vc7 / "PlatformSDK/Include",
+                "$TH09_MSVC71_ROOT/Vc7/PlatformSDK/Include",
+            ),
+            *_runtime_components(),
+        )
+        return ReplayPlan(
+            driver_id=self.driver_id,
+            oracle_id=self.oracle_id,
+            coldness=Coldness.FORCED_RECOMPILE,
+            stages=(
+                ReplayStagePlan(
+                    "compile",
+                    (
+                        sys.executable,
+                        str(build.relative_to(root)),
+                        "--unit",
+                        unit_name,
+                    ),
+                    root,
+                ),
+                ReplayStagePlan(
+                    "compare",
+                    (
+                        sys.executable,
+                        str(compare.relative_to(root)),
+                        "--unit",
+                        unit_name,
+                        "--json",
+                    ),
+                    root,
+                ),
+            ),
+            oracle_inputs=_identity_inputs(
+                root,
+                (
+                    "scripts/build-match-unit.py",
+                    "scripts/compile-probe.sh",
+                    "scripts/compare-coff-function.py",
+                    "config/match-units.toml",
+                    "config/target.toml",
+                    "config/tools.lock.toml",
+                ),
+            ),
+            target_path=_repo_file(root, "resources/th09.exe"),
+            toolchain_components=specs,
+            environment_names=(
+                "HOME",
+                "PATH",
+                "PYTHONPATH",
+                "TH09_MSVC71_ROOT",
+                "WINE",
+                "WINEPREFIX",
+            ),
+            metadata={
+                "unit": unit_name,
+                "proof_scope": "target-bound-vc71-function-codegen",
+            },
+        )
+
+    def decode(
+        self,
+        plan: ReplayPlan,
+        claim: Claim,
+        subject: Subject,
+        executions: Sequence[RawExecution],
+    ) -> NativeOutcome:
+        if len(executions) != 2 or executions[0].exit_code != 0:
+            return NativeOutcome(
+                Verdict.ERROR, 0, None, ("native-compile-stage-failed",)
+            )
+        report = _json_stdout(executions[-1])
+        return _decode_linear_function_report(
+            report,
+            subject,
+            unit=str(plan.metadata["unit"]),
+            size_key="size",
+        )
+
+
 class Th095WholeBuildDriver(ReplayDriver):
     """Cold-build the complete declared TH095 production graph."""
 
@@ -896,6 +1040,7 @@ def _decode_linear_function_report(
 BUILTIN_DRIVERS: tuple[ReplayDriver, ...] = (
     Th04OwnedExtentDriver(),
     Th08FunctionDriver(),
+    Th09FunctionDriver(),
     Th095FunctionDriver(),
     Th095WholeBuildDriver(),
     Th105FunctionDriver(),

@@ -41,6 +41,21 @@ post-review status in the batch record or final handoff. If new concurrent
 changes appear later, stop that batch at a coherent boundary and run the gate
 again.
 
+## Bounded repository search
+
+Search scope is part of the feedback loop. Start with `git grep` for tracked
+content and `git log -S` or `git log -G` for history. When untracked live source
+must be included, use `rg --hidden` with explicit exclusions such as
+`!.git/**`, `!.analysis/**`, `!build/**`, and `!.tools/**`. Search a named file
+or subdirectory inside an ignored evidence root only when that evidence is the
+subject of the investigation.
+
+Do not start a recursive repository-root search with `grep -R`, `rg --follow`,
+or another symlink-following traversal. A Wine prefix may expose `dosdevices/z:`
+and turn that query into an accidental host-filesystem walk. Broaden exclusions
+deliberately when a result is missing; do not pay the cost of hashing or walking
+large provider state by default.
+
 ## `.analysis/` is a workspace, not a knowledge base
 
 `.analysis/` is ignored, non-authoritative working storage. Old decompiler

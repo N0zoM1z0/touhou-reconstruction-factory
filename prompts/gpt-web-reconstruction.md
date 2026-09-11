@@ -110,6 +110,11 @@ Investigate and reconstruct:
    Wine, repo-local toolchains, object diff, and build/oracle diagnostics. The
    command runs in the real worktree. Nonzero exit and timeout do not roll back
    files; always inspect status and diff after an interrupted or surprising run.
+   Keep searches bounded: prefer git grep/history for tracked content; for live
+   untracked source use rg --hidden while excluding .git, .analysis, build, and
+   .tools. Never begin with a symlink-following repository-root traversal: a
+   Wine dosdevices/z: link can escape into the host filesystem. Search a named
+   ignored evidence path only when it is intentionally in scope.
 5. Run feedback from cheapest/focused to strongest/broader: syntax/static checks,
    affected exact function/extent checks, production translation-unit compile,
    and cold whole-product build at bounded milestones. Owner, ABI, layout,

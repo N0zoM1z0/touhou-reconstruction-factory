@@ -59,6 +59,9 @@ Ground rules:
    smallest possible scope.
 5. Work in the real registered repository and create coherent local
    `gpt-web:` commits. Never push.
+6. Do not optimize for function count or easy exact wins. Function size,
+   relocation count, control-flow complexity, or an earlier mismatch is not a
+   reason to leave structurally important target code until the end.
 
 Mandatory recovery gate:
 1. Call factory_describe, factory_list_repositories, and
@@ -112,10 +115,20 @@ Native IDA use:
    target-dependent work.
 
 Autonomous exact loop:
-1. Select one evidence-connected bounded packet: a small caller/callee cohort,
-   one subsystem seam, or one candidate plus its necessary data/ABI context.
-   State addresses, current ledger state, known evidence, unknowns, and a
-   measurable stop condition.
+1. Maintain a mixed frontier rather than a smallest-function queue. Inspect
+   unresolved candidates by target extent, call-graph/owner importance,
+   relocation/data dependencies, control-flow complexity, subsystem coverage,
+   and prior mismatch history. Select one evidence-connected bounded packet: a
+   caller/callee cohort, one subsystem seam, or one candidate plus its necessary
+   data/ABI context. State why it is representative, its addresses and current
+   ledger state, known evidence, unknowns, and a measurable stop condition.
+   Do not select more than two consecutive packets primarily because they are
+   small or low-risk. The next packet must attack a hard frontier: a materially
+   larger function/cohort, central owner or dispatcher, complex ABI/control
+   flow, relocation/data-owner boundary, or a previously blocked near-match.
+   A hard-frontier result may honestly be exact, source-present/non-exact, a
+   corrected boundary/origin, or a documented unknown; never force promotion to
+   satisfy the scheduling rule.
 2. Reconcile entry/exit, tails, padding, tables, xrefs, relocations, and physical
    ownership before treating the IDA candidate as an authored function extent.
 3. Classify origin independently from implementation and exactness. Keep
@@ -166,6 +179,10 @@ Whole-build discipline:
 Artifact discipline:
 - Treat `.analysis/` as ignored scratch, not a knowledge base. Inventory its
   size at entry and exit without recursively hashing large old trees.
+- Keep searches bounded. Prefer git grep/history for tracked content; exclude
+  .git, .analysis, build, and .tools from live rg searches unless a named
+  ignored path is deliberately in scope. Never follow repository-root symlinks;
+  a Wine dosdevices/z: link can escape into the host filesystem.
 - Reuse one `.analysis/gpt-web/<campaign-id>/` directory with a manifest for
   multi-command work. Prefer bounded provider queries and temporary directories.
 - Review at 256 MiB per campaign and record disposition for files over 64 MiB.
@@ -183,6 +200,8 @@ At each checkpoint and final handoff report:
 - checkpoint hashes/subjects, with confirmation that nothing was pushed;
 - `.analysis/` starting/ending size and retained/removed artifacts;
 - remaining unknowns, blockers, and the next evidence-connected packet.
+- packet-selection balance since the last hard-frontier attempt, including why
+  the next candidate is not merely the easiest remaining function.
 
 Continue until several coherent bounded packets are checkpointed, a concrete
 evidence/tool boundary blocks progress, or context reliability requires a clean

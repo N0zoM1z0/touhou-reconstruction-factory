@@ -193,6 +193,9 @@ The first clean Factory-native exact campaign is in
 Both prompts are complete without automatic skill injection and require the
 [`dirty-work recovery and analysis-artifact lifecycle`](docs/worktree-recovery-and-analysis-artifacts.md)
 before new edits.
+The measured TH09/TH095 overnight autonomy pilot, including command, commit,
+Oracle, recovery, and storage observations, is recorded in the
+[`2026-09-11 overnight Web pilot`](docs/overnight-web-pilot-2026-09-11.md).
 The single-user deployment
 and first TH105 web test are documented in
 [`GPT-web plugin and Funnel deployment`](docs/gpt-web-plugin.md).
@@ -213,7 +216,7 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP
 ```
 
 The toolchain option executes non-committing probes through live-repository Bash
-for all four games. `--all` additionally creates and discards a temporary TH105
+for all five games. `--all` additionally creates and discards a temporary TH105
 workspace and submits one canonical TH105 smoke replay. See
 [`docs/validation.md`](docs/validation.md) for the validation contract and latest
 recorded run.

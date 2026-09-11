@@ -169,7 +169,11 @@ Repeated bounded batch
 1. Select the latest named next batch when current evidence still supports it;
    otherwise choose one coherent high-evidence family and state exclusions.
    `factory_report_semantic_debt` is an optional lexical router, never a progress
-   metric. Supplement it with broad Bash and target-local analysis.
+   metric. Supplement it with broad Bash and target-local analysis. Keep each
+   search bounded: prefer git grep/history for tracked content and exclude .git,
+   .analysis, build, and .tools from live rg searches unless a named ignored
+   path is the explicit subject. Never follow repository-root symlinks; Wine's
+   dosdevices/z: may otherwise traverse the host filesystem.
 2. For every proposed meaning, inspect relevant target-local offsets, widths,
    signedness, reads/writes, callers/callees, strings, relocations, state
    transitions, lifetime, and storage owner. Target-attested IDA/Ghidra output

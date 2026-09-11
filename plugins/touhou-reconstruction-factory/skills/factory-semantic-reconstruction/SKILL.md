@@ -83,6 +83,10 @@ handoff. Never convert counts—including zero—into a completion percentage.
 Supplement the router with broad composable Bash searches. It does not find all
 numeric opcodes and operand selectors, stable resource IDs, flag namespaces,
 duplicate owners, representation boundaries, or lifetime mistakes.
+Prefer `git grep`/history for tracked content. For live untracked source, use
+bounded `rg --hidden` searches excluding `.git`, `.analysis`, `build`, and
+`.tools` unless a named ignored path is deliberately in scope. Never follow
+repository-root symlinks because Wine `dosdevices/z:` can traverse the host.
 
 For each loop, select one coherent owner, field, representation, or protocol
 family. Prefer

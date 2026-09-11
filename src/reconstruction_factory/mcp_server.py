@@ -130,13 +130,16 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     path = Path(config_path).expanduser().resolve(strict=True)
     server = MCPServer(
         "touhou-reconstruction-factory",
-        version="0.5.1",
+        version="0.6.0",
         instructions=(
             "Use registered repository IDs only. Prefer the live repository workflow "
             "for source reconstruction: it exposes the real worktree, broad composable "
             "Bash, repository-local tools, and local Git checkpoints. Commands may edit "
             "or commit and their partial changes persist even on failure or timeout; inspect "
             "status before and after. Network is unavailable, so Git push is not provided. "
+            "Keep repository searches bounded: prefer Git-aware tracked searches and exclude "
+            "large ignored build, analysis, tool, and Wine state unless explicitly needed; "
+            "never follow repository-root symlinks into a Wine dosdevices tree. "
             "For semantic reconstruction, use factory_report_semantic_debt only as a "
             "live-bound lexical router, preserve the target exact and corresponding "
             "historical-platform product/runtime baselines, and keep portable products "

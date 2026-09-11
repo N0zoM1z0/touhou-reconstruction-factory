@@ -18,6 +18,7 @@
   "allowed_driver_ids": [
     "th04-main-owned-extent-v1",
     "th08-vc7-function-v1",
+    "th09-vc71-function-v1",
     "th095-vc71-function-v1",
     "th095-vc71-whole-build-v1",
     "th105-vc8-function-v1"
