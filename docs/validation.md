@@ -125,6 +125,48 @@ tree is recorded in
 No second server restart or Factory version change is required for this
 recovery.
 
+## Recorded semantic closure-boundary correction: 2026-09-11
+
+The TH095 history supplied a direct falsification of Web-authored phase closure:
+SEM-059 reported the compact enemy `+0x285C` state as readerless and declared
+readiness, while the next conversation found the missed `enter_subroutine`
+consumer and recovered its ECL subroutine table in SEM-060. SEM-062 later
+reviewed seven named Enemy/ECL residual families, but its active source state
+still contained 991 lexical routing candidates across 197 C/C++ files, only 33
+C/C++-like paths had changed across the 63 semantic Web checkpoints, and runtime
+storage/scenario validation remained unknown. Those counts are work-routing
+evidence, not completion percentages; the counterexample establishes the
+authority error independently of them.
+
+Semantic campaign contract v3 therefore removes the Web-authored stop
+condition, defaults every new conversation to `active-incomplete`, requires an
+adversarial attempt to falsify inherited readiness prose, and reserves phase
+closure and port authorization to a later independent Codex or human review. A
+bounded negative search must rotate to another coverage surface and continue in
+the same conversation. It is explicitly neither completion evidence nor a
+handoff boundary. The prompt, bundled skill/reference, plugin defaults,
+ontology, reader flow, evaluation scenarios, and TH095 durable correction use
+the same rule. Plugin cachebuster `0.6.0+codex.20260911042007` publishes the
+revised skill package.
+
+The review also caught a mutable ignored-product distinction instead of
+silently choosing one hash: SEM-062 recorded a 780,288-byte product with SHA-256
+`37ac38ca...6251`, while a later same-source-HEAD ignored build report recorded
+`384a6458...3160`. Compile/link closure is the durable claim; neither
+rebuild-local hash is treated as a stable source invariant without a
+deterministic-artifact contract.
+
+Focused validation passed all eight `tests.test_web_assets` tests, Ruff for the
+changed test module, Git whitespace checks, three changed JSON parses, and the
+changed evaluation XML parse. The semantic skill passed the current quick
+validator. The plugin validator retained its already documented mismatch with
+the required ChatGPT `.app.json` `required` field; that current app dependency
+contract was not weakened to satisfy the older validator. A full release suite
+and live MCP restart were deliberately not run: this correction changes
+documentation, prompt/skill, machine-readable campaign policy, evaluation text,
+and plugin cache identity, but no MCP implementation, provider, runner,
+registry, or replay behavior.
+
 ## Recorded semantic-workflow run: 2026-09-10
 
 The MCP-enabled release gate passed all 139 tests with no skips. Ruff, bytecode

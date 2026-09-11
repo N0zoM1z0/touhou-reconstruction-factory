@@ -4,7 +4,8 @@
   "purpose": "Recover persistent live-repository work before new edits and bound non-authoritative analysis storage without deleting ambiguous evidence",
   "applies_to": [
     "gpt-web-reconstruction-session-v4",
-    "gpt-web-semantic-reconstruction-session-v2"
+    "gpt-web-semantic-reconstruction-session-v2",
+    "gpt-web-semantic-reconstruction-session-v3"
   ],
   "skill_independence": {
     "automatic_skill_loading_required": false,

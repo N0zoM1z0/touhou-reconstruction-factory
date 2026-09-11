@@ -134,9 +134,13 @@ A **semantic-debt candidate** is a heuristic work route, not a claim. A
 **semantic batch** is one coherent owner, field, representation, or protocol
 family plus its evidence record and affected-oracle closure. A **semantic
 checkpoint** is the batch's durable review commit; it is not an OracleResult.
-**Semantic completion** is a qualitative game-local exit audit and has no
-canonical aggregate claim or live Factory provider in schema version 1. The
-normative batch contract and non-implications are in
+An **exploration plateau** means only that one bounded route produced no
+actionable work and must cause coverage rotation. A **campaign handoff** pauses
+execution as `active-incomplete`; it does not close the phase. **Semantic
+completion** is reserved to a later independent Codex or human review and has
+no canonical aggregate claim or live Factory provider in schema version 1.
+GPT-web cannot certify the absence of undiscovered work in an open world. The
+normative open-ended campaign contract and non-implications are in
 [`semantic-reconstruction.md`](semantic-reconstruction.md).
 
 ## Evidence maturity

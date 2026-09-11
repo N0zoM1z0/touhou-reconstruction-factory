@@ -9,7 +9,7 @@ not a new path into the Truth Kernel and not a repository-wide beautification
 pass.
 
 The normative Web contract is
-[`gpt-web-semantic-reconstruction-session-v2`](../contracts/gpt-web-semantic-reconstruction-session-v2.json).
+[`gpt-web-semantic-reconstruction-session-v3`](../contracts/gpt-web-semantic-reconstruction-session-v3.json).
 It extends the general live-repository
 [`gpt-web-reconstruction-session-v4`](../contracts/gpt-web-reconstruction-session-v4.json)
 contract, so autonomous Bash, target-attested analysis, local Git checkpoints,
@@ -52,8 +52,14 @@ product and runtime environment. A known exact residual may remain honestly
 - A **campaign milestone** is a committed source state at which broad native
   gates and Factory receipts are closed once for that state rather than
   redundantly before another planned edit.
-- **Semantic completion** is a qualitative game-local exit audit. Candidate
-  counts, checked boxes, or an arbitrary number of batches never imply it.
+- An **exploration plateau** is the bounded result that one route found no
+  actionable change. It forces a coverage rotation; it is not a stop or closure.
+- A **campaign handoff** preserves continuation state at an unavoidable
+  conversation, connection, or tool boundary. Its phase state remains
+  `active-incomplete`.
+- A **semantic closure review** is a later independent Codex or human review of
+  the accumulated game-local evidence. GPT-web does not perform or authorize
+  this project decision.
 
 `semantic_evidence` and `semantic_ownership` already exist as Truth Kernel claim
 types. They describe bounded assertions, not a whole-project completion bit.
@@ -61,6 +67,30 @@ The current Factory has no live semantic-completion driver or acceptance
 policy. Exact and product receipts created during a semantic batch may be
 accepted for their own narrow claims; that acceptance does not certify a name,
 type, protocol interpretation, or semantic milestone.
+
+## Design principle: exploration cannot close an open world
+
+An exploration agent can produce positive evidence, but it cannot certify the
+absence of undiscovered work in an open world. Giving the same GPT-web campaign
+both discovery authority and semantic-phase closure authority asks it to prove
+a global negative from the routes it happened to inspect. A longer checklist
+reduces some omissions but does not repair that authority error.
+
+Factory therefore gives Web broad composable autonomy to inspect, edit, test,
+and checkpoint, while withholding semantic closure. Every new Web conversation
+defaults to `active-incomplete`. It treats earlier `ready`, `complete`,
+`closure`, and `exit audit` prose as hypotheses and first tries to falsify them
+with current target-local evidence outside the earlier audit's enumerated
+scope. One counterexample is enough to resume work. If one bounded search finds
+none, the agent immediately changes coverage surface and keeps working in the
+same conversation; a negative search result is not a handoff boundary, and
+neither no result nor no new commit changes the phase state.
+
+Only a later, separate Codex or human review may decide that the accumulated
+evidence is sufficient to close semantic reconstruction and authorize porting.
+That review may use the Web history, negative searches, retained Unknowns,
+Oracle results, and coverage records as inputs, but it is not an MCP receipt and
+is not automatically inferred from them.
 
 ## One campaign of bounded loops
 
@@ -77,9 +107,10 @@ flowchart LR
     D -->|"No"| X["Keep or revert experiment<br/>record contradiction or unknown<br/>do not broaden silently"]
     X --> E
     D -->|"Yes"| K["Evidence record + local gpt-web: commit<br/>report planes separately"]
-    K --> S{"Campaign stop condition<br/>independently audited?"}
-    S -->|"No: continue without asking"| R
-    S -->|"Yes / real blocker / context boundary"| H["Close milestone gates<br/>durable handoff + exact next batch"]
+    K --> R
+    R -->|"One route reaches a plateau"| Q["Rotate coverage<br/>different subsystem · debt class<br/>protocol · runtime · portability"]
+    Q --> B
+    K -->|"Unavoidable conversation/tool boundary"| H["Close applicable gates<br/>active-incomplete handoff<br/>exact next coverage route"]
 ```
 
 The two validation branches are coupled feedback but independent truth. A byte-
@@ -99,12 +130,14 @@ the evidence record remains mandatory.
 The outer campaign loop is the throughput mechanism. A batch remains small
 enough to inspect, validate, commit, revert, and bisect, but its successful
 checkpoint is not a reason to stop the Web session. The agent refreshes live
-state and proceeds to the next family without asking for permission. It stops
-only after an independent exit audit supports the supplied campaign condition,
-a concrete blocker prevents useful work, a materially different scope decision
-is needed, or remaining context cannot safely close another batch. At a context
-boundary it first finishes or reverts the active experiment and writes the
-evidence and next batch into repository state.
+state and proceeds to the next family without asking for permission. A route
+that yields no work causes immediate rotation to another subsystem, debt class,
+protocol surface, runtime gap, or portability boundary. At an unavoidable
+conversation, connection, or tool boundary it first finishes or reverts the
+active experiment and writes the evidence and next route into repository state
+as `active-incomplete`. It never converts the handoff into phase closure.
+A bounded negative search is not such a boundary and must instead trigger the
+next coverage route in the current conversation.
 
 ## Select the batch
 
@@ -218,12 +251,13 @@ local session. Neither location publishes cross-game knowledge.
 Create a local English `gpt-web:` commit after one coherent checked batch.
 Inspect status, the full diff, and the staged diff; exclude unrelated existing
 work. Do not push. Then refresh live state and begin the next batch. At a real
-terminal condition, hand off the starting and ending commit/dirty state, all
+execution boundary, hand off the starting and ending commit/dirty state, all
 completed checkpoints, selected and excluded scope, report profile and
 limitations, evidence classes, layout facts, changed files, tests by feedback
 level, broad gates run or explicitly deferred, every verification plane,
 accepted receipts separately from semantic interpretation, retained unknowns,
-and the exact next batch.
+and the exact next batch or coverage route. The handoff must say
+`active-incomplete` and must not claim semantic closure.
 
 ## Recover before starting and bound analysis storage
 
@@ -266,9 +300,16 @@ corrections that are part of this Factory contract:
 - aggregate failures must be classified before broadening a semantic batch.
 
 TH08's later protocol passes also demonstrated that primary interpreter opcodes
-can be readable while operand selectors and secondary streams remain raw. A
-future game-local exit audit must therefore examine both structural candidates
-and router-invisible protocol surfaces.
+can be readable while operand selectors and secondary streams remain raw. Its
+eventual authored-readability milestone used much broader evidence than a local
+field plateau: all four production structural-router categories reached zero;
+weak identifiers and unknown API conventions were individually closed or
+honestly classified; owner, lifecycle, callback, serialization, replay, audio,
+UI, and persistence surfaces were audited; primary and secondary interpreter
+domains received complete coverage guards; and TH06/TH07 were used as an
+adversarial readability challenge rather than as target authority. Those
+surfaces are reusable routing directions for future campaigns, not an automatic
+completion checklist.
 
 ### Bitter lesson: do not port before native product closure
 
@@ -330,3 +371,32 @@ run when a shared change requires the aggregate gate. Its product gate is
 runtime or format check for behavior-sensitive batches, but keep the live
 Factory runtime plane `unknown` until a deterministic target-bound runtime
 provider exists.
+
+### 2026-09-11 open-world closure correction
+
+TH095 provided the concrete counterexample that motivated semantic campaign
+v3. SEM-059 declared game-local readiness after an apparent evidence plateau
+and specifically recorded compact enemy `+0x285C` as having target-high writes
+but no TH095-local reader. The next Web conversation found the missed
+`enter_subroutine` consumer, recovered the 32-entry ECL subroutine table in
+SEM-060, and explicitly superseded that part of the earlier audit. SEM-061 then
+corrected an overconfident timer name before SEM-062 issued another readiness
+statement.
+
+A bounded review of SEM-062 found that it retested seven named Enemy/ECL
+families, not the whole semantic phase. At its committed HEAD the Factory router
+still reports 991 routing-only findings across 197 C/C++ files—165 raw-member
+and 826 anonymous-identifier candidates—and the 63 Web batches changed 33
+C/C++-like source files. These counts are not completion percentages and many
+findings may be legitimate exact-facing or unknown storage, but neither the
+remaining findings nor the untouched structural, owner, protocol, persistence,
+runtime, and portability surfaces received an exhaustive disposition in
+SEM-062. Runtime storage and scenario validation also remained explicitly
+unknown. The TH095 document itself continued to say `Status: active` and made no
+whole-program semantic-completion claim.
+
+Therefore SEM-062 is retained as valuable game-local evidence and a campaign
+milestone, but its readiness sentence has no phase-closing authority. Every new
+Web conversation defaults TH095 to `active-incomplete`, first tries to falsify
+the latest closure prose, and then keeps rotating coverage and producing
+evidence. A later independent Codex or human review decides closure.

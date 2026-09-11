@@ -1,6 +1,6 @@
 {
   "name": "touhou-reconstruction-factory",
-  "version": "0.6.0+codex.20260911021613",
+  "version": "0.6.0+codex.20260911042007",
   "description": "Touhou Reconstruction Factory plugin",
   "author": {
     "name": "N0zoM1z0",
@@ -29,7 +29,7 @@
     ],
     "websiteURL": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
     "defaultPrompt": [
-      "Continue TH095 semantic reconstruction autonomously across bounded batches. Do not assume a skill was loaded: first review any dirty work as possible interrupted state, read the mounted Factory semantic/recovery guidance when available, and bound .analysis scratch while preserving exact and Windows i386 feedback.",
+      "Continue TH095 semantic reconstruction as active-incomplete; after any negative search, rotate coverage and keep working.",
       "Verify the known TH105 smoke-test claim and report only accepted evidence.",
       "List current accepted reconstruction facts."
     ]

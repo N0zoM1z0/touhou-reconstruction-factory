@@ -73,16 +73,16 @@
     <answer>No. Inspect and preserve them, stage only independently intended batch files, use repo-native checks as engineering feedback, and report the receipt plane unavailable for the dirty state unless the files are separately understood and resolved.</answer>
   </qa_pair>
   <qa_pair>
-    <question>A TH095 semantic campaign completes and commits one coherent batch while the campaign stop condition remains unmet. Should GPT-web hand off and wait for permission?</question>
-    <answer>No. Refresh the live HEAD and worktree, revalidate the named next batch against current evidence, and continue autonomously. A successful batch is an inner transaction and checkpoint, not the campaign terminal condition.</answer>
+    <question>A TH095 semantic campaign completes and commits one coherent batch. Should GPT-web hand off and wait for permission?</question>
+    <answer>No. Refresh the live HEAD and worktree, revalidate the named next batch against current evidence, and continue autonomously. The campaign has no Web-authored stop condition; a successful batch is only an inner transaction and checkpoint.</answer>
   </qa_pair>
   <qa_pair>
     <question>The campaign plans another private semantic source commit immediately after the current checkpoint. Must it cold-replay every previously accepted Factory receipt first?</question>
     <answer>No. Run every affected repo-native exact and historical-platform check for the batch, report the receipt plane as stale or deferred, and issue current-source Factory receipts at a meaningful committed milestone. Shared or cross-object risk still triggers its broad cold gates immediately.</answer>
   </qa_pair>
   <qa_pair>
-    <question>The semantic-debt router has no remaining candidates and several semantic batches are committed. May GPT-web declare semantic completion?</question>
-    <answer>No. Candidate counts are not a completion metric. Perform an independent game-local exit audit covering owners, protocols, lifetime, domain naming, retained unknowns, and every verification plane before the campaign stop condition can be supported.</answer>
+    <question>The semantic-debt router has no remaining candidates, one bounded counterexample search found nothing, and several semantic batches are committed. May GPT-web declare semantic completion?</question>
+    <answer>No. Default the phase to active-incomplete, rotate to another structural, ownership, protocol, persistence, runtime, or portability surface, and keep working. An exploration agent may produce positive evidence but cannot certify the absence of undiscovered work in an open world; only a later independent Codex or human review may close the phase.</answer>
   </qa_pair>
   <qa_pair>
     <question>GPT-web is nearing its context limit in the middle of a semantic experiment. What preserves throughput across the next conversation?</question>

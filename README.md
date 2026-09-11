@@ -89,16 +89,22 @@ flowchart LR
     O1 --> S["Semantic reconstruction campaign<br/>one bounded evidenced batch at a time"]
     O2 --> S
     S --> K["Local gpt-web: checkpoint<br/>refresh live state"]
-    K -->|"stop condition not audited"| S
-    K -->|"semantic exit audit passes"| P["Portable products<br/>modern Windows · Linux · Web"]
+    K -->|"continue; plateau rotates coverage"| S
+    K -.->|"unavoidable boundary: active-incomplete"| H["Next Web conversation<br/>falsify prior closure prose<br/>resume open-ended work"]
+    H --> S
+    S -.->|"later independent request"| A{"Codex / human<br/>closure review"}
+    A -->|"more work"| S
+    A -->|"approved"| P["Portable products<br/>modern Windows · Linux · Web"]
 ```
 
 The two independent semantic feedback lanes are the key false-positive defense:
 exact comparison catches target-code regressions, while the reconstructed
 historical-platform product catches compile/link, initialized-data ownership,
 lifetime, and exercised behavior errors. A modern port cannot replace the
-native product prerequisite. This TH095-shaped sequence and the TH08 bitter
-lesson are specified in the
+native product prerequisite. GPT-web continuously produces evidence but cannot
+close the semantic phase: an exploration agent cannot certify the absence of
+undiscovered work in an open world. This TH095-shaped sequence and the TH08
+bitter lessons are specified in the
 [`semantic reconstruction workflow`](docs/semantic-reconstruction.md).
 
 ## Development

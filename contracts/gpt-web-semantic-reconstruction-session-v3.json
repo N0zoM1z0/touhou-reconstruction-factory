@@ -1,0 +1,242 @@
+{
+  "schema_version": 3,
+  "id": "gpt-web-semantic-reconstruction-session-v3",
+  "extends": "gpt-web-reconstruction-session-v4",
+  "purpose": "An open-ended autonomous semantic reconstruction campaign composed of bounded evidence-backed batches in one registered live game repository",
+  "required_inputs": [
+    "game_id",
+    "semantic_objective"
+  ],
+  "optional_inputs": [
+    "scope_hint",
+    "resume_commit",
+    "evidence_seed"
+  ],
+  "ontology": {
+    "semantic_debt_candidate": "A heuristic route to source that may encode known meaning as raw layout, an anonymous identifier, an absolute view, an opaque range, or an unnamed protocol. It is not evidence or progress.",
+    "semantic_batch": "One coherent owner, field, representation, or protocol family changed, validated, recorded, and committed as one reviewable unit.",
+    "semantic_campaign": "An open-ended outer loop that completes successive bounded batches against one objective without asking for permission after each successful checkpoint.",
+    "evidence_record": "A durable separation of observed, corroborated, inferred, and unknown meaning for one batch, including addresses and limitations.",
+    "regression_baseline": "The live pre-edit status of every applicable verification plane and every affected native oracle.",
+    "affected_oracle_closure": "All exact, production, format, and runtime checks required by the actual change surface have been rerun and reported independently.",
+    "semantic_checkpoint": "A local Git commit containing one coherent semantic batch and its evidence record. It is review state, not Truth Kernel admission.",
+    "campaign_milestone": "A committed source state at which deferred broad native gates and Factory receipts are closed once for that state instead of redundantly before another planned edit.",
+    "exploration_plateau": "A bounded observation that one search route or evidence family produced no actionable source change. It triggers coverage rotation and is neither a campaign stop nor a phase-completion claim.",
+    "campaign_handoff": "A durable continuation record created at an unavoidable conversation, connection, or tool boundary. It pauses execution without closing the semantic phase.",
+    "semantic_closure_review": "A separate later Codex or human review of the accumulated game-local evidence. It is outside the active GPT-web campaign and may request more semantic work.",
+    "semantic_completion": "A project decision reserved to a later independent Codex or human review. GPT-web exploration, self-audit, router counts, checkpoints, or an apparent evidence plateau cannot issue it."
+  },
+  "design_principles": [
+    "open-ended-semantic-exploration",
+    "positive-evidence-production-is-separate-from-phase-closure",
+    "an-exploration-agent-cannot-certify-the-absence-of-undiscovered-work-in-an-open-world",
+    "local-plateaus-trigger-coverage-rotation-not-completion",
+    "closure-is-a-later-independent-codex-or-human-review"
+  ],
+  "non_implications": [
+    "semantic-debt-candidate-does-not-imply-semantic-debt",
+    "zero-router-candidates-does-not-imply-semantic-completion",
+    "no-new-commit-does-not-imply-semantic-completion",
+    "an-exploration-plateau-does-not-imply-semantic-completion",
+    "a-web-self-audit-does-not-imply-semantic-completion",
+    "layout-assertion-does-not-prove-meaning",
+    "readable-name-does-not-prove-original-name",
+    "exact-codegen-does-not-prove-semantic-interpretation",
+    "build-or-runtime-success-does-not-prove-semantic-interpretation",
+    "semantic-checkpoint-does-not-imply-any-oracle-pass",
+    "one-semantic-batch-does-not-imply-session-stop-or-project-completion",
+    "a-campaign-handoff-does-not-imply-phase-closure",
+    "an-accepted-receipt-for-an-earlier-commit-does-not-prove-the-current-commit"
+  ],
+  "historical_platform_stage_order": [
+    "target-specific-exact-reconstruction-baseline",
+    "corresponding-historical-platform-product-closure-and-runtime-owner-feedback",
+    "semantic-reconstruction-under-both-feedback-lanes",
+    "portable-platform-products"
+  ],
+  "phase_entry": {
+    "required_live_checks": [
+      "inspect-current-head-branch-dirty-staged-and-untracked-state",
+      "read-current-repository-instructions-semantic-plan-and-latest-batch",
+      "attest-the-canonical-target-before-target-analysis",
+      "record-each-applicable-verification-plane-as-pass-fail-incomplete-or-unknown",
+      "preserve-preexisting-work"
+    ],
+    "whole_project_exact_completion_required": false,
+    "target_specific_exact_baseline_required": true,
+    "historical_platform_product_closure_required": true,
+    "historical_platform_runtime_owner_feedback_required": true,
+    "rule": "An explicit exact residual may remain unknown, but semantic work starts only after the corresponding historical-platform production graph compiles and links and its available native runtime/data-owner baseline has been exercised. A modern port cannot substitute for either prerequisite."
+  },
+  "semantic_regression_oracles": {
+    "target_exact_oracle": "Detects target code-generation, relocation, extent, and other configured exact regressions.",
+    "historical_platform_product_oracle": "Detects compile/link, initialized-data ownership, storage identity, lifetime, and exercised native behavior regressions in the reconstructed original-platform product.",
+    "joint_role": "Every batch must receive the applicable feedback from both lanes; their independent agreement reduces false positives but does not by itself prove an English name.",
+    "portable_product_role": "A later consumer and additional regression surface after an independent closure review, never a substitute prerequisite."
+  },
+  "campaign_loop": [
+    "preflight-and-capture-the-live-baseline-once",
+    "adversarially-review-prior-readiness-or-completion-claims-as-untrusted-hypotheses",
+    "search-for-a-current-target-local-counterexample-before-following-the-prior-handoff",
+    "read-the-latest-committed-batch-and-select-the-next-coherent-family",
+    "bound-all-relevant-reads-writes-widths-callers-state-transitions-and-owners",
+    "record-observed-corroborated-inferred-and-unknown-meaning",
+    "implement-the-narrowest-natural-source-change",
+    "run-the-fastest-applicable-inner-loop-feedback",
+    "close-the-batch-change-surface",
+    "record-evidence-and-create-one-local-gpt-web-checkpoint",
+    "refresh-live-state-and-select-the-next-batch-without-requesting-permission",
+    "rotate-to-another-coverage-surface-when-one-route-reaches-an-exploration-plateau",
+    "close-deferred-broad-oracles-and-current-source-receipts-at-a-campaign-milestone",
+    "write-a-durable-continuation-handoff-at-an-unavoidable-boundary-without-claiming-phase-closure"
+  ],
+  "resume_audit": {
+    "default_phase_state": "active-incomplete",
+    "prior_readiness_or_completion_claim_authority": "untrusted-hypothesis",
+    "required_first_action": "Try to falsify the latest readiness, completion, or exit-audit claim using current selected-game source, target analysis, ledgers, runtime evidence, and coverage surfaces that the claim did not enumerate.",
+    "counterexample_effect": "One concrete missed owner, consumer, producer, protocol, representation boundary, runtime gap, persistent-format issue, or portability hazard disproves the inherited closure claim and becomes the next bounded work route.",
+    "no_counterexample_effect": "Record only that the bounded search found no counterexample, then rotate to another coverage surface and continue working in the same conversation. Absence of a discovered counterexample is not evidence of global completion and is not a handoff boundary.",
+    "historical_lesson": "TH095 SEM-059 declared readiness, but the next campaign found the previously missed +0x285C consumer and produced SEM-060. Resume review must therefore be adversarial, not deferential."
+  },
+  "coverage_rotation": [
+    "raw-offset-absolute-view-anonymous-and-opaque-storage-surfaces",
+    "canonical-owner-lifetime-initialization-teardown-and-callback-surfaces",
+    "function-api-type-and-weak-identifier-surfaces",
+    "primary-and-secondary-interpreter-opcodes-operands-and-sibling-streams",
+    "flags-state-machines-resource-sound-effect-and-replay-event-domains",
+    "persistent-wire-format-and-platform-abi-boundaries",
+    "pointer-width-fixed-address-native-handle-and-inline-assembly-portability-hazards",
+    "historical-platform-runtime-owner-and-scenario-gaps",
+    "adjacent-game-readability-challenge-with-selected-game-evidence-required"
+  ],
+  "continuation_policy": {
+    "open_ended": true,
+    "continue_after_successful_batch": true,
+    "ask_permission_after_successful_batch": false,
+    "batch_completion_is_session_stop": false,
+    "replan_from_live_state_after_each_checkpoint": true,
+    "self_termination_for_apparent_completion": false,
+    "web_phase_closure_authority": false,
+    "negative_search_result_is_handoff_boundary": false,
+    "plateau_action": "Record the bounded negative result, rotate to another coverage surface, and continue working in the same conversation. Do not create a semantic-readiness or completion checkpoint or use the negative result to justify a handoff.",
+    "handoff_boundaries": [
+      "the-user-explicitly-interrupts-or-redirects-the-campaign",
+      "a-concrete-tool-or-evidence-boundary-prevents-further-useful-work-in-the-current-conversation",
+      "remaining-context-cannot-safely-complete-another-batch",
+      "continuation-would-leave-the-semantic-phase-and-enter-porting-or-another-user-controlled-program"
+    ],
+    "boundary_status_is_completion": false,
+    "context_pressure_rule": "Finish or revert the current experiment, run its required checks, create a coherent checkpoint when warranted, write durable evidence and the next coverage route, then hand off. Never leave context-only progress or claim semantic completion."
+  },
+  "selection_policy": {
+    "prefer": [
+      "the-next-family-named-by-the-latest-committed-handoff-when-live-evidence-still-supports-it",
+      "multiple-independent-target-local-consumers",
+      "bounded-caller-and-owner-scope",
+      "existing-focused-exact-units",
+      "high-owner-or-pointer-width-value",
+      "no-required-behavior-change"
+    ],
+    "avoid": [
+      "redoing-an-already-committed-batch-without-contradictory-live-evidence",
+      "repository-wide-renaming",
+      "mixed-unrelated-managers",
+      "large-interpreter-protocol-and-control-flow-rewrite-without-prior-bounding",
+      "persistent-format-redesign-without-format-evidence",
+      "meaning-inferred-only-from-an-adjacent-game"
+    ]
+  },
+  "evidence_classes": {
+    "observed": "Directly present in the canonical target, target-bound analysis, exact code shape, or a bounded target/runtime observation.",
+    "corroborated": "Independent target-local consumers agree, or adjacent-game evidence agrees with target-local evidence.",
+    "inferred": "A bounded target-local interpretation without independent naming evidence; use a neutral name and state the limitation.",
+    "unknown": "Only storage, width, alignment, lifetime, extent, or a weaker relationship is known; preserve the uncertainty."
+  },
+  "source_rules": [
+    "preserve-target-abi-layout-width-signedness-packing-construction-and-translation-unit-visibility",
+    "prefer-canonical-owners-real-fields-aggregates-enums-and-explicit-protocol-types",
+    "add-focused-sizeof-and-offset-assertions-only-for-relied-on-layout-facts",
+    "keep-wire-formats-instruction-streams-tagged-storage-and-platform-abi-buffers-byte-oriented-when-that-is-their-real-semantics",
+    "do-not-create-duplicate-globals-for-views-inside-an-existing-owner",
+    "do-not-hide-unknown-meaning-behind-a-confident-name-union-accessor-or-cast",
+    "do-not-combine-semantic-typing-with-unrelated-control-flow-or-api-redesign",
+    "prefer-unknown-to-an-unsupported-name-type-owner-or-protocol"
+  ],
+  "feedback_ladder": {
+    "edit_loop": [
+      "syntax-static-and-layout-checks",
+      "smallest-affected-compile-or-object-comparison",
+      "focused-target-analysis-only-when-a-live-question-requires-it"
+    ],
+    "batch_closure": [
+      "every-affected-exact-unit",
+      "affected-historical-platform-translation-units-and-link-surface",
+      "focused-format-or-runtime-checks-required-by-the-change"
+    ],
+    "immediate_broad_closure_triggers": [
+      "shared-header-layout-inline-pch-or-owner-change",
+      "serialization-protocol-persistence-callback-render-input-or-audio-change",
+      "repository-contract-requires-a-cold-gate",
+      "a-focused-result-exposes-a-cross-object-or-product-risk"
+    ],
+    "campaign_milestone": [
+      "repository-required-cold-aggregate-exact-gate",
+      "cold-historical-platform-product-build-and-link",
+      "smallest-available-native-runtime-transition",
+      "factory-replay-only-for-the-current-committed-source-state"
+    ],
+    "receipt_cadence": "Do not replay the full accepted receipt set after every private semantic checkpoint when another source commit will immediately stale it. Use repo-native exact and native-product feedback inside the campaign, then issue claim-specific Factory receipts once for the current committed milestone. Never describe a deferred or stale receipt plane as current."
+  },
+  "factory_tools": {
+    "factory_report_semantic_debt": "Optional cross-game lexical router bound to live HEAD and dirty state; never a completion metric.",
+    "factory_repository_run_shell": "Primary composable surface for repository search, edits, Git, compilers, Wine, native checks, and any unlisted in-repository investigation.",
+    "factory_analysis_call": "Target-attested provisional semantic evidence with zero exactness credit.",
+    "factory_submit_replay": "Factory-controlled verification for an eligible committed exact or product claim; use at a current-source milestone rather than redundantly before the next planned edit.",
+    "factory_query_accepted_facts": "Reads only independently accepted current receipt facts; it does not certify semantic completion.",
+    "factory_get_acceptance_registry": "Use summary detail for routine feedback and full detail only when candidate-level rejection diagnostics are needed."
+  },
+  "authority_boundary": {
+    "router_output": "work-selection-only",
+    "analysis_output": "provisional-semantic-evidence",
+    "repository_checks": "engineering-feedback",
+    "semantic_checkpoint": "durable-review-state",
+    "game_local_batch_record": "durable-game-evidence-input",
+    "exact_or_product_receipt": "claim-specific-oracle-state",
+    "acceptance_registry": "truth-kernel-admission-for-the-receipts-own-claim-only",
+    "factory_semantic_completion_provider": "unavailable",
+    "gpt_web_semantic_phase_closure": "forbidden",
+    "semantic_phase_closure_review": "later-independent-codex-or-human-review-only"
+  },
+  "checkpoint_rules": {
+    "prefix": "gpt-web:",
+    "checkpoint_after_each_coherent_batch": true,
+    "required_contents": [
+      "one-coherent-semantic-batch",
+      "evidence-record-or-durable-document-reference",
+      "retained-unknowns",
+      "tests-actually-run"
+    ],
+    "exclude_unrelated_preexisting_work": true,
+    "commit_is_semantic_or_exactness_proof": false,
+    "semantic-readiness-or-completion-commit-by-gpt-web": false
+  },
+  "handoff_fields": [
+    "campaign-continuation-status-and-boundary",
+    "game-and-campaign-objective",
+    "starting-and-ending-commit-and-dirty-state",
+    "completed-batches-and-excluded-scope",
+    "router-profile-scope-counts-and-limitations",
+    "coverage-surfaces-tried-and-next-rotation",
+    "bounded-exploration-plateaus-without-completion-implication",
+    "target-and-analysis-attestation",
+    "observed-corroborated-inferred-and-unknown-evidence",
+    "layout-and-abi-facts-relied-on",
+    "changed-files-and-created-checkpoints",
+    "tests-actually-run-by-feedback-level",
+    "affected-oracle-closure-and-any-explicitly-deferred-broad-gates",
+    "verification-plane-statuses",
+    "accepted-truth-separate-from-semantic-interpretation",
+    "remaining-unknowns-and-next-batch",
+    "explicit-statement-that-gpt-web-did-not-close-the-semantic-phase"
+  ]
+}

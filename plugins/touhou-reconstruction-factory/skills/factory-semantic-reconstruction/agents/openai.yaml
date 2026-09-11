@@ -1,4 +1,4 @@
 interface:
   display_name: "Factory Semantic Reconstruction"
   short_description: "Run semantic campaigns without losing exactness"
-  default_prompt: "Use $factory-semantic-reconstruction to continue TH095 semantic reconstruction autonomously across bounded, checked, locally committed batches."
+  default_prompt: "Use $factory-semantic-reconstruction to continue TH095 as active-incomplete, falsify prior readiness, rotate after negative searches, and checkpoint without closing the phase."

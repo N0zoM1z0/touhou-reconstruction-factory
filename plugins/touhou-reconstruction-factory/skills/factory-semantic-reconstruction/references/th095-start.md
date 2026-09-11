@@ -36,8 +36,8 @@ replaced by live command output in the session handoff.
 This ordering is a prerequisite, not incidental history. The exact replay lane
 and reconstructed Windows i386 product/runtime lane are the two independent
 semantic regression oracles. Preserve both throughout the phase. Windows
-x86-64, Linux, and Web products begin only after semantic readiness and cannot
-stand in for the i386 owner/runtime baseline.
+x86-64, Linux, and Web products begin only after a later independent closure
+review and cannot stand in for the i386 owner/runtime baseline.
 
 The same dated worktree contained four pre-existing untracked experiment files.
 Because Web cannot know whether a prior conversation disconnected, any current
@@ -69,14 +69,25 @@ lexical report with `rg`, mappings, match-unit definitions, target-attested
 Ghidra xrefs/decompilation/disassembly, and relevant TH08 source/history.
 
 When one or more semantic batches are already committed, first read the latest
-entry and its named next batch. Continue from it when current TH095 evidence
-still supports the choice; do not repeat a completed family merely because this
-reference describes the original entry point. Choose another small
-high-evidence canonical-owner or field family after each checkpoint. Avoid the
-largest ECL interpreter, a persistent score/replay/archive redesign, or an
-anonymous-field sweep until prior bounding makes that scope coherent. TH08 is
-workflow and corroboration only; require TH095-local evidence for every
-accepted interpretation.
+entry and its named next batch. Default the phase to `active-incomplete` and
+treat every historical readiness, completion, closure, or exit-audit statement
+as an untrusted hypothesis. Before following it, actively seek a TH095-local
+counterexample outside its enumerated scope. SEM-059 is the concrete warning:
+it declared `+0x285C` readerless and ready, while the next conversation found
+the missed `enter_subroutine` consumer and recovered the ECL subroutine table in
+SEM-060.
+
+Continue from an ordinary completed batch when current TH095 evidence still
+supports it; do not repeat a family merely because this reference describes the
+original entry point. Choose another small high-evidence canonical-owner or
+field family after each checkpoint. When one route yields nothing, immediately
+rotate to another structural, owner/lifetime, API/naming, protocol, persistence,
+runtime, or portability surface and keep working in the same conversation. A
+negative search result is not a handoff boundary. Avoid the largest ECL
+interpreter, a persistent score/replay/archive redesign, or an anonymous-field
+sweep until prior bounding makes that scope coherent. TH08 is workflow and
+corroboration only; require TH095-local evidence for every accepted
+interpretation.
 
 ## Native regression commands
 
@@ -115,8 +126,11 @@ until a deterministic target-bound Factory runtime provider exists.
 Append a completed entry to `docs/SEMANTIC_RECONSTRUCTION.md` only after the
 batch's applicable checks pass, then create one focused local English
 `gpt-web:` checkpoint. Refresh the live state and immediately start the next
-named batch unless a campaign terminal condition is real. Report exactness,
-product closure, runtime storage, and runtime scenario planes independently.
+named batch or coverage route. GPT-web must not create another semantic-
+readiness or completion checkpoint. At an unavoidable execution boundary, hand
+off as `active-incomplete` and state explicitly that the semantic phase remains
+open. Report exactness, product closure, runtime storage, and runtime scenario
+planes independently.
 
 Use repository-native checks for the rapid inner loop. Do not cold-replay the
 entire accepted Factory receipt set after every private checkpoint when another

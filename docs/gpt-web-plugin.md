@@ -50,10 +50,11 @@ knowledge or bypass replay-receipt acceptance.
   remain committed as historical contracts.
 - [`gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md)
   provides a ready-to-run TH095 prompt and standalone fallback under
-  `gpt-web-semantic-reconstruction-session-v2`. Version 2 adds the autonomous
-  outer campaign loop, layered feedback cadence, milestone receipt policy, and
-  durable context-boundary handoff. Version 1 remains as the historical
-  one-batch contract.
+  `gpt-web-semantic-reconstruction-session-v3`. Version 3 removes Web-authored
+  stop conditions and phase closure, defaults every resume to active-incomplete,
+  adversarially reviews earlier readiness prose, and rotates coverage after a
+  local plateau. Version 2 retains the earlier autonomous loop and self-audited
+  stop contract; version 1 remains the historical one-batch contract.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
@@ -309,7 +310,8 @@ historical-platform order: target exact baseline, corresponding Windows i386 or
 16-bit product closure/runtime-owner feedback, semantic reconstruction under
 both lanes, then portable products. The prompt intentionally lets live TH095
 evidence choose the first bounded family instead of freezing a stale filename or
-candidate count.
+candidate count. It does not let GPT-web declare semantic readiness or begin a
+port; that decision belongs to a later independent Codex or human review.
 
 The fresh TH09 exact-reconstruction campaign has a complete standalone prompt
 at
@@ -331,21 +333,34 @@ The intended campaign sequence is:
    the mandatory recovery review before new edits whenever it is non-clean;
 2. inventory `.analysis/`, establish one bounded manifested scratch root, and
    treat all old artifacts as non-authoritative until their bindings are current;
-3. read the repository's semantic phase plan and run target, tracking, and
-   target-attested Ghidra preflight;
-4. call `factory_report_semantic_debt` for `src`, preserving its HEAD/status
+3. read the repository's semantic phase plan, treat any prior readiness or exit
+   audit as an untrusted hypothesis, and actively search for a current TH095-
+   local counterexample before following its handoff;
+4. run target, tracking, and target-attested Ghidra preflight;
+5. call `factory_report_semantic_debt` for `src`, preserving its HEAD/status
    binding and routing-only limitations;
-5. supplement the lexical candidates with Bash, ledgers, exact-unit mappings,
+6. supplement the lexical candidates with Bash, ledgers, exact-unit mappings,
    and target-local Ghidra evidence;
-6. choose one small owner/field family, preserve both exact and reconstructed
+7. choose one small owner/field family, preserve both exact and reconstructed
    Windows i386 product/runtime feedback, document the evidence classes, and
    create a local English `gpt-web:` checkpoint;
-7. measure and retire proven current-session analysis scratch, refresh the live
+8. measure and retire proven current-session analysis scratch, refresh the live
    state, and immediately continue with the next named bounded
    family instead of treating the first successful checkpoint as the session
-   stop; and
-8. report runtime receipt status as `unknown` while no deterministic Factory
+   stop;
+9. when one route yields no actionable batch, immediately rotate to another
+   subsystem, debt class, protocol, persistence, runtime, or portability
+   surface and keep working in the same conversation; a negative search result
+   is not a handoff boundary; and
+10. report runtime receipt status as `unknown` while no deterministic Factory
    runtime provider exists, even when repo-native runtime feedback passes.
+
+The campaign has no `STOP_CONDITION`. It ends a conversation only at an
+explicit user interruption or an unavoidable connection, tool, context, or
+phase boundary, and writes an `active-incomplete` continuation handoff. No new
+commit, no router hit, or a self-authored exit audit is phase-completion
+authority. A bounded route with no result cannot justify that handoff; it must
+trigger another coverage route in the current conversation.
 
 The campaign uses repo-native exact and historical-platform checks for its fast
 dirty-tree inner loop. It closes broad cold gates immediately for shared or

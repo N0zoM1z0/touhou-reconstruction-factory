@@ -5,7 +5,7 @@ description: Run an autonomous campaign of bounded semantic reconstruction batch
 
 # Factory Semantic Reconstruction
 
-Follow `gpt-web-semantic-reconstruction-session-v2`, which extends
+Follow `gpt-web-semantic-reconstruction-session-v3`, which extends
 `gpt-web-reconstruction-session-v4`. Work autonomously in the registered live
 game repository. The Factory supplies routing, target-bound analysis,
 composable Bash, and independent replay; it does not decide meaning for you.
@@ -20,8 +20,9 @@ When the selected game is TH095, read
 
 ## Establish the semantic campaign
 
-Require a game ID, one semantic objective, and a measurable campaign stop condition. A
-scope hint, prior checkpoint, and evidence seed are optional.
+Require a game ID and one semantic objective. A scope hint, prior checkpoint,
+and evidence seed are optional. Do not request or invent a semantic stop
+condition: GPT-web has no semantic-phase closure authority.
 
 1. Call `factory_describe`, `factory_list_repositories`, and
    `factory_get_repository_status`. Report the real branch, HEAD, upstream, and
@@ -39,8 +40,11 @@ scope hint, prior checkpoint, and evidence seed are optional.
 3. Read `AGENTS.md`, the current handoff, architecture/workflow documents,
    semantic plan, latest committed semantic batch and named next batch,
    relevant source, ledgers, build scripts, and recent relevant history through
-   `factory_repository_run_shell`. Do not redo a committed batch without new
-   contradictory evidence.
+   `factory_repository_run_shell`. Treat any prior readiness, completion,
+   closure, or exit-audit statement as an untrusted hypothesis. Before following
+   its handoff, actively seek a current selected-game counterexample outside the
+   prior audit's enumerated scope. Do not redo an ordinary committed batch
+   without new contradictory evidence.
 4. Run the repository's target and tracking preflight. Attest the selected
    IDA/Ghidra provider before relying on it.
 5. Inventory `.analysis/` total/top-level size without trusting its contents.
@@ -64,15 +68,25 @@ prerequisite.
 One batch is an inner transaction, not the session stop. After a successful
 batch, refresh HEAD and worktree state, read the just-committed next-batch note,
 and immediately select the next coherent family without asking the user for
-permission. Continue until the supplied stop condition passes an independent
-exit audit, a concrete evidence/tool boundary prevents useful progress,
-continuation requires a materially different scope decision, or remaining
-context cannot safely close another batch.
+permission. The campaign is open-ended. GPT-web must not declare semantic
+readiness, completion, closure, or permission to begin a port.
+
+If a bounded route finds no actionable change, immediately rotate to another
+coverage surface: structural raw or unknown storage; owners, lifetimes,
+initialization, teardown, or callbacks; weak APIs and identifiers; primary or
+sibling interpreter protocols; flags, state, resource, sound, effect, or replay
+domains; persistent formats and ABI; portability hazards; historical-platform
+runtime gaps; or an adjacent-game readability challenge that still requires
+selected-game evidence. A plateau is not a stopping condition. Keep searching
+and working in the same conversation; a negative result is not a handoff
+boundary and cannot justify handing off early.
 
 Under context pressure, finish or revert the active experiment, run its required
 checks, write durable evidence, create a coherent checkpoint when warranted,
-name the exact next batch, and only then hand off. Never leave useful work only
-in chat context.
+name the exact next coverage route, and only then hand off as
+`active-incomplete`. The same applies to an unavoidable connection or tool
+boundary. Never leave useful work only in chat context or turn a handoff into
+phase closure.
 
 Call `factory_report_semantic_debt` for a repository-relative source scope when
 useful. Its raw-member, absolute-address, anonymous-identifier, and opaque-
@@ -154,8 +168,8 @@ Treat the target exact lane and the reconstructed historical-platform
 product/runtime lane as the two independent semantic regression oracles. A
 batch must preserve both when applicable. Their agreement reduces false
 positives but does not prove the chosen English interpretation. Portable
-products are later consumers after semantic readiness, not prerequisite
-oracles.
+products are later consumers after a separate closure review, not prerequisite
+oracles and not work for this campaign.
 
 - For a private field/name/expression change, run every affected exact unit and
   the smallest historical-platform compile/link surface that can expose the
@@ -227,9 +241,27 @@ exactness proof.
 After the checkpoint, return to batch selection and continue. Do not turn the
 normal completion of one reviewable unit into a campaign handoff.
 
+## Preserve the closure authority boundary
+
+An exploration agent can produce positive evidence, but it cannot certify the
+absence of undiscovered work in an open world. This is an authority boundary,
+not merely a request for a more detailed checklist. Router counts, no new
+commit, a bounded search with no hit, a self-authored exit audit, or a long
+sequence of successful batches cannot authorize semantic completion.
+
+On every new conversation, default the game phase to `active-incomplete` and
+try to falsify the latest readiness or completion prose. One concrete missed
+producer, consumer, owner, protocol, representation boundary, runtime gap,
+persistent-format issue, or portability hazard invalidates that inherited
+claim and becomes the next work route. If the current route finds none, rotate
+and continue working in the same conversation rather than stopping or handing
+off. Only a later independent Codex or human
+review may decide whether accumulated game-local evidence is sufficient to
+close the semantic phase and begin porting.
+
 ## Handoff
 
-Report the actual terminal condition; game/campaign objective; starting and
+Report the actual execution boundary; game/campaign objective; starting and
 ending commit and dirty state; every completed checkpoint; selected and
 excluded scope; router profile/scope/counts/limitations;
 recovery classifications/actions/unknowns; starting and ending `.analysis/`
@@ -238,4 +270,5 @@ target and analysis attestation; observed/corroborated/inferred/unknown evidence
 layout/ABI facts; changed files; checkpoint commits; tests actually run;
 affected-oracle closure and explicitly deferred broad gates; every verification
 plane; accepted receipt facts separately from semantic interpretation; retained
-unknowns; and the exact next batch.
+unknowns; the exact next batch or coverage route; and an explicit statement that
+GPT-web did not close the semantic phase.

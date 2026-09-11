@@ -3,7 +3,7 @@
 This prompt starts a persistent semantic campaign in a game repository
 registered by the shared Touhou Reconstruction Factory MCP. The campaign is a
 sequence of small, independently reviewable batches under
-`gpt-web-semantic-reconstruction-session-v2`, which extends
+`gpt-web-semantic-reconstruction-session-v3`, which extends
 `gpt-web-reconstruction-session-v4`. The mandatory companion contract is
 `worktree-recovery-and-analysis-artifacts-v1`; no prompt assumes that ChatGPT
 successfully loaded a bundled skill.
@@ -20,7 +20,7 @@ available, but do not depend on the skill body being loaded.
 Before editing, try to read these Factory-controlled paths through
 factory_repository_run_shell:
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v2.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v3.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/semantic-reconstruction.md
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
@@ -34,18 +34,21 @@ select the highest-evidence bounded owner, field, representation, or protocol
 family; recover maintainable meaning; validate it under the target-exact and
 reconstructed Windows i386 feedback lanes; record the evidence; and create a
 local checkpoint before proceeding to the next family.
+DEFAULT_PHASE_STATE: active-incomplete. GPT-web has no authority to declare the
+semantic phase ready, complete, closed, or ready for porting.
 SCOPE_HINT: Read the latest committed semantic record and its named next batch,
 then verify that choice against live TH095 evidence. Prefer bounded families
 with multiple TH095-local consumers and focused exact units. Do not redo an
 already committed batch unless current evidence contradicts it.
-STOP_CONDITION: Continue across multiple coherent batches. Do not stop merely
-because one batch or checkpoint succeeded. Stop only when an independent
-game-local semantic exit audit supports the campaign objective, a concrete
-evidence/tool boundary prevents useful progress, continuation requires a
-materially different scope decision, or remaining context cannot safely close
-another batch. Under context pressure, first close or revert the active
-experiment, run required checks, create a coherent checkpoint when warranted,
-write the next batch into durable repo state, and then hand off.
+RESUME_AUDIT: Treat every prior semantic-readiness, completion, closure, or exit-
+audit statement as an untrusted hypothesis. Before following its proposed next
+state, actively try to falsify it with current TH095-local evidence. Search for
+a missed consumer/producer, owner/lifetime relation, protocol domain, persistent
+or ABI boundary, runtime gap, or portability hazard outside the prior audit's
+enumerated scope. One counterexample reopens the claim and becomes work. If one
+bounded route finds none, immediately rotate to another coverage surface and
+continue working in the same conversation; absence of a found counterexample
+never changes active-incomplete and is not a handoff boundary.
 RESUME_COMMIT: current
 EVIDENCE_SEED: TH08 is workflow and adjacent-engine corroboration only. Require
 TH095-local evidence for every accepted interpretation.
@@ -61,6 +64,16 @@ change natural source, run the narrowest fast feedback first, close its actual
 regression surface, document observed/corroborated/inferred/unknown meaning,
 inspect the complete diff, and create an English `gpt-web:` commit. Immediately
 refresh live state and choose the next batch without asking me for permission.
+
+This campaign is deliberately open-ended. Do not create a semantic-readiness or
+completion checkpoint. A local evidence plateau is a routing event, never a
+reason to stop: rotate among structural raw/unknown storage, canonical owners
+and lifetimes, weak APIs and identifiers, primary and sibling interpreter
+protocols, flags/state/resource/sound/replay domains, persistent formats and ABI
+boundaries, portability hazards, and historical-platform runtime gaps. Keep
+working until I explicitly interrupt or redirect the campaign, or an unavoidable
+connection/tool/context boundary requires a durable continuation handoff. Such a
+handoff pauses execution and does not close the phase.
 
 Capture broad baselines once per campaign, not again before every edit. Use
 focused syntax, compile, exact-unit, format, and runtime feedback inside each
@@ -92,9 +105,9 @@ ending bytes plus every retained large artifact.
 
 Keep semantic interpretation, Git checkpoints, exact receipts, production
 closure, runtime storage, and runtime scenarios as separate states. Unknown is
-an accurate result. Portable Windows, Linux, and Web work begins only after
-semantic readiness and cannot substitute for the historical-platform
-prerequisite.
+an accurate result. Do not begin portable Windows, Linux, or Web work inside
+this campaign; a later independent Codex or human review decides whether the
+semantic prerequisite is satisfied.
 ```
 
 This is intentionally a campaign prompt, not a one-batch prompt. A successful
@@ -106,13 +119,13 @@ next; the prompt does not freeze a stale address or candidate count.
 
 ```text
 Run an autonomous evidence-first semantic reconstruction campaign under
-gpt-web-semantic-reconstruction-session-v2, extending the general
+gpt-web-semantic-reconstruction-session-v3, extending the general
 gpt-web-reconstruction-session-v4 live-repository contract, with mandatory
 worktree-recovery-and-analysis-artifacts-v1. Do not assume a bundled skill was
 loaded. Before editing, try to read these Factory-controlled paths through
 factory_repository_run_shell:
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v2.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v3.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/semantic-reconstruction.md
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
@@ -123,14 +136,19 @@ Inputs
 - SEMANTIC_OBJECTIVE: Continue semantic reconstruction from the live committed
   history through successive evidence-backed owner/field/representation/protocol
   batches while preserving applicable target-exact and Windows i386 feedback.
+- DEFAULT_PHASE_STATE: active-incomplete. GPT-web cannot close the semantic
+  phase or authorize porting.
 - SCOPE_HINT: Inspect the latest committed batch and named next batch, then
   revalidate the choice from current source, history, ledgers, and target-local
   evidence. Prefer bounded high-evidence families; do not redo completed work
   without a contradiction.
-- STOP_CONDITION: One batch is not a terminal condition. Continue until an
-  independent semantic exit audit supports completion, a concrete blocker
-  prevents useful progress, a materially different scope decision is required,
-  or remaining context cannot safely close another batch.
+- RESUME_AUDIT: Treat every prior readiness/completion/exit-audit statement as
+  an untrusted hypothesis. First try to falsify it with current TH095-local
+  evidence and coverage outside its enumerated scope. One counterexample
+  invalidates inherited closure and becomes work. If one bounded route finds no
+  counterexample, immediately rotate coverage and continue working in the same
+  conversation; the phase remains active-incomplete and the negative result is
+  not a handoff boundary.
 - RESUME_COMMIT: current
 - EVIDENCE_SEED: TH08 is workflow/corroboration only; TH095 is authoritative.
 
@@ -164,6 +182,10 @@ Campaign start
    storage, and runtime scenario planes separately. Historical totals orient
    work only. Do this broad orientation once and refresh only what a later
    source/tool/target change can invalidate.
+6. Adversarially review the latest readiness, completion, or exit-audit claim
+   before trusting its handoff. Try to find a current target-local counterexample
+   in a subsystem or debt class the prior audit did not enumerate. Prior prose
+   is orientation, not phase state.
 
 Repeated bounded batch
 1. Select the latest named next batch when current evidence still supports it;
@@ -198,6 +220,12 @@ Repeated bounded batch
 7. Refresh the live HEAD and worktree, read the just-committed next-batch note,
    and immediately begin the next coherent batch. Do not ask whether to continue
    merely because the previous batch passed.
+8. When one route yields no actionable change, rotate across structural layout,
+   canonical ownership/lifetime, weak APIs/identifiers, interpreter and sibling
+   protocols, flags/state/resource/sound/replay domains, persistent formats/ABI,
+   portability hazards, historical-platform runtime gaps, and adjacent-game
+   readability challenges. Keep searching and working in the same conversation;
+   do not turn a plateau or self-audit into a readiness commit or handoff.
 
 Milestone and receipt cadence
 - Repo-native checks provide the fast inner feedback loop while source is dirty.
@@ -211,17 +239,23 @@ Milestone and receipt cadence
 - A deferred, unavailable, or stale plane must be reported as such. Never replace
   it with another green check.
 
-Continue until a terminal condition is actually reached. If context is nearing
-its limit, finish or revert the active experiment, preserve required checks and
-evidence in the repository, create a checkpoint when coherent, name the next
-batch, and hand off without leaving context-only work.
+Continue open-endedly within semantic reconstruction. Stop executing only when
+the user explicitly interrupts or redirects the campaign, a concrete tool or
+connection boundary prevents further work in this conversation, remaining
+context cannot safely close another batch, or the next action would leave the
+semantic phase and enter porting. At such a boundary, finish or revert the active
+experiment, preserve required checks and evidence in the repository, create a
+checkpoint when coherent, name the next coverage route, and hand off without
+leaving context-only work. The handoff status remains active-incomplete.
 
-Final handoff: report the terminal condition; campaign objective; start/end
+Continuation handoff: report the execution boundary; campaign objective; start/end
 commit and dirty state; every completed checkpoint; selected and excluded
 scope; target attestation; evidence classes and retained unknowns; checks by
 feedback level; broad gates run or explicitly deferred; all verification planes;
 accepted facts separately from semantic interpretation; and the exact next
 batch. Include recovery classifications/actions, starting/ending `.analysis/`
-bytes, manifest state, and retained/removed artifact disposition. Never infer
-semantic completion from router counts or number of commits.
+bytes, manifest state, and retained/removed artifact disposition. Explicitly
+state that GPT-web did not close the semantic phase. Never infer completion from
+router counts, no new commit, a self-audit, an evidence plateau, or any number of
+commits.
 ```

@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ElementTree
 
 ROOT = Path(__file__).parents[1]
 CONTRACT_ID = "gpt-web-reconstruction-session-v4"
-SEMANTIC_CONTRACT_ID = "gpt-web-semantic-reconstruction-session-v2"
+SEMANTIC_CONTRACT_ID = "gpt-web-semantic-reconstruction-session-v3"
 PLUGIN_ROOT = ROOT / "plugins" / "touhou-reconstruction-factory"
 FACTORY_APP_ID = "asdk_app_6aa21bec66888191bd24c118e47ddee6"
 
@@ -109,9 +109,13 @@ class WebWorkflowAssetTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(contract["schema_version"], 2)
+        self.assertEqual(contract["schema_version"], 3)
         self.assertEqual(contract["id"], SEMANTIC_CONTRACT_ID)
         self.assertEqual(contract["extends"], CONTRACT_ID)
+        self.assertEqual(
+            set(contract["required_inputs"]), {"game_id", "semantic_objective"}
+        )
+        self.assertNotIn("stop_condition", contract["required_inputs"])
         self.assertEqual(
             contract["historical_platform_stage_order"],
             [
@@ -147,9 +151,24 @@ class WebWorkflowAssetTests(unittest.TestCase):
             contract["checkpoint_rules"]["commit_is_semantic_or_exactness_proof"]
         )
         continuation = contract["continuation_policy"]
+        self.assertTrue(continuation["open_ended"])
         self.assertTrue(continuation["continue_after_successful_batch"])
         self.assertFalse(continuation["ask_permission_after_successful_batch"])
         self.assertFalse(continuation["batch_completion_is_session_stop"])
+        self.assertFalse(continuation["self_termination_for_apparent_completion"])
+        self.assertFalse(continuation["web_phase_closure_authority"])
+        self.assertFalse(continuation["negative_search_result_is_handoff_boundary"])
+        self.assertEqual(
+            contract["resume_audit"]["default_phase_state"], "active-incomplete"
+        )
+        self.assertEqual(
+            contract["authority_boundary"]["gpt_web_semantic_phase_closure"],
+            "forbidden",
+        )
+        self.assertIn(
+            "an-exploration-agent-cannot-certify-the-absence-of-undiscovered-work-in-an-open-world",
+            contract["design_principles"],
+        )
         self.assertIn("campaign_milestone", contract["feedback_ladder"])
         self.assertIn("receipt_cadence", contract["feedback_ladder"])
 
@@ -182,8 +201,9 @@ class WebWorkflowAssetTests(unittest.TestCase):
             self.assertIn("gpt-web:", document)
             self.assertIn("unknown", document)
             self.assertIn("campaign", document.lower())
-        for field in ("GAME_ID", "SEMANTIC_OBJECTIVE", "STOP_CONDITION"):
+        for field in ("GAME_ID", "SEMANTIC_OBJECTIVE", "DEFAULT_PHASE_STATE"):
             self.assertIn(field, prompt)
+        self.assertNotIn("STOP_CONDITION:", prompt)
         for document in (prompt, skill, reference):
             self.assertIn("Windows i386", document)
             self.assertIn("exact", document.lower())
@@ -191,8 +211,14 @@ class WebWorkflowAssetTests(unittest.TestCase):
         self.assertIn("name: factory-semantic-reconstruction", skill)
         self.assertIn("without asking", prompt)
         self.assertIn("after every private checkpoint", prompt)
+        self.assertIn("active-incomplete", prompt)
+        self.assertIn("untrusted hypothesis", prompt)
+        self.assertIn("no authority to declare", prompt)
         defaults = "\n".join(manifest["interface"]["defaultPrompt"])
         self.assertIn("TH095 semantic", defaults)
+        self.assertTrue(
+            all(len(item) <= 128 for item in manifest["interface"]["defaultPrompt"])
+        )
 
     def test_prompt_skill_and_manifest_publish_the_same_workflow(self) -> None:
         prompt = (ROOT / "prompts" / "gpt-web-reconstruction.md").read_text(
