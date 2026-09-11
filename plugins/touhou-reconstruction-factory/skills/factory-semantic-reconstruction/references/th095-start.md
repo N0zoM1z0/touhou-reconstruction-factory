@@ -80,10 +80,10 @@ SEM-060.
 Continue from an ordinary completed batch when current TH095 evidence still
 supports it; do not repeat a family merely because this reference describes the
 original entry point. Choose another small high-evidence canonical-owner or
-field family after each checkpoint. When one route yields nothing, immediately
-rotate to another structural, owner/lifetime, API/naming, protocol, persistence,
-runtime, or portability surface and keep working in the same conversation. A
-negative search result is not a handoff boundary. Avoid the largest ECL
+field family when it fits the current conversation. When one route yields
+nothing, rotate to another structural, owner/lifetime, API/naming, protocol,
+persistence, runtime, or portability surface rather than treating that negative
+result as completion or the sole reason to hand off. Avoid the largest ECL
 interpreter, a persistent score/replay/archive redesign, or an anonymous-field
 sweep until prior bounding makes that scope coherent. TH08 is workflow and
 corroboration only; require TH095-local evidence for every accepted
@@ -125,12 +125,13 @@ until a deterministic target-bound Factory runtime provider exists.
 
 Append a completed entry to `docs/SEMANTIC_RECONSTRUCTION.md` only after the
 batch's applicable checks pass, then create one focused local English
-`gpt-web:` checkpoint. Refresh the live state and immediately start the next
-named batch or coverage route. GPT-web must not create another semantic-
-readiness or completion checkpoint. At an unavoidable execution boundary, hand
-off as `active-incomplete` and state explicitly that the semantic phase remains
-open. Report exactness, product closure, runtime storage, and runtime scenario
-planes independently.
+`gpt-web:` checkpoint. Refresh live state and start another named batch when the
+browser and context remain reliable. Do not try to complete the entire phase in
+one conversation; before another batch would make the conversation fragile,
+hand off as `active-incomplete` and state explicitly that the semantic phase
+remains open. GPT-web must not create another semantic-readiness or completion
+checkpoint. Report exactness, product closure, runtime storage, and runtime
+scenario planes independently.
 
 Use repository-native checks for the rapid inner loop. Do not cold-replay the
 entire accepted Factory receipt set after every private checkpoint when another

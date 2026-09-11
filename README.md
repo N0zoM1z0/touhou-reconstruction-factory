@@ -21,7 +21,7 @@ is in [`docs/ontology.md`](docs/ontology.md).
 flowchart LR
     H["Human<br/>scope · stop condition · release"]:::human --> I["Installed Factory Plugin<br/>five bundled skills<br/>registered ChatGPT app binding"]:::control
     K[("Factory repository memory<br/>ontology · providers · adapters<br/>fixtures · knowledge · prompt · skills")]:::memory --> I
-    I --> W["GPT-web agent<br/>autonomous reconstruction<br/>bounded objective · resumable Git history"]:::agent
+    I --> W["GPT-web agent<br/>autonomous bounded conversation<br/>long campaign · resumable Git history"]:::agent
     W --> D["One shared Factory MCP<br/>registered repo selection<br/>atomic evidence tools + composable Bash"]:::control
     K --> D
     D --> C["Selected live game repository<br/>dirty + untracked + ignored state<br/>ledgers · original target identity"]:::repo
@@ -90,7 +90,7 @@ flowchart LR
     O2 --> S
     S --> K["Local gpt-web: checkpoint<br/>refresh live state"]
     K -->|"continue; plateau rotates coverage"| S
-    K -.->|"unavoidable boundary: active-incomplete"| H["Next Web conversation<br/>falsify prior closure prose<br/>resume open-ended work"]
+    K -.->|"proactive bounded handoff: active-incomplete"| H["Next Web conversation<br/>audit live state · falsify closure prose<br/>resume open-ended campaign"]
     H --> S
     S -.->|"later independent request"| A{"Codex / human<br/>closure review"}
     A -->|"more work"| S
@@ -106,6 +106,8 @@ close the semantic phase: an exploration agent cannot certify the absence of
 undiscovered work in an open world. This TH095-shaped sequence and the TH08
 bitter lessons are specified in the
 [`semantic reconstruction workflow`](docs/semantic-reconstruction.md).
+The campaign may span many adaptive bounded Web conversations; external browser
+scheduling is not part of the agent prompt or reconstruction ontology.
 
 ## Development
 
@@ -196,7 +198,9 @@ The ready-to-run TH095 semantic campaign is in
 [`prompts/gpt-web-semantic-reconstruction.md`](prompts/gpt-web-semantic-reconstruction.md).
 The first clean Factory-native exact campaign is in
 [`prompts/gpt-web-th09-exact-reconstruction.md`](prompts/gpt-web-th09-exact-reconstruction.md).
-Both prompts are complete without automatic skill injection and require the
+The mature PC-98 TH04 exact campaign is in
+[`prompts/gpt-web-th04-exact-reconstruction.md`](prompts/gpt-web-th04-exact-reconstruction.md).
+All prompts are complete without automatic skill injection and require the
 [`dirty-work recovery and analysis-artifact lifecycle`](docs/worktree-recovery-and-analysis-artifacts.md)
 before new edits.
 The measured TH09/TH095 overnight autonomy pilot, including command, commit,

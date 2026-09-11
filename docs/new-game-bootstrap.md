@@ -104,6 +104,16 @@ progress.
     hypothesis, but never transfer target facts, ownership, ABI, exactness, or
     completion; a reference that is still undergoing semantic work is more
     provisional still.
+11. **Make the campaign long-lived and each Web conversation bounded.** The
+    standalone prompt gives a strong phase objective, autonomous tools, fast
+    feedback, and frequent checkpoints, but never asks one chat to finish the
+    whole phase. Web chooses a safe handoff point from packet difficulty,
+    validation latency, browser responsiveness, and context reliability. Exact
+    prompts may use a moving 99.5% reviewed authored-function/authored-byte
+    pressure target while continuing boundary discovery; crossing it is not
+    phase closure. Do not mention an operator's browser scheduler or userscript
+    in the prompt. The repository and handoff are the only continuation
+    interface the reconstruction agent needs.
 
 Run the staged native-provider check with no public-service restart:
 

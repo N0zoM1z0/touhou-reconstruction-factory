@@ -7,8 +7,10 @@ import xml.etree.ElementTree as ElementTree
 
 
 ROOT = Path(__file__).parents[1]
-CONTRACT_ID = "gpt-web-reconstruction-session-v4"
-SEMANTIC_CONTRACT_ID = "gpt-web-semantic-reconstruction-session-v3"
+CONTRACT_ID = "gpt-web-reconstruction-session-v5"
+BASE_CONTRACT_ID = "gpt-web-reconstruction-session-v4"
+SEMANTIC_CONTRACT_ID = "gpt-web-semantic-reconstruction-session-v4"
+SEMANTIC_BASE_CONTRACT_ID = "gpt-web-semantic-reconstruction-session-v3"
 PLUGIN_ROOT = ROOT / "plugins" / "touhou-reconstruction-factory"
 FACTORY_APP_ID = "asdk_app_6aa21bec66888191bd24c118e47ddee6"
 
@@ -20,69 +22,87 @@ class WebWorkflowAssetTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(contract["schema_version"], 4)
+        base = json.loads(
+            (ROOT / "contracts" / f"{BASE_CONTRACT_ID}.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(contract["schema_version"], 5)
         self.assertEqual(contract["id"], CONTRACT_ID)
-        self.assertEqual(
-            set(contract["required_inputs"]),
-            {"game_id", "objective", "stop_condition"},
-        )
-        self.assertEqual(
-            contract["authorities"]["analysis"]["exactness_credit"], "none"
-        )
+        self.assertEqual(contract["extends"], BASE_CONTRACT_ID)
+        self.assertEqual(set(contract["required_inputs"]), {"game_id", "objective"})
         self.assertTrue(
-            contract["authorities"]["repository_work"]["game_repository_write"]
-        )
-        self.assertTrue(
-            contract["authorities"]["repository_work"]["local_git_commit"]
-        )
-        self.assertFalse(contract["authorities"]["repository_work"]["git_push"])
-        self.assertFalse(
-            contract["authorities"]["repository_work"]["truth_promotion"]
+            contract["conversation_slice_policy"]["campaign_may_span_conversations"]
         )
         self.assertFalse(
-            contract["authorities"]["disposable_workspace"][
+            contract["conversation_slice_policy"][
+                "one_conversation_must_attempt_entire_campaign"
+            ]
+        )
+        self.assertIsNone(
+            contract["conversation_slice_policy"]["fixed_packet_count"]
+        )
+        self.assertIn(
+            "repository-state-not-chat-context-carries-continuation",
+            contract["design_principles_add"],
+        )
+        self.assertEqual(
+            base["authorities"]["analysis"]["exactness_credit"], "none"
+        )
+        self.assertTrue(
+            base["authorities"]["repository_work"]["game_repository_write"]
+        )
+        self.assertTrue(
+            base["authorities"]["repository_work"]["local_git_commit"]
+        )
+        self.assertFalse(base["authorities"]["repository_work"]["git_push"])
+        self.assertFalse(
+            base["authorities"]["repository_work"]["truth_promotion"]
+        )
+        self.assertFalse(
+            base["authorities"]["disposable_workspace"][
                 "default_for_reconstruction"
             ]
         )
         self.assertEqual(
-            contract["authorities"]["game_knowledge"]["canonical_path"],
+            base["authorities"]["game_knowledge"]["canonical_path"],
             ".reconstruction/game-knowledge.json",
         )
         self.assertEqual(
-            contract["authorities"]["game_knowledge"]["factory_publication"],
+            base["authorities"]["game_knowledge"]["factory_publication"],
             "none",
         )
-        self.assertFalse(contract["authorities"]["factory_knowledge"]["web_write"])
+        self.assertFalse(base["authorities"]["factory_knowledge"]["web_write"])
         self.assertFalse(
-            contract["authorities"]["factory_knowledge"]["mcp_promotion"]
+            base["authorities"]["factory_knowledge"]["mcp_promotion"]
         )
-        self.assertFalse(contract["authorities"]["replay"]["dirty_source_eligible"])
+        self.assertFalse(base["authorities"]["replay"]["dirty_source_eligible"])
         self.assertEqual(
-            contract["authorities"]["acceptance_registry"]["role"],
+            base["authorities"]["acceptance_registry"]["role"],
             "sole live Truth Kernel admission authority",
         )
         self.assertEqual(
-            len(contract["workflow_phases"]), len(set(contract["workflow_phases"]))
+            len(base["workflow_phases"]), len(set(base["workflow_phases"]))
         )
         self.assertIn(
             "git-push",
-            contract["prohibitions"],
+            base["prohibitions"],
         )
         self.assertIn(
-            "claim-exactness-from-build-or-git-commit", contract["prohibitions"]
+            "claim-exactness-from-build-or-git-commit", base["prohibitions"]
         )
         self.assertIn(
-            "publish-or-promote-game-local-knowledge", contract["prohibitions"]
+            "publish-or-promote-game-local-knowledge", base["prohibitions"]
         )
-        self.assertIn("game_knowledge_changes", contract["handoff_fields"])
-        self.assertIn("created_checkpoint_commits", contract["handoff_fields"])
-        self.assertIn("unknowns_and_blockers", contract["handoff_fields"])
-        self.assertIn("agent-autonomy-first", contract["design_principles"])
+        self.assertIn("game_knowledge_changes", base["handoff_fields"])
+        self.assertIn("created_checkpoint_commits", base["handoff_fields"])
+        self.assertIn("unknowns_and_blockers", base["handoff_fields"])
+        self.assertIn("agent-autonomy-first", base["design_principles"])
         self.assertIn(
             "verification-planes-are-independent-but-feedback-is-coupled",
-            contract["design_principles"],
+            base["design_principles"],
         )
-        planes = contract["verification_planes"]
+        planes = base["verification_planes"]
         self.assertEqual(
             set(planes),
             {
@@ -99,9 +119,9 @@ class WebWorkflowAssetTests(unittest.TestCase):
             planes["runtime_scenario"]["factory_live_provider"], "unavailable"
         )
         self.assertIn(
-            "verification_plane_statuses", contract["handoff_fields"]
+            "verification_plane_statuses", base["handoff_fields"]
         )
-        self.assertFalse(contract["checkpoint_rules"]["commit_is_exactness_evidence"])
+        self.assertFalse(base["checkpoint_rules"]["commit_is_exactness_evidence"])
 
     def test_semantic_contract_preserves_stage_order_and_two_oracles(self) -> None:
         contract = json.loads(
@@ -109,15 +129,21 @@ class WebWorkflowAssetTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(contract["schema_version"], 3)
-        self.assertEqual(contract["id"], SEMANTIC_CONTRACT_ID)
-        self.assertEqual(contract["extends"], CONTRACT_ID)
-        self.assertEqual(
-            set(contract["required_inputs"]), {"game_id", "semantic_objective"}
+        base = json.loads(
+            (ROOT / "contracts" / f"{SEMANTIC_BASE_CONTRACT_ID}.json").read_text(
+                encoding="utf-8"
+            )
         )
-        self.assertNotIn("stop_condition", contract["required_inputs"])
+        self.assertEqual(contract["schema_version"], 4)
+        self.assertEqual(contract["id"], SEMANTIC_CONTRACT_ID)
+        self.assertEqual(contract["extends"], SEMANTIC_BASE_CONTRACT_ID)
+        self.assertEqual(contract["base_contract_revision"], CONTRACT_ID)
         self.assertEqual(
-            contract["historical_platform_stage_order"],
+            set(base["required_inputs"]), {"game_id", "semantic_objective"}
+        )
+        self.assertNotIn("stop_condition", base["required_inputs"])
+        self.assertEqual(
+            base["historical_platform_stage_order"],
             [
                 "target-specific-exact-reconstruction-baseline",
                 "corresponding-historical-platform-product-closure-and-runtime-owner-feedback",
@@ -125,13 +151,13 @@ class WebWorkflowAssetTests(unittest.TestCase):
                 "portable-platform-products",
             ],
         )
-        entry = contract["phase_entry"]
+        entry = base["phase_entry"]
         self.assertFalse(entry["whole_project_exact_completion_required"])
         self.assertTrue(entry["target_specific_exact_baseline_required"])
         self.assertTrue(entry["historical_platform_product_closure_required"])
         self.assertTrue(entry["historical_platform_runtime_owner_feedback_required"])
         self.assertEqual(
-            set(contract["semantic_regression_oracles"]),
+            set(base["semantic_regression_oracles"]),
             {
                 "target_exact_oracle",
                 "historical_platform_product_oracle",
@@ -140,37 +166,38 @@ class WebWorkflowAssetTests(unittest.TestCase):
             },
         )
         self.assertEqual(
-            contract["authority_boundary"]["factory_semantic_completion_provider"],
+            base["authority_boundary"]["factory_semantic_completion_provider"],
             "unavailable",
         )
         self.assertIn(
             "zero-router-candidates-does-not-imply-semantic-completion",
-            contract["non_implications"],
+            base["non_implications"],
         )
         self.assertFalse(
-            contract["checkpoint_rules"]["commit_is_semantic_or_exactness_proof"]
+            base["checkpoint_rules"]["commit_is_semantic_or_exactness_proof"]
         )
-        continuation = contract["continuation_policy"]
-        self.assertTrue(continuation["open_ended"])
-        self.assertTrue(continuation["continue_after_successful_batch"])
+        continuation = contract["continuation_policy_override"]
+        self.assertTrue(continuation["campaign_open_ended"])
+        self.assertFalse(continuation["conversation_open_ended"])
         self.assertFalse(continuation["ask_permission_after_successful_batch"])
-        self.assertFalse(continuation["batch_completion_is_session_stop"])
-        self.assertFalse(continuation["self_termination_for_apparent_completion"])
+        self.assertIsNone(continuation["fixed_batches_per_conversation"])
+        self.assertFalse(continuation["batch_completion_is_phase_completion"])
         self.assertFalse(continuation["web_phase_closure_authority"])
         self.assertFalse(continuation["negative_search_result_is_handoff_boundary"])
+        self.assertFalse(continuation["negative_search_result_may_be_sole_slice_delivery"])
         self.assertEqual(
-            contract["resume_audit"]["default_phase_state"], "active-incomplete"
+            contract["resume_audit_override"]["default_phase_state"], "active-incomplete"
         )
         self.assertEqual(
-            contract["authority_boundary"]["gpt_web_semantic_phase_closure"],
+            base["authority_boundary"]["gpt_web_semantic_phase_closure"],
             "forbidden",
         )
         self.assertIn(
             "an-exploration-agent-cannot-certify-the-absence-of-undiscovered-work-in-an-open-world",
-            contract["design_principles"],
+            base["design_principles"],
         )
-        self.assertIn("campaign_milestone", contract["feedback_ladder"])
-        self.assertIn("receipt_cadence", contract["feedback_ladder"])
+        self.assertIn("campaign_milestone", base["feedback_ladder"])
+        self.assertIn("receipt_cadence", base["feedback_ladder"])
 
     def test_semantic_prompt_skill_and_manifest_publish_the_same_workflow(self) -> None:
         prompt = (ROOT / "prompts" / "gpt-web-semantic-reconstruction.md").read_text(
@@ -243,8 +270,9 @@ class WebWorkflowAssetTests(unittest.TestCase):
         )
         for document in (prompt, skill):
             self.assertIn(CONTRACT_ID, document)
-        for field in ("GAME_ID", "OBJECTIVE", "STOP_CONDITION"):
+        for field in ("GAME_ID", "OBJECTIVE"):
             self.assertIn(field, prompt)
+        self.assertNotIn("STOP_CONDITION:", prompt)
         for document in (prompt, skill):
             self.assertIn(".reconstruction/game-knowledge.json", document)
             self.assertIn("factory_publication", document)
@@ -254,8 +282,28 @@ class WebWorkflowAssetTests(unittest.TestCase):
             self.assertIn("production closure", document)
             self.assertIn("runtime scenario", document)
         self.assertIn("name: factory-reconstruction", skill)
+        self.assertIn("one browser conversation", prompt)
+        self.assertIn("one browser conversation", skill)
         defaults = "\n".join(manifest["interface"]["defaultPrompt"])
         self.assertIn("reconstruction", defaults.lower())
+
+    def test_exact_game_prompts_bind_platform_and_moving_target(self) -> None:
+        th04 = (ROOT / "prompts" / "gpt-web-th04-exact-reconstruction.md").read_text(
+            encoding="utf-8"
+        )
+        th09 = (ROOT / "prompts" / "gpt-web-th09-exact-reconstruction.md").read_text(
+            encoding="utf-8"
+        )
+        for prompt in (th04, th09):
+            self.assertIn(CONTRACT_ID, prompt)
+            self.assertIn("99.5%", prompt)
+            self.assertIn("browser conversation", prompt)
+            self.assertIn("gpt-web:", prompt)
+            self.assertIn("Never push", prompt)
+        for value in ("th04-ghidra", "target:th04-main", "16-bit", "MZ/OMF", "RETF"):
+            self.assertIn(value, th04)
+        for value in ("th09-ida", "target:th09-main", "Windows i386", "VC7.1"):
+            self.assertIn(value, th09)
 
     def test_plugin_binds_registered_chatgpt_app_without_desktop_only_mcp(self) -> None:
         manifest = json.loads(

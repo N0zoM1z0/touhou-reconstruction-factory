@@ -1,0 +1,70 @@
+{
+  "schema_version": 4,
+  "id": "gpt-web-semantic-reconstruction-session-v4",
+  "extends": "gpt-web-semantic-reconstruction-session-v3",
+  "base_contract_revision": "gpt-web-reconstruction-session-v5",
+  "purpose": "An open-ended semantic reconstruction campaign delivered through bounded GPT-web conversations with game-local continuation state",
+  "override_rule": "This document replaces the same-named continuation and handoff fields inherited from gpt-web-semantic-reconstruction-session-v3 and rebases its unchanged semantic evidence, stage-order, dual-Oracle, authority, source, feedback, and closure rules on gpt-web-reconstruction-session-v5.",
+  "ontology_override": {
+    "semantic_campaign": "An open-ended outer program that advances successive evidence-backed batches across as many GPT-web conversations as useful. It is longer lived than any conversation slice.",
+    "conversation_slice": "An adaptive bounded set of semantic batches delivered by one GPT-web conversation before client or context reliability degrades.",
+    "campaign_handoff": "A proactive durable continuation record between GPT-web conversations. It normally follows meaningful checkpointed progress, keeps the semantic phase active-incomplete, and is not phase closure."
+  },
+  "design_principles_add": [
+    "semantic-campaign-duration-is-independent-of-conversation-duration",
+    "short-correct-web-feedback-loops-maximize-throughput",
+    "planned-conversation-handoffs-are-normal-campaign-continuation",
+    "negative-search-alone-cannot-be-used-as-an-immediate-handoff-shortcut"
+  ],
+  "campaign_loop_override": [
+    "preflight-and-reconstruct-live-continuation-state",
+    "adversarially-review-prior-readiness-or-completion-claims-as-untrusted-hypotheses",
+    "search-for-a-current-target-local-counterexample-before-following-the-prior-handoff",
+    "select-an-adaptive-conversation-slice-from-current-evidence",
+    "complete-one-coherent-semantic-batch-at-a-time",
+    "record-observed-corroborated-inferred-and-unknown-meaning",
+    "run-the-fastest-applicable-inner-loop-feedback",
+    "close-each-batch-change-surface",
+    "record-evidence-and-create-local-gpt-web-checkpoints",
+    "rotate-coverage-when-one-route-reaches-an-exploration-plateau",
+    "close-deferred-broad-oracles-at-an-appropriate-milestone",
+    "write-a-proactive-active-incomplete-handoff-before-the-web-client-or-context-becomes-fragile"
+  ],
+  "resume_audit_override": {
+    "default_phase_state": "active-incomplete",
+    "prior_readiness_or_completion_claim_authority": "untrusted-hypothesis",
+    "required_first_action": "Try to falsify the latest readiness, completion, or exit-audit claim using current selected-game evidence and a coverage surface it did not enumerate.",
+    "counterexample_effect": "A concrete missed owner, consumer, producer, protocol, representation boundary, runtime gap, persistent-format issue, or portability hazard disproves inherited closure and becomes current work.",
+    "no_counterexample_effect": "Record only that this bounded route found no counterexample and rotate to another coverage surface. The negative result neither changes active-incomplete nor alone earns an immediate handoff. After the conversation has made other meaningful durable progress, it may hand off normally.",
+    "historical_lesson": "TH095 SEM-059 declared readiness, but the next campaign found the missed +0x285C consumer and produced SEM-060. Resume review is adversarial, while work may continue across multiple bounded conversations."
+  },
+  "continuation_policy_override": {
+    "campaign_open_ended": true,
+    "conversation_open_ended": false,
+    "campaign_may_span_many_conversations": true,
+    "continue_after_successful_batch_when_the_current_slice_remains_healthy": true,
+    "ask_permission_after_successful_batch": false,
+    "fixed_batches_per_conversation": null,
+    "batch_completion_is_phase_completion": false,
+    "web_phase_closure_authority": false,
+    "negative_search_result_is_handoff_boundary": false,
+    "negative_search_result_may_be_sole_slice_delivery": false,
+    "plateau_action": "Record the bounded negative result and rotate to another coverage route when useful work remains reasonably available. Do not create a readiness checkpoint. A later handoff is valid after substantive durable progress elsewhere in the conversation.",
+    "normal_handoff_condition": "Coherent work has been durably checkpointed and another packet would risk browser responsiveness, context reliability, or an incomplete transaction.",
+    "other_handoff_conditions": [
+      "the-user-explicitly-interrupts-or-redirects-the-campaign",
+      "a-concrete-tool-or-evidence-boundary-prevents-further-useful-work",
+      "the-next-action-would-leave-semantic-reconstruction"
+    ],
+    "proactive_handoff_required": true,
+    "boundary_status": "active-incomplete",
+    "handoff_rule": "Finish or revert the active experiment, run applicable checks, checkpoint coherent work, persist evidence and an exact next route, then hand off before the browser or context becomes unreliable. Never leave context-only progress or claim semantic completion."
+  },
+  "handoff_fields_add": [
+    "conversation-slice-size-and-why-it-ended-now",
+    "semantic-work-items-completed",
+    "negative-routes-tried-and-the-coverage-rotation-that-followed",
+    "exact-next-candidate-with-first-evidence-or-validation-step",
+    "explicit-active-incomplete-campaign-status"
+  ]
+}

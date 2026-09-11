@@ -138,16 +138,23 @@ storage/scenario validation remained unknown. Those counts are work-routing
 evidence, not completion percentages; the counterexample establishes the
 authority error independently of them.
 
-Semantic campaign contract v3 therefore removes the Web-authored stop
+Semantic campaign contract v3 therefore removed the Web-authored stop
 condition, defaults every new conversation to `active-incomplete`, requires an
 adversarial attempt to falsify inherited readiness prose, and reserves phase
-closure and port authorization to a later independent Codex or human review. A
-bounded negative search must rotate to another coverage surface and continue in
-the same conversation. It is explicitly neither completion evidence nor a
-handoff boundary. The prompt, bundled skill/reference, plugin defaults,
-ontology, reader flow, evaluation scenarios, and TH095 durable correction use
-the same rule. Plugin cachebuster `0.6.0+codex.20260911042007` publishes the
-revised skill package.
+closure and port authorization to a later independent Codex or human review.
+A bounded negative search must rotate to another coverage surface and cannot by
+itself justify completion or an immediate handoff.
+
+The live TH09/TH095 browser runs then exposed a separate duration bug: v3's
+instruction to continue in the same conversation could eventually make the Web
+client unusable. General contract v5 and semantic contract v4 preserve the
+open-ended campaign but make each conversation adaptive and bounded. Web chooses
+when another batch would threaten browser or context reliability, closes or
+reverts the active transaction, checkpoints coherent work, and hands off as
+`active-incomplete`. The external browser mechanism used by the operator to
+start later chats is intentionally absent from prompts and contracts. The
+prompt, bundled skill/reference, plugin defaults, ontology, reader flow, and
+evaluation scenarios use this corrected separation.
 
 The review also caught a mutable ignored-product distinction instead of
 silently choosing one hash: SEM-062 recorded a 780,288-byte product with SHA-256
@@ -155,6 +162,28 @@ silently choosing one hash: SEM-062 recorded a 780,288-byte product with SHA-256
 `384a6458...3160`. Compile/link closure is the durable claim; neither
 rebuild-local hash is treated as a stable source invariant without a
 deterministic-artifact contract.
+
+## Bounded Web-conversation prompt validation: 2026-09-11
+
+General reconstruction contract v5 and semantic contract v4 were checked with
+the nine focused `test_web_assets.py` scenarios. They preserve the v4/v3
+evidence and authority contracts while requiring adaptive bounded browser
+conversations, repository-backed continuation, no fixed batch quota, and no Web
+phase closure. The same check binds the new TH04 prompt to `th04-ghidra`,
+`target:th04-main`, 16-bit MZ/OMF and Borland/TASM/TLINK rules; binds TH09 to
+`th09-ida`, `target:th09-main`, VC7.1 Windows i386; and confirms both exact
+prompts express the moving 99.5% authored-function/authored-byte pressure target
+without relabeling it as whole-game coverage.
+
+Both changed bundled skills passed `quick_validate.py`; the focused test module
+passed Ruff; the new contracts parsed as JSON; the evaluation XML parsed through
+the focused tests; and `git diff --check` passed. The older system plugin
+validator still rejects the registered ChatGPT `.app.json` app entry's
+`required` field. That is the already recorded validator/schema mismatch, not a
+new package error; removing the field would break the working registered-app
+binding. Cachebuster `0.6.0+codex.20260911063659` publishes the changed skill
+text when the plugin is next synced. No MCP or worker restart is required for
+the prompt/document changes.
 
 Focused validation passed all eight `tests.test_web_assets` tests, Ruff for the
 changed test module, Git whitespace checks, three changed JSON parses, and the

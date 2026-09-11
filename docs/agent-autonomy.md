@@ -39,6 +39,51 @@ The design correction is not to predict every missing operation and add another
 narrow tool. It is to restore a general composition surface while retaining
 stronger atomic tools where they materially improve evidence quality.
 
+## Bitter lesson: a campaign is not one browser conversation
+
+The early hand-written prompts were ugly but productive because they gave Web a
+strong objective, broad autonomy, distrust of stale claims, fast Oracle
+feedback, and frequent Git checkpoints. Later Factory prompts accidentally
+coupled that useful open-ended campaign posture to one conversation: after a
+successful batch or negative search they repeatedly ordered the model to keep
+working in the same chat. Overnight use showed the operational failure. Long
+tool histories and outputs eventually made the browser slow or unusable even
+though the repository was healthy and the work could have continued in a fresh
+conversation.
+
+The corrected rule separates durations:
+
+- the reconstruction or semantic campaign is long lived;
+- a Git/evidence batch is one reviewable transaction; and
+- a GPT-web conversation is an adaptive bounded delivery interval chosen by the
+  agent from task difficulty, validation latency, browser responsiveness, and
+  remaining reliable context.
+
+The agent should make serious progress, but it is not required to finish the
+campaign or a fixed number of batches in one conversation. It finishes or
+reverts the active experiment, runs applicable checks, commits coherent work,
+and writes a precise continuation handoff before the client becomes fragile.
+The next conversation first audits live Git and dirty state, so a disconnect is
+not required before handoff is appropriate.
+
+An intentionally ambitious moving target can still be useful. The older TH04
+prompt's 99% target helped sustain exploration because authored boundary
+discovery could expand the denominator while exact reconstruction improved the
+numerator. Exact-phase prompts may therefore use 99.5% reviewed authored
+functions and bytes as campaign pressure, provided they name those denominators
+and never reinterpret them as executable, product, or whole-game coverage.
+Crossing the moving target grants Web no completion authority; the operator and
+a later independent audit decide when to stop the campaign.
+
+External chat scheduling is an operator concern. In this installation the
+operator may use a browser userscript to submit subsequent conversations, but
+that implementation is deliberately absent from prompts, skills, contracts,
+and game ontology. The model only needs to know that work may continue in a
+later conversation from repository state. Leaking a particular scheduler or
+queue into the task prompt adds irrelevant mechanism, couples the workflow to a
+personal client, and encourages the model to manage orchestration instead of
+reconstruction.
+
 ## Capability boundary versus truth boundary
 
 These are intentionally different boundaries.

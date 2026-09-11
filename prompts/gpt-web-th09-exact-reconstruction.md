@@ -28,7 +28,7 @@ Read these instructions before editing, using factory_repository_run_shell:
 - /home/pentester/coding/codex_ida/th09-reconstruction/th09/docs/RE_HANDOFF.md
 - /home/pentester/coding/codex_ida/th09-reconstruction/th09/docs/RE_WORKFLOW.md
 - /home/pentester/coding/codex_ida/th09-reconstruction/th09/docs/ORACLES.md
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v5.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/new-game-bootstrap.md
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
@@ -62,6 +62,13 @@ Ground rules:
 6. Do not optimize for function count or easy exact wins. Function size,
    relocation count, control-flow complexity, or an earlier mismatch is not a
    reason to leave structurally important target code until the end.
+
+Campaign pressure target: drive both reviewed authored-function exactness and
+reviewed authored-byte exactness toward at least 99.5%, while continuously
+challenging and expanding the authored boundary denominator. This is a moving
+work objective, not an automatic stop condition and not a whole-executable or
+whole-game exactness claim. Even if the current ledger crosses it, GPT-web does
+not declare the phase complete; the operator will decide after later audit.
 
 Mandatory recovery gate:
 1. Call factory_describe, factory_list_repositories, and
@@ -115,17 +122,18 @@ Native IDA use:
    target-dependent work.
 
 Autonomous exact loop:
-1. Maintain a mixed frontier rather than a smallest-function queue. Inspect
+1. Maintain a mixed frontier rather than a smallest-function strategy. Inspect
    unresolved candidates by target extent, call-graph/owner importance,
    relocation/data dependencies, control-flow complexity, subsystem coverage,
    and prior mismatch history. Select one evidence-connected bounded packet: a
    caller/callee cohort, one subsystem seam, or one candidate plus its necessary
    data/ABI context. State why it is representative, its addresses and current
-   ledger state, known evidence, unknowns, and a measurable stop condition.
-   Do not select more than two consecutive packets primarily because they are
-   small or low-risk. The next packet must attack a hard frontier: a materially
-   larger function/cohort, central owner or dispatcher, complex ABI/control
-   flow, relocation/data-owner boundary, or a previously blocked near-match.
+   ledger state, known evidence, unknowns, and the observable outcome sought for
+   that packet.
+   Do not spend the conversation accumulating only easy function-count wins.
+   Regularly attack a hard frontier: a materially larger function/cohort,
+   central owner or dispatcher, complex ABI/control flow, relocation/data-owner
+   boundary, or a previously blocked near-match.
    A hard-frontier result may honestly be exact, source-present/non-exact, a
    corrected boundary/origin, or a documented unknown; never force promotion to
    satisfy the scheduling rule.
@@ -148,8 +156,8 @@ Autonomous exact loop:
 8. Review status and complete diffs, run focused validation, update the handoff
    and durable game-local knowledge when warranted, then create one coherent
    English `gpt-web:` checkpoint. Continue with another connected bounded packet
-   while the session has reliable context and useful feedback; do not stop after
-   orientation or one trivial edit.
+   while the browser and context remain reliable; do not stop after orientation
+   or one trivial edit.
 
 Adjacent-game hypothesis discipline:
 - Search focused TH08 or TH095 source, history, scripts, and game-local notes
@@ -203,8 +211,15 @@ At each checkpoint and final handoff report:
 - packet-selection balance since the last hard-frontier attempt, including why
   the next candidate is not merely the easiest remaining function.
 
-Continue until several coherent bounded packets are checkpointed, a concrete
-evidence/tool boundary blocks progress, or context reliability requires a clean
-handoff. Do not claim completion, exactness, acceptance, or push without direct
-evidence for that exact state.
+Work seriously and keep the exact feedback loop fast, but do not try to finish
+the entire TH09 exact phase in this one browser conversation. Judge the amount
+of work from packet difficulty, compile/Oracle latency, browser responsiveness,
+and remaining reliable context. One difficult packet may be enough; several
+tightly connected small packets may fit. Before another packet would make the
+conversation slow or fragile, finish or revert the current experiment, run its
+applicable checks, commit coherent work, and write an exact continuation handoff.
+Do not wait for a disconnect. The next conversation will audit and continue from
+live repository state. A handoff does not mean the exact phase is complete. Do
+not claim completion, exactness, acceptance, or push without direct evidence for
+that exact state.
 ```

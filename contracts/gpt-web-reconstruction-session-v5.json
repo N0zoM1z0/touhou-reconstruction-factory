@@ -1,0 +1,93 @@
+{
+  "schema_version": 5,
+  "id": "gpt-web-reconstruction-session-v5",
+  "extends": "gpt-web-reconstruction-session-v4",
+  "purpose": "Autonomous evidence-first reconstruction delivered as bounded conversations with repository-backed continuation",
+  "override_rule": "Every key in this document replaces the same key inherited from gpt-web-reconstruction-session-v4. All unmentioned v4 verification, authority, feedback, prohibition, checkpoint, knowledge, and artifact rules remain in force.",
+  "required_inputs": [
+    "game_id",
+    "objective"
+  ],
+  "optional_inputs": [
+    "scope_hint",
+    "resume_commit"
+  ],
+  "ontology": {
+    "reconstruction_campaign": "The long-lived game and phase objective. It may span many GPT-web conversations and is not completed merely because one conversation ends.",
+    "conversation_slice": "One adaptive, bounded delivery interval in one GPT-web conversation. It normally closes one difficult packet or a small set of tightly connected packets before the Web client becomes slow or context becomes unreliable.",
+    "conversation_checkpoint": "A coherent local gpt-web commit plus durable evidence. It is review and resume state, not Oracle proof.",
+    "continuation_handoff": "A proactive repository-backed transfer record that leaves the campaign active and identifies useful continuation for a fresh conversation."
+  },
+  "design_principles_add": [
+    "long-lived-campaigns-use-short-bounded-web-conversations",
+    "repository-state-not-chat-context-carries-continuation",
+    "conversation-slice-size-is-adaptive-not-a-fixed-batch-quota",
+    "handoff-before-browser-or-context-fragility",
+    "a-conversation-boundary-does-not-imply-a-phase-boundary"
+  ],
+  "workflow_phases_override": [
+    "discover",
+    "recover-live-repository-and-continuation-state",
+    "read-repository-instructions",
+    "select-an-adaptive-conversation-slice",
+    "collect-provisional-analysis",
+    "edit-natural-source",
+    "run-coupled-exact-and-production-feedback",
+    "create-reviewable-git-checkpoints",
+    "update-game-local-knowledge-if-durable",
+    "update-durable-evidence-and-continuation-state",
+    "replay-eligible-committed-claims-at-useful-milestones",
+    "proactively-handoff-before-client-or-context-fragility",
+    "report-each-verification-plane-and-unknown"
+  ],
+  "conversation_slice_policy": {
+    "campaign_may_span_conversations": true,
+    "one_conversation_must_attempt_entire_campaign": false,
+    "bounded": true,
+    "fixed_packet_count": null,
+    "fixed_time_limit": null,
+    "sizing_rule": "Choose a reviewable slice from live complexity, tool latency, validation cost, client responsiveness, and remaining reliable context. One difficult packet may be enough; several tightly connected small packets may be appropriate.",
+    "throughput_rule": "Prefer a fast correct feedback loop and durable checkpoints over maximizing work retained in one browser conversation.",
+    "progress_rule": "Make useful evidence-producing, implementation, validation, or recovery progress. Do not end merely because one bounded search found nothing; change coverage when another useful route is reasonably available.",
+    "proactive_handoff": "After coherent durable progress, hand off before the browser becomes slow or remaining context threatens correct completion of another packet. Do not wait for a disconnect or context exhaustion.",
+    "no_completion_implication": "Ending a conversation slice leaves the reconstruction campaign active unless a separate authorized review closes the phase."
+  },
+  "continuation_state_rules": {
+    "authoritative_resume_sources": [
+      "live-git-head-and-worktree",
+      "latest-committed-handoff",
+      "current-ledgers-and-manifests",
+      "durable-evidence-records",
+      "repository-instructions"
+    ],
+    "never_authoritative": [
+      "remembered-chat-only-state",
+      "stale-prompt-counts",
+      "an-unverified-prior-next-action"
+    ],
+    "on_resume": "Audit live repository state before editing. Preserve recoverable dirty work as the first candidate packet.",
+    "on_checkpoint": "Record the bounded scope completed, the evidence that changed its state, and useful remaining candidates.",
+    "on_handoff": "Name a concrete next candidate or coverage route, its evidence, unknowns, required tools, and first validation step. Leave alternatives when the preferred item may be stale or blocked."
+  },
+  "checkpoint_rules_override": {
+    "prefix": "gpt-web:",
+    "when": "after one coherent reviewable unit and its available checks; multiple checkpoints may occur in one conversation slice",
+    "before_commit": [
+      "inspect-status",
+      "inspect-complete-working-diff",
+      "inspect-staged-diff",
+      "stage-only-intended-files"
+    ],
+    "commit_is_exactness_evidence": false,
+    "checkpoint_is_conversation_stop": false,
+    "checkpoint_enables_safe_conversation_handoff": true
+  },
+  "handoff_fields_add": [
+    "campaign_status-active-unless-separately-closed",
+    "conversation-slice-boundary-and-reason",
+    "work-items-completed-and-evidence-produced",
+    "work-items-considered-but-not-selected",
+    "exact-next-candidate-or-coverage-route",
+    "first-command-or-validation-for-the-next-conversation"
+  ]
+}

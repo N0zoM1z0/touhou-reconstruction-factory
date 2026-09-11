@@ -43,15 +43,19 @@ knowledge or bypass replay-receipt acceptance.
   feedback.
 - [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md) provides a
   short installed-plugin invocation and a complete standalone prompt under the
-  machine-readable `gpt-web-reconstruction-session-v4` contract. Version 4 adds
-  independent exactness, production-closure, runtime-storage, and runtime-scenario
+  machine-readable `gpt-web-reconstruction-session-v5` contract. Version 5
+  separates long campaign duration from adaptive bounded Web conversations and
+  preserves continuation in repository state without exposing external browser
+  scheduling. Version 4 added independent exactness, production-closure, runtime-storage, and runtime-scenario
   reporting plus their coupled feedback loop. Version 3 preserves the earlier
   live-repository autonomy and Git-checkpoint contract; versions 1 through 3
   remain committed as historical contracts.
 - [`gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md)
   provides a ready-to-run TH095 prompt and standalone fallback under
-  `gpt-web-semantic-reconstruction-session-v3`. Version 3 removes Web-authored
-  stop conditions and phase closure, defaults every resume to active-incomplete,
+  `gpt-web-semantic-reconstruction-session-v4`. Version 4 keeps the campaign
+  open while bounding each browser conversation and making proactive
+  `active-incomplete` handoff normal. Version 3 removed Web-authored stop
+  conditions and phase closure, defaults every resume to active-incomplete,
   adversarially reviews earlier readiness prose, and rotates coverage after a
   local plateau. Version 2 retains the earlier autonomous loop and self-audited
   stop contract; version 1 remains the historical one-batch contract.
@@ -293,8 +297,8 @@ and [Build skills](https://learn.chatgpt.com/docs/build-skills).
 Use the maintained prompt in
 [`prompts/gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md).
 With the plugin installed, select **@Touhou Reconstruction Factory** and fill in
-the game ID, objective, optional scope hint, measurable stop condition, and an
-optional prior `gpt-web:` commit for orientation. The longer standalone form
+the game ID, objective, optional scope hint, and an optional prior `gpt-web:`
+commit for orientation. The longer standalone form
 repeats all authority and handoff rules for testing without automatic skill
 selection.
 
@@ -321,6 +325,14 @@ path, recovers dirty work first, uses the Factory-native IDA provider, and keeps
 exact, Windows i386 product, semantic, and port gates separate. Use it only
 after the staged provider is active and passes the public smoke test.
 
+The mature PC-98 TH04 exact campaign has its own complete prompt at
+[`gpt-web-th04-exact-reconstruction.md`](../prompts/gpt-web-th04-exact-reconstruction.md).
+It selects `th04-ghidra` and `target:th04-main`, preserves 16-bit MZ/OMF,
+near/far, segment, relocation, and Borland/TASM/TLINK evidence, and keeps
+authored-boundary discovery coupled to natural-source exact reconstruction. Its
+99.5% authored-function and authored-byte targets are moving campaign pressure,
+not whole-product coverage or Web closure authority.
+
 ## TH095 semantic reconstruction campaign
 
 After syncing a plugin version containing `factory-semantic-reconstruction`,
@@ -345,22 +357,24 @@ The intended campaign sequence is:
    Windows i386 product/runtime feedback, document the evidence classes, and
    create a local English `gpt-web:` checkpoint;
 8. measure and retire proven current-session analysis scratch, refresh the live
-   state, and immediately continue with the next named bounded
-   family instead of treating the first successful checkpoint as the session
-   stop;
-9. when one route yields no actionable batch, immediately rotate to another
-   subsystem, debt class, protocol, persistence, runtime, or portability
-   surface and keep working in the same conversation; a negative search result
-   is not a handoff boundary; and
-10. report runtime receipt status as `unknown` while no deterministic Factory
+   state, and continue with another named family while the browser and context
+   remain reliable;
+9. when one route yields no actionable batch, rotate to another subsystem, debt
+   class, protocol, persistence, runtime, or portability surface instead of
+   treating that negative result as completion or the sole reason to hand off;
+10. after useful coherent progress, proactively checkpoint and hand off before
+   another batch would make the browser or context unreliable; and
+11. report runtime receipt status as `unknown` while no deterministic Factory
    runtime provider exists, even when repo-native runtime feedback passes.
 
-The campaign has no `STOP_CONDITION`. It ends a conversation only at an
-explicit user interruption or an unavoidable connection, tool, context, or
-phase boundary, and writes an `active-incomplete` continuation handoff. No new
-commit, no router hit, or a self-authored exit audit is phase-completion
-authority. A bounded route with no result cannot justify that handoff; it must
-trigger another coverage route in the current conversation.
+The campaign has no `STOP_CONDITION`, but each browser conversation is
+deliberately bounded. GPT-web chooses the useful amount of work from batch
+difficulty, validation latency, browser responsiveness, and remaining reliable
+context; it then writes an `active-incomplete` continuation handoff before the
+client becomes fragile. No fixed batch count is imposed. No new commit, no
+router hit, or a self-authored exit audit is phase-completion authority. A
+bounded route with no result cannot be the sole reason for an immediate handoff;
+it triggers coverage rotation while useful work remains available.
 
 The campaign uses repo-native exact and historical-platform checks for its fast
 dirty-tree inner loop. It closes broad cold gates immediately for shared or

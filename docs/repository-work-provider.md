@@ -154,7 +154,7 @@ can be migrated one at a time after historical replay parity is demonstrated.
 7. Submit a supported replay only when the claim and committed inputs are ready.
 
 The exact GPT-web input contract and stopping rules are in
-[`gpt-web-reconstruction-session-v4.json`](../contracts/gpt-web-reconstruction-session-v4.json)
+[`gpt-web-reconstruction-session-v5.json`](../contracts/gpt-web-reconstruction-session-v5.json)
 and [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md). The
 durable operational record is normalized by
 [`repository-command.schema.json`](../schemas/v1/repository-command.schema.json).

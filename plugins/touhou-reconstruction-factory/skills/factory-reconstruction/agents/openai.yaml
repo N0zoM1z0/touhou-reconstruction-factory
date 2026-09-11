@@ -1,4 +1,4 @@
 interface:
   display_name: "Factory Reconstruction"
   short_description: "Reconstruct autonomously with Git checkpoints"
-  default_prompt: "Use $factory-reconstruction to continue one bounded th105 task in its live repository and create reviewable local checkpoints."
+  default_prompt: "Use $factory-reconstruction to advance th105 in one bounded Web conversation, checkpoint it, and preserve the next handoff."

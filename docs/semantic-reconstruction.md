@@ -9,9 +9,9 @@ not a new path into the Truth Kernel and not a repository-wide beautification
 pass.
 
 The normative Web contract is
-[`gpt-web-semantic-reconstruction-session-v3`](../contracts/gpt-web-semantic-reconstruction-session-v3.json).
-It extends the general live-repository
-[`gpt-web-reconstruction-session-v4`](../contracts/gpt-web-reconstruction-session-v4.json)
+[`gpt-web-semantic-reconstruction-session-v4`](../contracts/gpt-web-semantic-reconstruction-session-v4.json).
+It is based on the general live-repository
+[`gpt-web-reconstruction-session-v5`](../contracts/gpt-web-reconstruction-session-v5.json)
 contract, so autonomous Bash, target-attested analysis, local Git checkpoints,
 game-local knowledge, replay receipts, and acceptance boundaries remain
 unchanged.
@@ -54,9 +54,12 @@ product and runtime environment. A known exact residual may remain honestly
   redundantly before another planned edit.
 - An **exploration plateau** is the bounded result that one route found no
   actionable change. It forces a coverage rotation; it is not a stop or closure.
-- A **campaign handoff** preserves continuation state at an unavoidable
-  conversation, connection, or tool boundary. Its phase state remains
-  `active-incomplete`.
+- A **conversation slice** is one adaptive bounded interval of Web work. It may
+  contain one difficult batch or several tightly connected smaller batches and
+  ends before browser or context reliability degrades.
+- A **campaign handoff** preserves continuation state between conversations.
+  Its phase state remains `active-incomplete`; it is a normal campaign
+  operation, not evidence of a blocker or phase closure.
 - A **semantic closure review** is a later independent Codex or human review of
   the accumulated game-local evidence. GPT-web does not perform or authorize
   this project decision.
@@ -82,9 +85,9 @@ defaults to `active-incomplete`. It treats earlier `ready`, `complete`,
 `closure`, and `exit audit` prose as hypotheses and first tries to falsify them
 with current target-local evidence outside the earlier audit's enumerated
 scope. One counterexample is enough to resume work. If one bounded search finds
-none, the agent immediately changes coverage surface and keeps working in the
-same conversation; a negative search result is not a handoff boundary, and
-neither no result nor no new commit changes the phase state.
+none, the agent changes coverage surface rather than treating the negative
+result as completion or as the sole reason for an immediate handoff. Neither no
+result nor no new commit changes the phase state.
 
 Only a later, separate Codex or human review may decide that the accumulated
 evidence is sufficient to close semantic reconstruction and authorize porting.
@@ -110,7 +113,7 @@ flowchart LR
     K --> R
     R -->|"One route reaches a plateau"| Q["Rotate coverage<br/>different subsystem · debt class<br/>protocol · runtime · portability"]
     Q --> B
-    K -->|"Unavoidable conversation/tool boundary"| H["Close applicable gates<br/>active-incomplete handoff<br/>exact next coverage route"]
+    K -->|"Another batch would make this chat fragile"| H["Close applicable gates<br/>active-incomplete handoff<br/>exact next coverage route"]
 ```
 
 The two validation branches are coupled feedback but independent truth. A byte-
@@ -128,16 +131,21 @@ but wrong refactors. Their agreement still does not prove an English name, so
 the evidence record remains mandatory.
 
 The outer campaign loop is the throughput mechanism. A batch remains small
-enough to inspect, validate, commit, revert, and bisect, but its successful
-checkpoint is not a reason to stop the Web session. The agent refreshes live
-state and proceeds to the next family without asking for permission. A route
-that yields no work causes immediate rotation to another subsystem, debt class,
-protocol surface, runtime gap, or portability boundary. At an unavoidable
-conversation, connection, or tool boundary it first finishes or reverts the
-active experiment and writes the evidence and next route into repository state
-as `active-incomplete`. It never converts the handoff into phase closure.
-A bounded negative search is not such a boundary and must instead trigger the
-next coverage route in the current conversation.
+enough to inspect, validate, commit, revert, and bisect. The agent refreshes
+live state and proceeds to another family without asking for permission when
+the browser and remaining context are still reliable. A route that yields no
+work causes rotation to another subsystem, debt class, protocol surface,
+runtime gap, or portability boundary; that one negative result cannot be the
+sole reason to hand off. Before another batch would make the conversation slow
+or fragile, the agent finishes or reverts the active experiment and writes the
+evidence and next route into repository state as `active-incomplete`. It never
+converts the handoff into phase closure.
+
+Campaign duration and conversation duration are deliberately independent. The
+model decides the useful conversation size from current work rather than a
+fixed time or batch quota. External browser automation that starts later chats
+is not exposed in the prompt or semantic ontology; it is operator
+orchestration, while the repository is the durable handoff boundary.
 
 ## Select the batch
 
@@ -400,3 +408,20 @@ milestone, but its readiness sentence has no phase-closing authority. Every new
 Web conversation defaults TH095 to `active-incomplete`, first tries to falsify
 the latest closure prose, and then keeps rotating coverage and producing
 evidence. A later independent Codex or human review decides closure.
+
+### 2026-09-11 bounded-conversation correction
+
+The first closure correction overreached operationally. Contract v3 correctly
+removed Web's authority to close the open semantic world, but its repeated
+instruction to continue in the same conversation coupled campaign persistence
+to browser lifetime. Long-running TH09 and TH095 use showed that the Web client
+can become sluggish before the repository workflow has any real blocker.
+
+Contract v4 preserves `active-incomplete`, adversarial resume review, coverage
+rotation, and independent closure authority while making each conversation
+adaptive and bounded. A negative search still cannot be the sole excuse for an
+immediate handoff, but after useful coherent progress the agent may checkpoint
+and hand off before another batch risks client or context reliability. No fixed
+batch count or time limit is imposed. The operator's mechanism for launching
+the next chat remains outside the prompt; only repository-backed continuation
+state is part of the reconstruction contract.

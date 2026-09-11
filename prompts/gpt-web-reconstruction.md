@@ -1,8 +1,9 @@
-# GPT-web reconstruction session prompt
+# GPT-web reconstruction conversation prompt
 
-This prompt starts one autonomous, evidence-first reconstruction session in a
-game repository registered by the shared Touhou Reconstruction Factory MCP. The
-session contract is `gpt-web-reconstruction-session-v4`.
+This prompt starts one autonomous, evidence-first GPT-web conversation within a
+longer reconstruction campaign in a game repository registered by the shared
+Touhou Reconstruction Factory MCP. The conversation contract is
+`gpt-web-reconstruction-session-v5`.
 
 The mandatory companion contract is
 `worktree-recovery-and-analysis-artifacts-v1`. Automatic skill loading is an
@@ -20,13 +21,13 @@ is orientation for the agent, not authority to reset current work.
 ## Complete standalone prompt
 
 ```text
-Run one autonomous evidence-first Touhou source-reconstruction session under
-contract gpt-web-reconstruction-session-v4 plus mandatory companion contract
+Run one autonomous evidence-first Touhou source-reconstruction conversation
+under contract gpt-web-reconstruction-session-v5 plus mandatory companion contract
 worktree-recovery-and-analysis-artifacts-v1. Do not assume any bundled skill was
 loaded.
 
 Factory guidance paths on this host:
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v5.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
 
@@ -38,8 +39,7 @@ rules and do not stop merely because automatic skill loading is unavailable.
 Task:
 - GAME_ID: th105
 - OBJECTIVE: <one concrete source-reconstruction objective>
-- SCOPE_HINT: <files, symbols, addresses, or subsystem; use "discover" if unknown>
-- STOP_CONDITION: <a measurable result for this session>
+- SCOPE_HINT: <files, symbols, addresses, subsystem, or "discover">
 - RESUME_COMMIT: <prior gpt-web checkpoint hash, or "current">
 
 Language:
@@ -84,10 +84,10 @@ Start:
    or equivalent instructions, architecture, build/oracle scripts, ledgers, and
    relevant recent commits. Existing local changes are part of the live context:
    understand and preserve them, and distinguish them from changes made now.
-5. Turn the objective into one bounded work packet. State the candidate
-   functions/addresses/extents/files, evidence already available, unknowns, and
-   measurable stop condition. Do not invent a completion percentage without an
-   independently established boundary and denominator.
+5. Select a useful bounded work packet. State the candidate functions,
+   addresses, extents, files, evidence already available, and unknowns. Do not
+   invent a completion percentage without an independently established boundary
+   and denominator.
 
 Investigate and reconstruct:
 1. Discover the registered IDA or Ghidra provider and its operation schema before
@@ -177,11 +177,19 @@ Knowledge and verification:
    build or playable/manual report is not a runtime receipt. When the Factory has
    no runtime provider, report the corresponding live plane as `unknown`.
 
-Continue until STOP_CONDITION is met, a concrete evidence/tool boundary blocks
-the packet, or a materially different scope decision is required.
+Work seriously and keep momentum, but do not try to finish the entire game or
+phase in this one browser conversation. Decide the conversation size from the
+actual difficulty, validation latency, browser responsiveness, and remaining
+reliable context. One difficult packet may be enough; several tightly related
+small packets may fit. After useful coherent progress, finish or revert the
+active experiment, run the applicable checks, checkpoint durable work, update
+the handoff, and return control before the browser becomes slow or the context
+becomes unreliable. Do not wait for a disconnect. A conversation boundary is
+not a phase-completion claim, and the next conversation resumes from live Git
+and repository state.
 
 Final handoff:
-- Session status: stop condition met | blocked | bounded progress
+- Conversation status: active campaign, bounded progress | blocked | redirected
 - Game and objective
 - Starting and ending commit
 - Starting and ending staged/unstaged/untracked state
@@ -205,17 +213,18 @@ unless returned Factory/Git evidence proves that exact state. Never equate those
 states with one another.
 ```
 
-## Choosing a stop condition
+## Choosing a conversation scope
 
-A useful stop condition is bounded and observable, for example:
+A useful initial scope is concrete but may be replanned from live evidence, for
+example:
 
 ```text
-The selected function cohort has maintainable source candidates; focused
-repository-native compile/object checks have been run; coherent changes are in
-one or more local `gpt-web:` checkpoint commits; replay-accepted extents and all
-remaining unknown ownership/exactness questions are reported separately.
+Start from the selected function cohort and its owner/ABI context. Produce and
+validate coherent natural-source checkpoints, then hand off before another
+packet would make this browser conversation unreliable.
 ```
 
-“Improve the reconstruction” and “reach 99%” are goals, not stop conditions,
-unless the repository already has a verified denominator and the task names an
-exact measurable increment.
+An ambitious percentage such as 99.5% can be a useful campaign pressure target
+when its exact claim type and current denominator are named and the denominator
+continues to be audited. It is not evidence that this conversation or phase is
+complete, and it must never be relabeled as whole-game coverage.

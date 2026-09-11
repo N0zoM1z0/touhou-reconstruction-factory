@@ -100,6 +100,28 @@ larger, central, complex, data-owner, or previously blocked frontier. An honest
 non-exact or unknown result satisfies that exploration requirement; false
 promotion never does.
 
+## Post-pilot conversation-duration correction
+
+Continued TH09 and TH095 use exposed a client-side failure not visible in the
+service counts above: a productive campaign can make one GPT-web browser
+conversation too large to remain responsive. The earlier semantic instruction
+to keep working in the same conversation and the TH09 fixed “at most two easy
+packets” scheduler both confused campaign persistence with chat duration.
+
+The replacement keeps the useful pressure—TH04/TH09 pursue a moving 99.5%
+reviewed authored-function and authored-byte target while continuing boundary
+discovery, and TH095 remains `active-incomplete`—but lets Web decide how much
+coherent work fits in the current conversation. It checkpoints and hands off
+before client or context reliability degrades. A negative search alone cannot
+justify an immediate handoff, and a handoff cannot imply phase completion.
+
+The operator currently uses a separate browser userscript to submit later
+conversations. That mechanism is intentionally not named in the agent prompt or
+workflow ontology. Repository Git state, evidence, and the handoff are the only
+continuation interface the model needs. This separation keeps the Factory
+portable and prevents the reconstruction agent from spending attention on a
+personal orchestration implementation.
+
 ## Storage and recovery state
 
 TH09 `.analysis/` was 17,436,939 bytes. TH095 `.analysis/` was 1,408,444,500

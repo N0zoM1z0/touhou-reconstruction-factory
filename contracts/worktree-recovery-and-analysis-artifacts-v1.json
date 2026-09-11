@@ -4,8 +4,10 @@
   "purpose": "Recover persistent live-repository work before new edits and bound non-authoritative analysis storage without deleting ambiguous evidence",
   "applies_to": [
     "gpt-web-reconstruction-session-v4",
+    "gpt-web-reconstruction-session-v5",
     "gpt-web-semantic-reconstruction-session-v2",
-    "gpt-web-semantic-reconstruction-session-v3"
+    "gpt-web-semantic-reconstruction-session-v3",
+    "gpt-web-semantic-reconstruction-session-v4"
   ],
   "skill_independence": {
     "automatic_skill_loading_required": false,
@@ -109,7 +111,7 @@
       "update-the-session-manifest-and-report-retained-bytes"
     ],
     "at_campaign_handoff": [
-      "mark-the-session-complete-or-interrupted",
+      "mark-the-conversation-handed-off-or-interrupted-and-report-campaign-status-separately",
       "remove-owned-ephemeral-artifacts-after-reference-review",
       "name-every-retained-large-artifact-and-its-reason",
       "leave-shared-provider-state-and-legacy-unknown-content-untouched"

@@ -1,11 +1,11 @@
 ---
 name: factory-reconstruction
-description: Run an autonomous, resumable Touhou source-reconstruction session in a registered live game repository through the shared Factory MCP. Use when GPT-web should inspect current work, combine Bash with IDA/Ghidra, edit and build with repo-local tools or Wine, create reviewable local Git checkpoints, and keep commits separate from Oracle-accepted truth. Do not use for creating a new game repository or publishing cross-game Factory knowledge.
+description: Run an autonomous, resumable Touhou source-reconstruction conversation in a registered live game repository through the shared Factory MCP. Use when GPT-web should inspect current work, combine Bash with IDA/Ghidra, edit and build with repo-local tools or Wine, create reviewable local Git checkpoints, and preserve continuation across conversations. Do not use for creating a new game repository or publishing cross-game Factory knowledge.
 ---
 
 # Factory Reconstruction
 
-Follow `gpt-web-reconstruction-session-v4`. The Factory improves accuracy,
+Follow `gpt-web-reconstruction-session-v5`. The Factory improves accuracy,
 feedback speed, and resumability; it does not replace your engineering judgment
 with a rigid sequence of narrow tools. Prefer broad composable repository Bash
 plus the target-attested analysis and replay tools.
@@ -20,10 +20,11 @@ When the objective is semantic reconstruction of already recovered source, use
 historical-platform order: target exact baseline, corresponding native product
 closure/runtime feedback, semantic reconstruction, then portable products.
 
-## Establish the live session
+## Establish the live conversation
 
-1. Require a game ID, concrete objective, and measurable stop condition. A scope
-   hint and prior checkpoint commit are optional.
+1. Require a game ID and concrete campaign objective. A scope hint and prior
+   checkpoint commit are optional. Do not require one browser conversation to
+   finish the objective.
 2. Call `factory_describe`, `factory_list_repositories`, and
    `factory_get_repository_status`. Work only in the returned game ID. Report the
    actual branch, `HEAD`, dirty/staged/untracked counts, and upstream relation.
@@ -41,8 +42,8 @@ closure/runtime feedback, semantic reconstruction, then portable products.
    `factory_repository_run_shell`. Existing dirty and untracked work is part of
    the live context: understand and preserve it; do not pretend it is absent.
 5. Bound one useful work packet. State the candidate functions, addresses,
-   extents, files, evidence, unknowns, and stop condition. Do not invent a
-   percentage when the denominator is not independently known.
+   extents, files, evidence, and unknowns. Do not invent a percentage when the
+   denominator is not independently known.
 
 ## Reconstruct autonomously
 
@@ -153,9 +154,24 @@ Use `factory-replay` only for a discovered claim bound to the committed source
 being checked. If pre-existing or newly created dirty changes remain, explain
 why the replay is not eligible instead of claiming verification.
 
+## Bound the Web conversation
+
+Work seriously and preserve momentum, but do not attempt to finish the entire
+game or phase in one browser conversation. Choose the amount of work from the
+actual packet difficulty, validation latency, browser responsiveness, and
+remaining reliable context. A difficult packet may occupy the whole
+conversation; several tightly related small packets may fit.
+
+After useful coherent progress, finish or revert the active experiment, close
+its applicable checks, commit durable work, and update the repository handoff
+before the browser becomes slow or context becomes unreliable. Do not wait for
+a disconnect. The next conversation resumes by auditing live Git, dirty state,
+evidence, and the handoff. A conversation boundary is not evidence that the
+campaign or phase is complete.
+
 ## Handoff
 
-Always report the session status; game and objective; starting and ending
+Always report the conversation status and active campaign state; game and objective; starting and ending
 commit; starting and ending dirty state; bounded scope completed and excluded;
 dirty-work recovery classifications, actions, and retained unknowns; starting
 and ending `.analysis/` bytes, scratch-manifest state, and retained/removed

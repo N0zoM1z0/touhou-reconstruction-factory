@@ -135,12 +135,18 @@ A **semantic-debt candidate** is a heuristic work route, not a claim. A
 family plus its evidence record and affected-oracle closure. A **semantic
 checkpoint** is the batch's durable review commit; it is not an OracleResult.
 An **exploration plateau** means only that one bounded route produced no
-actionable work and must cause coverage rotation. A **campaign handoff** pauses
-execution as `active-incomplete`; it does not close the phase. **Semantic
-completion** is reserved to a later independent Codex or human review and has
-no canonical aggregate claim or live Factory provider in schema version 1.
-GPT-web cannot certify the absence of undiscovered work in an open world. The
-normative open-ended campaign contract and non-implications are in
+actionable work and must cause coverage rotation when another useful route is
+available. A **conversation slice** is one adaptive, bounded interval of Web
+work; it is deliberately shorter-lived than the campaign and has no fixed batch
+count. A **campaign handoff** durably pauses execution as `active-incomplete`
+before browser or context reliability degrades; it does not close the phase.
+Repository state and the handoff carry continuation, not chat memory. External
+browser scheduling mechanisms are operator implementation details and are not
+part of this ontology. **Semantic completion** is reserved to a later
+independent Codex or human review and has no canonical aggregate claim or live
+Factory provider in schema version 1. GPT-web cannot certify the absence of
+undiscovered work in an open world. The normative campaign contract and non-
+implications are in
 [`semantic-reconstruction.md`](semantic-reconstruction.md).
 
 ## Evidence maturity

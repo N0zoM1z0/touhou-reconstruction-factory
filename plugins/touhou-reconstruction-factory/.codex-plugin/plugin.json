@@ -1,6 +1,6 @@
 {
   "name": "touhou-reconstruction-factory",
-  "version": "0.6.0+codex.20260911042007",
+  "version": "0.6.0+codex.20260911063659",
   "description": "Touhou Reconstruction Factory plugin",
   "author": {
     "name": "N0zoM1z0",
@@ -29,7 +29,7 @@
     ],
     "websiteURL": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
     "defaultPrompt": [
-      "Continue TH095 semantic reconstruction as active-incomplete; after any negative search, rotate coverage and keep working.",
+      "Advance TH095 semantics in one bounded Web conversation; checkpoint and hand off as active-incomplete.",
       "Verify the known TH105 smoke-test claim and report only accepted evidence.",
       "List current accepted reconstruction facts."
     ]

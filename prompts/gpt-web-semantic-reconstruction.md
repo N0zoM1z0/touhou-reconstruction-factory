@@ -1,10 +1,10 @@
 # GPT-web semantic reconstruction campaign prompt
 
-This prompt starts a persistent semantic campaign in a game repository
-registered by the shared Touhou Reconstruction Factory MCP. The campaign is a
-sequence of small, independently reviewable batches under
-`gpt-web-semantic-reconstruction-session-v3`, which extends
-`gpt-web-reconstruction-session-v4`. The mandatory companion contract is
+This prompt advances a persistent semantic campaign in a game repository
+registered by the shared Touhou Reconstruction Factory MCP. The campaign may
+span many bounded GPT-web conversations and consists of small, independently
+reviewable batches under `gpt-web-semantic-reconstruction-session-v4`, based on
+`gpt-web-reconstruction-session-v5`. The mandatory companion contract is
 `worktree-recovery-and-analysis-artifacts-v1`; no prompt assumes that ChatGPT
 successfully loaded a bundled skill.
 
@@ -19,8 +19,8 @@ available, but do not depend on the skill body being loaded.
 
 Before editing, try to read these Factory-controlled paths through
 factory_repository_run_shell:
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v3.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v5.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v4.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/semantic-reconstruction.md
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
@@ -46,9 +46,9 @@ state, actively try to falsify it with current TH095-local evidence. Search for
 a missed consumer/producer, owner/lifetime relation, protocol domain, persistent
 or ABI boundary, runtime gap, or portability hazard outside the prior audit's
 enumerated scope. One counterexample reopens the claim and becomes work. If one
-bounded route finds none, immediately rotate to another coverage surface and
-continue working in the same conversation; absence of a found counterexample
-never changes active-incomplete and is not a handoff boundary.
+bounded route finds none, rotate to another useful coverage surface rather than
+treating that result as completion or as the sole reason to hand off. Absence of
+a found counterexample never changes active-incomplete.
 RESUME_COMMIT: current
 EVIDENCE_SEED: TH08 is workflow and adjacent-engine corroboration only. Require
 TH095-local evidence for every accepted interpretation.
@@ -62,18 +62,21 @@ the session narrating a plan that can be tested.
 Treat each batch as a small transaction: investigate one coherent family,
 change natural source, run the narrowest fast feedback first, close its actual
 regression surface, document observed/corroborated/inferred/unknown meaning,
-inspect the complete diff, and create an English `gpt-web:` commit. Immediately
-refresh live state and choose the next batch without asking me for permission.
+inspect the complete diff, and create an English `gpt-web:` commit. Refresh live
+state; continue with another batch without asking me for permission when it fits
+the current conversation, otherwise write a precise continuation handoff.
 
-This campaign is deliberately open-ended. Do not create a semantic-readiness or
-completion checkpoint. A local evidence plateau is a routing event, never a
-reason to stop: rotate among structural raw/unknown storage, canonical owners
-and lifetimes, weak APIs and identifiers, primary and sibling interpreter
-protocols, flags/state/resource/sound/replay domains, persistent formats and ABI
-boundaries, portability hazards, and historical-platform runtime gaps. Keep
-working until I explicitly interrupt or redirect the campaign, or an unavoidable
-connection/tool/context boundary requires a durable continuation handoff. Such a
-handoff pauses execution and does not close the phase.
+This campaign is deliberately open-ended, but this browser conversation is not.
+Do not create a semantic-readiness or completion checkpoint. A local evidence
+plateau is a routing event: rotate among structural raw/unknown storage,
+canonical owners and lifetimes, weak APIs and identifiers, primary and sibling
+interpreter protocols, flags/state/resource/sound/replay domains, persistent
+formats and ABI boundaries, portability hazards, and historical-platform
+runtime gaps. Make serious useful progress, then use your own judgment to finish
+or revert the active transaction, run its checks, checkpoint it, and hand off
+before browser responsiveness or context reliability degrades. Do not try to
+finish the whole semantic phase in one conversation and do not wait for a
+disconnect. The handoff pauses execution and does not close the phase.
 
 Capture broad baselines once per campaign, not again before every edit. Use
 focused syntax, compile, exact-unit, format, and runtime feedback inside each
@@ -110,22 +113,25 @@ this campaign; a later independent Codex or human review decides whether the
 semantic prerequisite is satisfied.
 ```
 
-This is intentionally a campaign prompt, not a one-batch prompt. A successful
-checkpoint closes the current inner transaction and starts the next selection
-cycle. The current repository and its committed evidence decide what comes
-next; the prompt does not freeze a stale address or candidate count.
+This is a campaign prompt delivered across multiple conversations, not a demand
+to complete the campaign in one chat. A successful checkpoint closes an inner
+transaction. Continue with another related batch when the browser and context
+remain healthy, or write an `active-incomplete` handoff when another batch would
+make the conversation fragile. The current repository and committed evidence
+decide what comes next; the prompt does not freeze a stale address, candidate
+count, time limit, or number of batches.
 
 ## Standalone campaign without automatic skill selection
 
 ```text
-Run an autonomous evidence-first semantic reconstruction campaign under
-gpt-web-semantic-reconstruction-session-v3, extending the general
-gpt-web-reconstruction-session-v4 live-repository contract, with mandatory
+Advance an autonomous evidence-first semantic reconstruction campaign under
+gpt-web-semantic-reconstruction-session-v4, based on the general
+gpt-web-reconstruction-session-v5 live-repository contract, with mandatory
 worktree-recovery-and-analysis-artifacts-v1. Do not assume a bundled skill was
 loaded. Before editing, try to read these Factory-controlled paths through
 factory_repository_run_shell:
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v4.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v3.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v5.json
+- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v4.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/semantic-reconstruction.md
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
@@ -146,9 +152,9 @@ Inputs
   an untrusted hypothesis. First try to falsify it with current TH095-local
   evidence and coverage outside its enumerated scope. One counterexample
   invalidates inherited closure and becomes work. If one bounded route finds no
-  counterexample, immediately rotate coverage and continue working in the same
-  conversation; the phase remains active-incomplete and the negative result is
-  not a handoff boundary.
+  counterexample, rotate to another useful coverage route. The phase remains
+  active-incomplete, and the negative result cannot by itself justify an
+  immediate handoff.
 - RESUME_COMMIT: current
 - EVIDENCE_SEED: TH08 is workflow/corroboration only; TH095 is authoritative.
 
@@ -217,15 +223,15 @@ Repeated bounded batch
    complete working/staged diff, measure `.analysis/` growth, remove only proven
    current-session ephemeral scratch, stage only intended files, and create one
    local English `gpt-web:` commit. Do not push.
-7. Refresh the live HEAD and worktree, read the just-committed next-batch note,
-   and immediately begin the next coherent batch. Do not ask whether to continue
-   merely because the previous batch passed.
+7. Refresh the live HEAD and worktree after a checkpoint. Begin another coherent
+   batch without asking for permission when the browser and remaining context
+   are still reliable; otherwise write a precise `active-incomplete` handoff.
 8. When one route yields no actionable change, rotate across structural layout,
    canonical ownership/lifetime, weak APIs/identifiers, interpreter and sibling
    protocols, flags/state/resource/sound/replay domains, persistent formats/ABI,
    portability hazards, historical-platform runtime gaps, and adjacent-game
-   readability challenges. Keep searching and working in the same conversation;
-   do not turn a plateau or self-audit into a readiness commit or handoff.
+   readability challenges. Do not turn a plateau or self-audit into a readiness
+   commit or use that negative result alone to justify an immediate handoff.
 
 Milestone and receipt cadence
 - Repo-native checks provide the fast inner feedback loop while source is dirty.
@@ -239,14 +245,16 @@ Milestone and receipt cadence
 - A deferred, unavailable, or stale plane must be reported as such. Never replace
   it with another green check.
 
-Continue open-endedly within semantic reconstruction. Stop executing only when
-the user explicitly interrupts or redirects the campaign, a concrete tool or
-connection boundary prevents further work in this conversation, remaining
-context cannot safely close another batch, or the next action would leave the
-semantic phase and enter porting. At such a boundary, finish or revert the active
-experiment, preserve required checks and evidence in the repository, create a
-checkpoint when coherent, name the next coverage route, and hand off without
-leaving context-only work. The handoff status remains active-incomplete.
+The semantic campaign is open-ended; this browser conversation is deliberately
+bounded. Make useful progress without trying to finish the whole phase here.
+Use your own judgment about packet difficulty, validation latency, browser
+responsiveness, and remaining reliable context. Before another batch would make
+the conversation fragile, finish or revert the active experiment, preserve
+required checks and evidence in the repository, create a checkpoint when
+coherent, name the next coverage route, and hand off without leaving context-
+only work. The same applies to a concrete tool boundary, user redirection, or a
+transition out of semantic reconstruction. The handoff status remains
+active-incomplete.
 
 Continuation handoff: report the execution boundary; campaign objective; start/end
 commit and dirty state; every completed checkpoint; selected and excluded

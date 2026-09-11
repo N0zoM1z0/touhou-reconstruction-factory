@@ -1,12 +1,12 @@
 ---
 name: factory-semantic-reconstruction
-description: Run an autonomous campaign of bounded semantic reconstruction batches in an already reconstructed Touhou game while preserving applicable exact, historical-platform product, format, and runtime feedback. Use to recover evidence-backed types, names, owners, representations, and protocols in a registered live repository. Do not use for broad beautification, new-game scaffolding, ports, or cross-game knowledge publication.
+description: Advance an autonomous semantic reconstruction campaign through bounded Web conversations while preserving applicable exact, historical-platform product, format, and runtime feedback. Use to recover evidence-backed types, names, owners, representations, and protocols in a registered live repository. Do not use for broad beautification, new-game scaffolding, ports, or cross-game knowledge publication.
 ---
 
 # Factory Semantic Reconstruction
 
-Follow `gpt-web-semantic-reconstruction-session-v3`, which extends
-`gpt-web-reconstruction-session-v4`. Work autonomously in the registered live
+Follow `gpt-web-semantic-reconstruction-session-v4`, based on
+`gpt-web-reconstruction-session-v5`. Work autonomously in the registered live
 game repository. The Factory supplies routing, target-bound analysis,
 composable Bash, and independent replay; it does not decide meaning for you.
 
@@ -65,28 +65,31 @@ prerequisite.
 
 ## Run a campaign of bounded batches
 
-One batch is an inner transaction, not the session stop. After a successful
-batch, refresh HEAD and worktree state, read the just-committed next-batch note,
-and immediately select the next coherent family without asking the user for
-permission. The campaign is open-ended. GPT-web must not declare semantic
-readiness, completion, closure, or permission to begin a port.
+One batch is an inner transaction, not phase completion. After a successful
+batch, refresh HEAD and worktree state. Select another coherent family without
+asking the user for permission when the browser and remaining context are still
+reliable; otherwise write a precise continuation handoff. The campaign is open-
+ended across conversations. GPT-web must not declare semantic readiness,
+completion, closure, or permission to begin a port.
 
-If a bounded route finds no actionable change, immediately rotate to another
+If a bounded route finds no actionable change, rotate to another
 coverage surface: structural raw or unknown storage; owners, lifetimes,
 initialization, teardown, or callbacks; weak APIs and identifiers; primary or
 sibling interpreter protocols; flags, state, resource, sound, effect, or replay
 domains; persistent formats and ABI; portability hazards; historical-platform
 runtime gaps; or an adjacent-game readability challenge that still requires
 selected-game evidence. A plateau is not a stopping condition. Keep searching
-and working in the same conversation; a negative result is not a handoff
-boundary and cannot justify handing off early.
+while useful work is reasonably available. A negative result cannot by itself
+justify an immediate handoff.
 
-Under context pressure, finish or revert the active experiment, run its required
-checks, write durable evidence, create a coherent checkpoint when warranted,
-name the exact next coverage route, and only then hand off as
-`active-incomplete`. The same applies to an unavoidable connection or tool
-boundary. Never leave useful work only in chat context or turn a handoff into
-phase closure.
+Do not attempt to finish the entire semantic phase in one browser conversation.
+Use your own judgment about batch difficulty, validation latency, browser
+responsiveness, and remaining reliable context. Before another batch would make
+the conversation fragile, finish or revert the active experiment, run its
+required checks, write durable evidence, create a coherent checkpoint when
+warranted, name the exact next coverage route, and hand off as
+`active-incomplete`. The same applies to a connection or tool boundary. Never
+leave useful work only in chat context or turn a handoff into phase closure.
 
 Call `factory_report_semantic_debt` for a repository-relative source scope when
 useful. Its raw-member, absolute-address, anonymous-identifier, and opaque-
@@ -238,8 +241,10 @@ English local commit whose subject begins `gpt-web:`. Exclude unrelated existing
 work. Do not push. The checkpoint is review/resume state, not semantic or
 exactness proof.
 
-After the checkpoint, return to batch selection and continue. Do not turn the
-normal completion of one reviewable unit into a campaign handoff.
+After the checkpoint, return to batch selection when another batch fits safely
+in the current conversation. Otherwise create a normal `active-incomplete`
+handoff before the Web client or context becomes unreliable. Neither action
+closes the campaign.
 
 ## Preserve the closure authority boundary
 
@@ -254,8 +259,8 @@ try to falsify the latest readiness or completion prose. One concrete missed
 producer, consumer, owner, protocol, representation boundary, runtime gap,
 persistent-format issue, or portability hazard invalidates that inherited
 claim and becomes the next work route. If the current route finds none, rotate
-and continue working in the same conversation rather than stopping or handing
-off. Only a later independent Codex or human
+coverage rather than treating one negative search as completion or the sole
+reason to hand off. Only a later independent Codex or human
 review may decide whether accumulated game-local evidence is sufficient to
 close the semantic phase and begin porting.
 
