@@ -38,8 +38,11 @@ def parser() -> argparse.ArgumentParser:
 async def validate(arguments: argparse.Namespace) -> dict[str, Any]:
     config = load_service_config(arguments.config)
     provider = config.analysis_provider(arguments.provider)
-    if provider.backend != "attested-ida-stdio-v1":
-        raise ValueError("selected provider is not Factory-native IDA stdio")
+    if provider.backend not in {
+        "attested-ghidra-command-v1",
+        "attested-ida-stdio-v1",
+    }:
+        raise ValueError("selected provider is not Factory-native")
     gateway = AnalysisGateway(config)
     discovery = await gateway.list_operations(
         provider.id,

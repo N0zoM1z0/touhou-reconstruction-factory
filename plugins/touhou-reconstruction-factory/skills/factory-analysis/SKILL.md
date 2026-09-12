@@ -50,6 +50,19 @@ validates PE image base and entry point, and compares six distributed mapped
 `.text` samples before returning operations. If IDA has another database open,
 attestation must fail rather than silently analyze that game.
 
+## TH10 native Ghidra example
+
+Select `th10-ghidra`; there is no TH10-local MCP or URL. Discovery first runs a
+real target-attested `check`, then returns ten fixed read-only schemas. Use
+`function`, `decompile`, `disassemble`, callers/callees, xrefs, paged functions,
+or bounded string search exactly as discovered. Require target
+`target:th10-main` and transport `factory-native-command`. The shared immutable
+Ghidra/JDK installation and the game-specific ignored project are separate
+state. The private registration also pins the reviewed wrapper and Java-script
+implementation: if those files change, report the provider unavailable until
+operator review refreshes its binding. A successful query proves target
+binding, not an authored boundary or exact source.
+
 ## TH105 example
 
 Select `th105-ida`, discover `get_function_by_address`,

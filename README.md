@@ -45,9 +45,9 @@ flowchart LR
     P -.-> K
 
     P98["PC-98 era family<br/>TH01–TH05<br/>currently validated: TH04"]:::platform --> C
-    PE["Windows PE era family<br/>TH06+<br/>currently validated: TH08 / TH095 / TH105"]:::platform --> C
+    PE["Windows PE era family<br/>TH06+<br/>currently validated: TH08 / TH09 / TH095 / TH10 / TH105"]:::platform --> C
 
-    B["Registered atomic<br/>IDA / Ghidra bridge"]:::evidence -->|"independent target attestation"| E
+    B["Registered atomic analysis<br/>native IDA / native Ghidra<br/>legacy bridge during migration"]:::evidence -->|"independent target attestation"| E
     S -.-> O["Optional disposable workspace<br/>explicitly isolated experiment<br/>committed source only"]:::platform
 
     classDef human fill:#fff1c2,stroke:#b7791f,color:#3b2f0b,stroke-width:2px;
@@ -179,13 +179,14 @@ See [`agent autonomy and tool composition`](docs/agent-autonomy.md), the
 [`live repository work provider`](docs/repository-work-provider.md), and the
 special-purpose [`disposable workspace provider`](docs/workspace-provider.md).
 
-IDA and Ghidra remain separate provisional authorities. The MCP analysis
-gateway now makes TH09 the first fully Factory-native instance: the single
-shared Factory MCP owns the `ida-pro-mcp` stdio client, binds the active IDA
-database to the registered target, and exposes composable semantic reads and
-IDA metadata edits without another per-game MCP service. Legacy loopback
-bridges remain temporary compatibility providers for earlier games. Every
-analysis result is bounded, redacted, and worth zero exactness credit. See the
+IDA and Ghidra remain separate provisional authorities. TH09 is the first
+Factory-native IDA instance; TH10 is the first Factory-native Ghidra instance.
+The single shared MCP owns analyzer selection, binds each active database or
+project to one registered target, and exposes composable semantic operations
+without another per-game MCP service or URL. Ghidra/JDK binaries are shared and
+hash-pinned while project state remains per-game. Legacy loopback bridges remain
+temporary compatibility providers for earlier games. Every analysis result is
+bounded, redacted, and worth zero exactness credit. See the
 [`attested analysis provider`](docs/analysis-provider.md) and the
 [`new-game bootstrap`](docs/new-game-bootstrap.md).
 
@@ -198,6 +199,10 @@ The ready-to-run TH095 semantic campaign is in
 [`prompts/gpt-web-semantic-reconstruction.md`](prompts/gpt-web-semantic-reconstruction.md).
 The first clean Factory-native exact campaign is in
 [`prompts/gpt-web-th09-exact-reconstruction.md`](prompts/gpt-web-th09-exact-reconstruction.md).
+The first native-Ghidra exact campaign is in
+[`prompts/gpt-web-th10-exact-reconstruction.md`](prompts/gpt-web-th10-exact-reconstruction.md).
+Its target, tool ownership, provider contract, and measured bootstrap are in the
+[`2026-09-12 TH10 native-Ghidra record`](docs/th10-native-ghidra-bootstrap-2026-09-12.md).
 The mature PC-98 TH04 exact campaign is in
 [`prompts/gpt-web-th04-exact-reconstruction.md`](prompts/gpt-web-th04-exact-reconstruction.md).
 All prompts are complete without automatic skill injection and require the
@@ -226,7 +231,8 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP
 ```
 
 The toolchain option executes non-committing probes through live-repository Bash
-for all five games. `--all` additionally creates and discards a temporary TH105
+for every game with a configured historical compiler surface. `--all`
+additionally creates and discards a temporary TH105
 workspace and submits one canonical TH105 smoke replay. See
 [`docs/validation.md`](docs/validation.md) for the validation contract and latest
 recorded run.

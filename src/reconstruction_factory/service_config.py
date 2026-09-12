@@ -18,9 +18,14 @@ SERVICE_CONFIG_SCHEMA_VERSION = 1
 _ID = re.compile(r"^[a-z0-9][a-z0-9._:-]*$")
 _ENVIRONMENT_NAME = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 _ANALYSIS_BACKENDS = {
+    "attested-ghidra-command-v1",
     "attested-ida-stdio-v1",
     "attested-ida-proxy-v1",
     "attested-ghidra-proxy-v1",
+}
+_NATIVE_ANALYSIS_BACKENDS = {
+    "attested-ghidra-command-v1",
+    "attested-ida-stdio-v1",
 }
 
 
@@ -38,6 +43,8 @@ class AnalysisProviderRegistration:
     command: Path | None = None
     arguments: tuple[str, ...] = ()
     target_path: Path | None = None
+    implementation_files: tuple[Path, ...] = ()
+    implementation_sha256: str | None = None
 
     def __post_init__(self) -> None:
         for label, value in (
@@ -56,10 +63,22 @@ class AnalysisProviderRegistration:
             raise ServiceConfigError(
                 "analysis provider timeout_seconds must be from 1 through 3600"
             )
-        if self.backend == "attested-ida-stdio-v1":
-            self._validate_native_ida()
+        if self.backend in _NATIVE_ANALYSIS_BACKENDS:
+            self._validate_native_command()
+            if self.backend == "attested-ghidra-command-v1":
+                self._validate_native_ghidra_implementation()
+            elif self.implementation_files or self.implementation_sha256 is not None:
+                raise ServiceConfigError(
+                    "native IDA backend does not accept Ghidra implementation fields"
+                )
             return
-        if self.command is not None or self.arguments or self.target_path is not None:
+        if (
+            self.command is not None
+            or self.arguments
+            or self.target_path is not None
+            or self.implementation_files
+            or self.implementation_sha256 is not None
+        ):
             raise ServiceConfigError(
                 "loopback analysis backends do not accept stdio provider fields"
             )
@@ -103,21 +122,21 @@ class AnalysisProviderRegistration:
                 "analysis endpoint must be an exact loopback HTTP URL with a non-root path"
             )
 
-    def _validate_native_ida(self) -> None:
+    def _validate_native_command(self) -> None:
         if self.endpoint is not None or self.upstream_tool is not None:
             raise ServiceConfigError(
-                "native IDA stdio backend does not accept a bridge endpoint or tool"
+                "native analysis backend does not accept a bridge endpoint or tool"
             )
         if self.command is None or not self.command.is_absolute() or not self.command.is_file():
             raise ServiceConfigError(
-                "native IDA command must be an existing absolute file"
+                "native analysis command must be an existing absolute file"
             )
         if not 1 <= len(self.arguments) <= 16 or any(
             not isinstance(value, str) or not value or "\0" in value
             for value in self.arguments
         ):
             raise ServiceConfigError(
-                "native IDA arguments must contain 1 through 16 non-empty strings"
+                "native analysis arguments must contain 1 through 16 non-empty strings"
             )
         if (
             self.target_path is None
@@ -125,7 +144,30 @@ class AnalysisProviderRegistration:
             or not self.target_path.is_file()
         ):
             raise ServiceConfigError(
-                "native IDA target_path must be an existing absolute file"
+                "native analysis target_path must be an existing absolute file"
+            )
+
+    def _validate_native_ghidra_implementation(self) -> None:
+        if (
+            not 1 <= len(self.implementation_files) <= 32
+            or tuple(sorted(self.implementation_files, key=str))
+            != self.implementation_files
+            or len(set(self.implementation_files)) != len(self.implementation_files)
+            or any(
+                not path.is_absolute() or not path.is_file()
+                for path in self.implementation_files
+            )
+        ):
+            raise ServiceConfigError(
+                "native Ghidra implementation_files must contain 1 through 32 "
+                "sorted unique existing absolute files"
+            )
+        if (
+            not isinstance(self.implementation_sha256, str)
+            or re.fullmatch(r"[0-9a-f]{64}", self.implementation_sha256) is None
+        ):
+            raise ServiceConfigError(
+                "native Ghidra implementation_sha256 must be lowercase SHA-256"
             )
 
     def public_dict(self) -> dict[str, Any]:
@@ -143,7 +185,7 @@ class AnalysisProviderRegistration:
 
     def identity_dict(self) -> dict[str, Any]:
         identity = {**self.public_dict(), "timeout_seconds": self.timeout_seconds}
-        if self.backend == "attested-ida-stdio-v1":
+        if self.backend in _NATIVE_ANALYSIS_BACKENDS:
             identity.update(
                 {
                     "command": str(self.command),
@@ -151,6 +193,15 @@ class AnalysisProviderRegistration:
                     "target_path": str(self.target_path),
                 }
             )
+            if self.backend == "attested-ghidra-command-v1":
+                identity.update(
+                    {
+                        "implementation_files": [
+                            str(path) for path in self.implementation_files
+                        ],
+                        "implementation_sha256": self.implementation_sha256,
+                    }
+                )
         else:
             identity.update(
                 {"endpoint": self.endpoint, "upstream_tool": self.upstream_tool}
@@ -870,10 +921,13 @@ def load_service_config(path: str | Path) -> ServiceConfig:
             "backend",
             "timeout_seconds",
         }
-        if backend == "attested-ida-stdio-v1":
+        if backend in _NATIVE_ANALYSIS_BACKENDS:
+            native_fields = {"command", "arguments", "target_path"}
+            if backend == "attested-ghidra-command-v1":
+                native_fields |= {"implementation_files", "implementation_sha256"}
             item = _strict_object(
                 raw,
-                common_fields | {"command", "arguments", "target_path"},
+                common_fields | native_fields,
                 label,
             )
             raw_arguments = item["arguments"]
@@ -891,6 +945,28 @@ def load_service_config(path: str | Path) -> ServiceConfig:
             target_path = _resolve_path(
                 base, item["target_path"], f"{label}.target_path", must_exist=True
             )
+            if backend == "attested-ghidra-command-v1":
+                raw_implementation_files = item["implementation_files"]
+                if not isinstance(raw_implementation_files, list):
+                    raise ServiceConfigError(
+                        f"{label}.implementation_files must be an array"
+                    )
+                implementation_files = tuple(
+                    _resolve_path(
+                        base,
+                        value,
+                        f"{label}.implementation_files[{file_index}]",
+                        must_exist=True,
+                    )
+                    for file_index, value in enumerate(raw_implementation_files)
+                )
+                implementation_sha256 = _string(
+                    item["implementation_sha256"],
+                    f"{label}.implementation_sha256",
+                )
+            else:
+                implementation_files = ()
+                implementation_sha256 = None
         else:
             item = _strict_object(
                 raw,
@@ -904,6 +980,8 @@ def load_service_config(path: str | Path) -> ServiceConfig:
             command = None
             arguments = ()
             target_path = None
+            implementation_files = ()
+            implementation_sha256 = None
         analysis_registrations.append(
             AnalysisProviderRegistration(
                 id=_string(item["id"], f"{label}.id"),
@@ -925,6 +1003,8 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                 command=command,
                 arguments=arguments,
                 target_path=target_path,
+                implementation_files=implementation_files,
+                implementation_sha256=implementation_sha256,
             )
         )
     try:

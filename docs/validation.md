@@ -36,12 +36,12 @@ PYTHONPATH=src FACTORY_MCP_URL="$FACTORY_MCP_URL" \
 ```
 
 The default checks the exact 33-tool inventory, annotations and bounded schemas,
-strict policy, all five registered adapters, imported-versus-accepted evidence
+strict policy, all six registered adapters, imported-versus-accepted evidence
 separation, real Git HEAD/dirty state, the TH095 semantic router's authority and
 source binding, live accepted snapshots, registry partition, explicit unknown
 knowledge, and committed historical fixtures. Mature TH04/TH08/TH095/TH105
-coverage must remain nonzero; fresh TH09 accurately reports zero until a
-meaningful historical regression is admitted.
+coverage must remain nonzero; fresh TH09 and TH10 accurately report zero until
+meaningful historical regressions are admitted.
 
 Mutation and bridge checks are explicit:
 
@@ -59,8 +59,9 @@ ignored `.tools`, or the network, and confirms its Git metadata is read-only. It
 then verifies command output and a candidate diff across a new MCP session,
 removes its marker, requires a zero-byte final diff, and discards the workspace.
 
-The live toolchain check invokes `factory_repository_run_shell` for every real
-registration. It performs two deterministic Borland/TASM/TLINK rounds for TH04,
+The live toolchain check invokes `factory_repository_run_shell` for each game
+with a configured historical compiler surface. It performs two deterministic
+Borland/TASM/TLINK rounds for TH04,
 checks TH08 VC7 through its historical Wine prefix, and compiles fresh temporary
 objects with TH095 VC7.1 and TH105 VC8 SP1. It requires identical before/after
 HEAD and status digests and no created commits. These are operational probes,

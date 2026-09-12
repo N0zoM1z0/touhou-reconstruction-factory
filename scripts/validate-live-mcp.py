@@ -21,6 +21,7 @@ REPOSITORIES = {
     "th08": "th08-vc7-ledgers-v1",
     "th09": "windows-pe-ledgers-v1",
     "th095": "windows-pe-ledgers-v1",
+    "th10": "windows-pe-ledgers-v1",
     "th105": "windows-pe-ledgers-v1",
 }
 REQUIRED_HISTORICAL_FIXTURE_REPOSITORIES = {"th04", "th08", "th095", "th105"}
@@ -342,6 +343,7 @@ async def _analysis(url: str, report: dict[str, Any]) -> None:
         "th08-ida": ("get_metadata", "target:th08-main"),
         "th09-ida": ("get_metadata", "target:th09-main"),
         "th095-ghidra": ("check", "target:th095-main"),
+        "th10-ghidra": ("check", "target:th10-main"),
         "th105-ida": ("get_metadata", "target:th105-main"),
     }
     outcomes: dict[str, Any] = {}
@@ -378,11 +380,11 @@ async def _analysis(url: str, report: dict[str, Any]) -> None:
             items = operations.structured_content["items"]
             names = {item["name"] for item in items}
             _check(operation in names, f"{provider_id} omitted {operation}")
-            if provider_id == "th09-ida":
+            if provider_id in {"th09-ida", "th10-ghidra"}:
                 _check(
                     items
                     and all(isinstance(item.get("input_schema"), dict) for item in items),
-                    "native TH09 IDA operation schemas are missing",
+                    f"native operation schemas are missing for {provider_id}",
                 )
             result = await client.call_tool(
                 "factory_analysis_call",

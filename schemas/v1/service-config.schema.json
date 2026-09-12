@@ -32,19 +32,56 @@
           "repository_id",
           "target_identity_id",
           "backend",
-          "endpoint",
-          "upstream_tool",
           "timeout_seconds"
         ],
         "properties": {
           "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$"},
           "repository_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$"},
           "target_identity_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$"},
-          "backend": {"enum": ["attested-ida-proxy-v1", "attested-ghidra-proxy-v1"]},
+          "backend": {"enum": ["attested-ghidra-command-v1", "attested-ida-stdio-v1", "attested-ida-proxy-v1", "attested-ghidra-proxy-v1"]},
           "endpoint": {"type": "string", "minLength": 1},
           "upstream_tool": {"enum": ["ida_call", "ghidra_call"]},
+          "command": {"type": "string", "minLength": 1},
+          "arguments": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "target_path": {"type": "string", "minLength": 1},
+          "implementation_files": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "implementation_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
           "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 3600}
-        }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "backend": {"const": "attested-ghidra-command-v1"}
+            },
+            "required": ["command", "arguments", "target_path", "implementation_files", "implementation_sha256"],
+            "not": {"anyOf": [{"required": ["endpoint"]}, {"required": ["upstream_tool"]}]}
+          },
+          {
+            "properties": {
+              "backend": {"const": "attested-ida-stdio-v1"}
+            },
+            "required": ["command", "arguments", "target_path"],
+            "not": {"anyOf": [{"required": ["endpoint"]}, {"required": ["upstream_tool"]}, {"required": ["implementation_files"]}, {"required": ["implementation_sha256"]}]}
+          },
+          {
+            "properties": {
+              "backend": {"enum": ["attested-ida-proxy-v1", "attested-ghidra-proxy-v1"]}
+            },
+            "required": ["endpoint", "upstream_tool"],
+            "not": {"anyOf": [{"required": ["command"]}, {"required": ["arguments"]}, {"required": ["target_path"]}, {"required": ["implementation_files"]}, {"required": ["implementation_sha256"]}]}
+          }
+        ]
       }
     },
     "workspace": {

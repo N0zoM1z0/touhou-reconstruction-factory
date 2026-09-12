@@ -130,7 +130,7 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     path = Path(config_path).expanduser().resolve(strict=True)
     server = MCPServer(
         "touhou-reconstruction-factory",
-        version="0.6.0",
+        version="0.7.0",
         instructions=(
             "Use registered repository IDs only. Prefer the live repository workflow "
             "for source reconstruction: it exposes the real worktree, broad composable "

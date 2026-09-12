@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from functools import partial
 import hashlib
 import json
 import math
 from pathlib import Path
 import re
+import shutil
 import struct
+import subprocess
+import tempfile
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -151,7 +155,22 @@ class AnalysisGateway:
             }
         async with _analysis_slot(provider.id):
             target = await self._target(provider)
-            if provider.backend == "attested-ida-stdio-v1":
+            if provider.backend == "attested-ghidra-command-v1":
+                attestation, _ = await self._native_ghidra_call(
+                    provider, target, "check", {}
+                )
+                query = filter.lower()
+                tools = tuple(
+                    {
+                        "name": name,
+                        "description": description,
+                        "input_schema": _ghidra_schema(name),
+                        "mutates_analysis_database": False,
+                    }
+                    for name, description in _GHIDRA_OPERATIONS.items()
+                    if query in f"{name} {description}".lower()
+                )
+            elif provider.backend == "attested-ida-stdio-v1":
                 async with self._native_ida_session(provider) as session:
                     attestation, _ = await self._attest_native_ida(
                         provider, target, session
@@ -179,7 +198,14 @@ class AnalysisGateway:
         arguments = _arguments(arguments_json)
         async with _analysis_slot(provider.id):
             target = await self._target(provider)
-            if provider.backend == "attested-ida-stdio-v1":
+            if provider.backend == "attested-ghidra-command-v1":
+                if operation not in _GHIDRA_OPERATIONS:
+                    raise AnalysisError("unsupported Ghidra read-only operation")
+                forwarded = _validate_ghidra_arguments(operation, arguments)
+                attestation, output = await self._native_ghidra_call(
+                    provider, target, operation, forwarded
+                )
+            elif provider.backend == "attested-ida-stdio-v1":
                 if operation not in _IDA_NATIVE_ALLOWED:
                     raise AnalysisError(
                         "IDA operation is not in the factory native allowlist"
@@ -242,7 +268,11 @@ class AnalysisGateway:
             "observed_at": _now(),
             "authority": "provisional-semantic-analysis",
             "exactness_credit": "none",
-            "output_completeness": "upstream-not-attested",
+            "output_completeness": (
+                "factory-bounded-native-ghidra"
+                if provider.backend == "attested-ghidra-command-v1"
+                else "upstream-not-attested"
+            ),
             "output": output,
         }
 
@@ -477,6 +507,55 @@ class AnalysisGateway:
         )
         return attestation, metadata
 
+    async def _native_ghidra_call(
+        self,
+        provider: AnalysisProviderRegistration,
+        target: TargetIdentity,
+        operation: str,
+        arguments: dict[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        if provider.command is None or provider.target_path is None:
+            raise AnalysisError("native Ghidra provider is missing private configuration")
+        implementation_sha256 = await anyio.to_thread.run_sync(
+            _native_ghidra_implementation_sha256, provider
+        )
+        if implementation_sha256 != provider.implementation_sha256:
+            raise AnalysisError(
+                "native Ghidra implementation differs from its operator binding; "
+                "review the changed provider files and refresh private configuration"
+            )
+        disk = await anyio.to_thread.run_sync(
+            _inspect_private_pe_target, provider.target_path, target
+        )
+        repository = self.config.repository(provider.repository_id).path
+        try:
+            stdout, result_text = await anyio.to_thread.run_sync(
+                partial(
+                    _run_native_ghidra_command,
+                    provider,
+                    repository,
+                    operation,
+                    arguments,
+                )
+            )
+        except subprocess.TimeoutExpired as error:
+            raise AnalysisError("native Ghidra provider timed out") from error
+        except subprocess.CalledProcessError as error:
+            detail = _redact(
+                (error.stderr or error.stdout or "")[:4096], self.config
+            )
+            raise AnalysisError(
+                "native Ghidra provider rejected the request"
+                + (f": {detail}" if detail else "")
+            ) from error
+        except OSError as error:
+            raise AnalysisError(
+                f"native Ghidra provider failed to start: {type(error).__name__}"
+            ) from error
+        attestation = _validate_native_ghidra_attestation(stdout, disk, target)
+        attestation["provider_implementation_sha256"] = implementation_sha256
+        return attestation, _bounded_text_output(result_text, self.config)
+
     async def _upstream(
         self,
         provider: AnalysisProviderRegistration,
@@ -506,6 +585,175 @@ class AnalysisGateway:
             config=self.config,
             rejection="registered analysis bridge rejected the request",
         )
+
+
+def _run_native_ghidra_command(
+    provider: AnalysisProviderRegistration,
+    repository: Path,
+    operation: str,
+    arguments: dict[str, Any],
+) -> tuple[str, str]:
+    """Run one registered wrapper; it attests and queries in one process."""
+
+    if provider.command is None:
+        raise AnalysisError("native Ghidra provider has no command")
+    scratch_root = repository / ".analysis" / "factory-native-ghidra"
+    scratch_root.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix="call-", dir=scratch_root))
+    try:
+        command = [str(provider.command), *provider.arguments]
+        output_path = temporary / "result.txt"
+        if operation == "check":
+            command.append("check")
+        elif operation == "decompile":
+            command.extend(
+                ["decompile", str(output_path), *arguments["addresses"]]
+            )
+        else:
+            query_arguments: list[str]
+            if operation in {"function", "callers", "callees"}:
+                query_arguments = list(arguments["addresses"])
+            elif operation == "disassemble":
+                query_arguments = [
+                    str(arguments.get("instruction_count", 80)),
+                    *arguments["addresses"],
+                ]
+            elif operation in {"xrefs_to", "xrefs_from"}:
+                query_arguments = [
+                    str(arguments.get("limit", 100)),
+                    *arguments["addresses"],
+                ]
+            elif operation == "list_functions":
+                query_arguments = [
+                    str(arguments.get("offset", 0)),
+                    str(arguments.get("limit", 50)),
+                    str(arguments.get("query", "")),
+                ]
+            elif operation == "search_strings":
+                query_arguments = [
+                    str(arguments.get("limit", 50)),
+                    str(arguments["query"]),
+                ]
+            else:
+                raise AnalysisError("unsupported native Ghidra operation")
+            command.extend(["query", str(output_path), operation, *query_arguments])
+        completed = subprocess.run(
+            command,
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=provider.timeout_seconds,
+            check=False,
+        )
+        if completed.returncode != 0:
+            raise subprocess.CalledProcessError(
+                completed.returncode,
+                command,
+                output=completed.stdout,
+                stderr=completed.stderr,
+            )
+        if operation == "check":
+            result_text = "Native Ghidra target, project, and toolchain attestation passed."
+        else:
+            try:
+                result_text = output_path.read_text(encoding="utf-8")
+            except OSError as error:
+                raise AnalysisError(
+                    "native Ghidra operation produced no readable output"
+                ) from error
+        return completed.stdout, result_text
+    finally:
+        shutil.rmtree(temporary, ignore_errors=True)
+
+
+def _native_ghidra_implementation_sha256(
+    provider: AnalysisProviderRegistration,
+) -> str:
+    try:
+        hashes = [
+            hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in provider.implementation_files
+        ]
+    except OSError as error:
+        raise AnalysisError(
+            f"cannot read native Ghidra implementation: {type(error).__name__}"
+        ) from error
+    return canonical_sha256(hashes)
+
+
+_GHIDRA_ATTESTATION = re.compile(
+    r"FACTORY_GHIDRA_ATTESTATION_V1:"
+    r"(?P<sha256>[0-9a-fA-F]{64}):(?P<md5>[0-9a-fA-F]{32}):"
+    r"(?P<size>[0-9]+):(?P<image_base>[0-9a-fA-F]{8}):"
+    r"(?P<image_size>[0-9]+):(?P<entry_point>[0-9a-fA-F]{8}):"
+    r"(?P<sample_count>[0-9]+)"
+)
+
+
+def _validate_native_ghidra_attestation(
+    stdout: str, disk: dict[str, Any], target: TargetIdentity
+) -> dict[str, Any]:
+    matches = list(_GHIDRA_ATTESTATION.finditer(stdout))
+    if not matches:
+        raise AnalysisError("native Ghidra did not emit its target attestation marker")
+    values = matches[-1].groupdict()
+    observed = {
+        "sha256": values["sha256"].lower(),
+        "md5": values["md5"].lower(),
+        "size": int(values["size"]),
+        "image_base": int(values["image_base"], 16),
+        "image_size": int(values["image_size"]),
+        "entry_point": int(values["entry_point"], 16),
+        "sample_count": int(values["sample_count"]),
+    }
+    expected = {
+        "sha256": disk["sha256"],
+        "md5": disk["md5"],
+        "size": disk["size"],
+        "image_base": disk["image_base"],
+        "image_size": disk["size_of_image"],
+        "entry_point": disk["entry_point"],
+        "sample_count": len(disk["samples"]),
+    }
+    if observed != expected:
+        raise AnalysisError("native Ghidra attestation differs from the private target")
+    return {
+        "status": "passed",
+        "target_identity_id": target.id,
+        "provider_transport": "factory-native-command",
+        "private_target_file_attested": True,
+        "observed_sha256": observed["sha256"],
+        "observed_md5": observed["md5"],
+        "observed_size": observed["size"],
+        "observed_image_base": f"0x{observed['image_base']:x}",
+        "observed_image_size": observed["image_size"],
+        "observed_entry_point": f"0x{observed['entry_point']:x}",
+        "mapped_byte_samples": [
+            {"address": sample["address"], "size": len(sample["bytes"])}
+            for sample in disk["samples"]
+        ],
+        "mapped_byte_sample_count": observed["sample_count"],
+    }
+
+
+def _bounded_text_output(text: str, config: ServiceConfig) -> dict[str, Any]:
+    redacted = _redact(text, config)
+    observed_payload = redacted.encode("utf-8")
+    payload = observed_payload[:_MAX_OUTPUT_BYTES]
+    returned = payload.decode("utf-8", "ignore")
+    structured_payload = b"null"
+    return {
+        "text": returned,
+        "structured": None,
+        "factory_output_truncated": len(observed_payload) > len(payload),
+        "factory_structured_output_omitted": False,
+        "observed_text_bytes": len(observed_payload),
+        "returned_bytes": len(payload),
+        "returned_sha256": hashlib.sha256(payload).hexdigest(),
+        "structured_bytes": len(structured_payload),
+        "structured_sha256": hashlib.sha256(structured_payload).hexdigest(),
+    }
 
 
 def _bounded_output(
@@ -582,7 +830,7 @@ def _inspect_private_pe_target(path: Path, target: TargetIdentity) -> dict[str, 
             "registered private target MD5 does not match the adapter target identity"
         )
     if target.format.lower() != "pe" or len(data) < 0x100 or data[:2] != b"MZ":
-        raise AnalysisError("native IDA v1 target must be a valid PE image")
+        raise AnalysisError("native PE analysis target must be a valid PE image")
     try:
         pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
         if data[pe_offset : pe_offset + 4] != b"PE\0\0":
@@ -823,7 +1071,21 @@ def _contains_field(value: Any, names: set[str]) -> bool:
 def _validate_ghidra_arguments(
     operation: str, arguments: dict[str, Any]
 ) -> dict[str, Any]:
-    allowed = {"addresses", "query", "offset", "limit", "instruction_count"}
+    allowed_by_operation = {
+        "check": set(),
+        "decompile": {"addresses"},
+        "function": {"addresses"},
+        "disassemble": {"addresses", "instruction_count"},
+        "callers": {"addresses"},
+        "callees": {"addresses"},
+        "xrefs_to": {"addresses", "limit"},
+        "xrefs_from": {"addresses", "limit"},
+        "list_functions": {"query", "offset", "limit"},
+        "search_strings": {"query", "limit"},
+    }
+    allowed = allowed_by_operation.get(operation)
+    if allowed is None:
+        raise AnalysisError("unsupported Ghidra read-only operation")
     if set(arguments) - allowed:
         raise AnalysisError("Ghidra arguments contain unsupported fields")
     result = dict(arguments)

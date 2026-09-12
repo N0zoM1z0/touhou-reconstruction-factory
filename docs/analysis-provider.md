@@ -31,8 +31,13 @@ an ID, repository ID, target identity ID, backend, and timeout. Private backend
 selection fields are part of the provider-binding digest but are omitted from
 public responses.
 
-Three contracts are supported during migration:
+Four contracts are supported during migration:
 
+- `attested-ghidra-command-v1` is Factory-native. It declares a local command
+  wrapper, exact private target, one shared immutable Ghidra/JDK installation,
+  and a game-specific ignored project. The Factory launches the command itself;
+  every bounded read performs target/project attestation in the same headless
+  process as the query;
 - `attested-ida-stdio-v1` is Factory-native. It declares the shared IDA Python
   executable, `ida-pro-mcp` server argument, and exact private target file. The
   Factory launches stdio itself; there is no endpoint or upstream wrapper tool;
@@ -51,8 +56,13 @@ configuration selects the shared analyzer installation and target path. Older
 games remain on compatibility providers only until their working analysis
 state can be migrated and re-attested.
 
-The private single-operator configuration staged for the next activation
-registers:
+TH10 is the first fully Factory-native Ghidra game. Its public repository owns
+the small headless wrapper and Java query scripts, while private Factory state
+owns the single shared Ghidra/JDK payload and `resources/th10.exe`. The mutable
+`ghidra-project/TH10` database remains game-specific and ignored. This selector
+replaces both the legacy per-game HTTP bridge and any per-game public URL.
+
+The private single-operator configuration registers:
 
 | Provider | Repository | Backend | Target scope |
 | --- | --- | --- | --- |
@@ -60,24 +70,20 @@ registers:
 | `th08-ida` | `th08` | attested IDA Pro | `target:th08-main` |
 | `th09-ida` | `th09` | Factory-native IDA Pro | `target:th09-main` |
 | `th095-ghidra` | `th095` | attested headless Ghidra | `target:th095-main` |
+| `th10-ghidra` | `th10` | Factory-native headless Ghidra | `target:th10-main` |
 | `th105-ida` | `th105` | attested IDA Pro | `target:th105-main` |
-
-The already-running public process intentionally remains on its pre-TH09 code
-and configuration while the TH095 Web campaign is active. TH09 must not be
-reported publicly available until a deliberate restart and public validation.
 
 This is operator configuration, not a cross-game claim that one backend is
 universally correct. A provider can be absent, offline, busy, or correctly fail
 attestation; the result is unavailable/unknown rather than fallback to a
 different target.
 
-The checked TH04 and TH095 deployments currently select Ghidra 12.1.3 and
-JDK 21.0.12.1+1 from separate repo-local directories; their Ghidra `bom.json`
-files have the same SHA-256. They run one bridge service per project. A future migration may
-deduplicate that payload into one immutable Factory tool installation and let a
-broker select the registered game/project. Project state, request serialization,
-and target attestation must remain per-game. Sharing Ghidra's executable is not
-permission to share a Ghidra project or analysis identity.
+The checked TH04 and TH095 deployments remain on their legacy per-project
+bridges until deliberate migration. TH10 proves the replacement boundary:
+Ghidra 12.1.3 and Temurin JDK 21.0.12.1+1 are hash-pinned once in private
+Factory-managed storage, selected by ignored repo-local links, and paired with
+one mutable project per game. Sharing analyzer binaries is never permission to
+share project or target identity.
 
 ## Discovery and calls
 
@@ -98,9 +104,12 @@ closed loop before exposing tools:
 
 If another IDA database is open, the hash, layout, entry, or mapped-byte check
 fails. The Factory does not guess which game was intended. Legacy IDA discovery
-retains its bridge attestation. Ghidra operation schemas remain static and
-`not-probed` until a real operation performs that compatibility bridge's
-toolchain/project/target checks.
+retains its bridge attestation. Native Ghidra discovery launches a read-only
+`check`: the wrapper hashes its configured Ghidra/JDK surfaces and private EXE,
+opens the registered per-game project, then verifies SHA-256, MD5, PE layout,
+entry function, and six distributed mapped `.text` samples. The ten static
+operation schemas are exposed only after that closed loop passes. Legacy Ghidra
+discovery remains `not-probed` until a real bridge operation.
 
 `factory_analysis_call` accepts a provider ID, one discovered operation name,
 and a JSON object string containing only that operation's arguments. The JSON
@@ -116,6 +125,9 @@ Factory validation remains closed-world but preserves useful analyzer autonomy:
 - native IDA never exposes target-byte patching; metadata edits remain
   provisional analysis state and receive zero exactness credit;
 - legacy IDA remains read-only until migrated;
+- native Ghidra exposes ten bounded, read-only operations: check, decompile,
+  function metadata, disassembly, callers, callees, both xref directions,
+  paged function listing, and bounded string search;
 - raw IDA memory reads are limited to 256 bytes per call;
 - list counts, offsets, strings, arrays, nesting, addresses, Ghidra instruction
   counts, and xref/search limits are bounded;
@@ -131,8 +143,49 @@ The upstream bridge may impose a smaller limit without returning a cryptographic
 completeness statement. The factory therefore reports
 `output_completeness = "upstream-not-attested"` even when its own
 `factory_output_truncated` and `factory_structured_output_omitted` values are
-false. Do not infer a complete function or reference set unless the selected
-operation itself supplies adequate pagination or extent evidence.
+false. Native Ghidra instead reports `factory-bounded-native-ghidra`: the
+Factory owns the operation bound and output envelope, but the result is still
+not proof of a complete authored extent. Do not infer completeness unless the
+selected operation and independent boundary evidence justify it.
+
+## Native Ghidra registration
+
+`attested-ghidra-command-v1` uses a private command binding without creating
+another MCP server:
+
+```toml
+[[analysis_providers]]
+id = "th10-ghidra"
+repository_id = "th10"
+target_identity_id = "target:th10-main"
+backend = "attested-ghidra-command-v1"
+command = "/absolute/path/to/factory/.venv/bin/python"
+arguments = ["/absolute/path/to/th10/scripts/ghidra.py"]
+target_path = "/absolute/path/to/th10/resources/th10.exe"
+implementation_files = [
+  "/absolute/path/to/th10/config/target.toml",
+  "/absolute/path/to/th10/config/tools.lock.toml",
+  "/absolute/path/to/th10/scripts/ghidra.py",
+  "/absolute/path/to/th10/scripts/ghidra/QueryProgram.java",
+  "/absolute/path/to/th10/scripts/ghidra/VerifyTarget.java",
+]
+implementation_sha256 = "<aggregate lowercase SHA-256>"
+timeout_seconds = 900
+```
+
+The repo-local wrapper accepts only fixed subcommands and writes temporary query
+output below ignored `.analysis/`; it does not accept shell source, arbitrary
+scripts, or caller-selected paths. For each discovery or call, the Factory
+independently hashes and parses the registered PE, then requires the same
+headless process to emit an exact attestation marker after verifying the Ghidra
+program and distributed mapped bytes. Requested semantic output is returned
+only when those observations agree. The live registration pins the complete
+reviewed wrapper/config/Java-script file set, not merely the command path; a
+repository edit therefore makes the provider unavailable until an operator
+reviews it and deliberately refreshes the aggregate implementation binding.
+`scripts/render-native-ghidra-registration.py` produces the complete reviewed
+file list and digest for this private block; it prints to stdout and never edits
+service configuration.
 
 ## Relationship to repository work
 

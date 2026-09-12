@@ -17,6 +17,7 @@ Touhou Reconstruction Factory MCP
    |-- Truth Kernel, replay jobs, receipts, and acceptance registry
    `-- target-bound analysis provider
           |-- native IDA stdio client (preferred; TH09 first)
+          |-- native Ghidra command selector (preferred; TH10 first)
           `-- legacy IDA/Ghidra HTTP adapter (migration only)
 ```
 
@@ -120,9 +121,9 @@ Run the staged native-provider check with no public-service restart:
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/validate-native-analysis-provider.py \
   --config .factory/web-live/service.next.toml \
-  --provider th09-ida \
-  --operation get_function_by_address \
-  --arguments-json '{"address":"0x47d45f"}'
+  --provider th10-ghidra \
+  --operation function \
+  --arguments-json '{"addresses":["0x004537DC"]}'
 ```
 
 ### Hot-reload compatibility trap
@@ -180,6 +181,57 @@ They remain provisional hypotheses with zero exactness credit. The target-byte
 patch operation is not exposed because it would invalidate the target used by
 the exactness workflow.
 
+## Native Ghidra registration
+
+`attested-ghidra-command-v1` replaces the legacy per-game Ghidra MCP/HTTP
+bridge. The public game repository contains a fixed-grammar wrapper and Ghidra
+Java scripts; the private Factory configuration binds that wrapper to one
+ignored target and project:
+
+```toml
+[[analysis_providers]]
+id = "th10-ghidra"
+repository_id = "th10"
+target_identity_id = "target:th10-main"
+backend = "attested-ghidra-command-v1"
+command = "/absolute/path/to/factory/.venv/bin/python"
+arguments = ["/absolute/path/to/th10/scripts/ghidra.py"]
+target_path = "/absolute/path/to/th10/resources/th10.exe"
+implementation_files = [
+  "/absolute/path/to/th10/config/target.toml",
+  "/absolute/path/to/th10/config/tools.lock.toml",
+  "/absolute/path/to/th10/scripts/ghidra.py",
+  "/absolute/path/to/th10/scripts/ghidra/QueryProgram.java",
+  "/absolute/path/to/th10/scripts/ghidra/VerifyTarget.java",
+]
+implementation_sha256 = "<aggregate lowercase SHA-256>"
+timeout_seconds = 900
+```
+
+Install and hash-pin Ghidra/JDK once below private Factory-managed storage. A
+new game gets ignored `.tools/ghidra` and `.tools/jdk` selectors plus its own
+ignored `ghidra-project/<GAME>` state. Initial import is an operator bootstrap;
+GPT-web receives only read-only check/decompile/function/disassembly/call/xref/
+listing/string operations. Every query process verifies the target manifest,
+Ghidra/JDK pins, project program, entry function, and distributed mapped bytes
+before returning semantic output. Pin every implementation/config/script file
+that can select or attest those surfaces in a private aggregate digest. A Web
+edit to provider code must fail closed until local review refreshes that digest.
+
+Render the complete sorted file list, per-file hashes, and aggregate binding
+instead of calculating the registration by hand:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/render-native-ghidra-registration.py \
+  --repository /absolute/path/to/th10-reconstruction/th10 \
+  --repository-id th10 --provider-id th10-ghidra \
+  --target-identity-id target:th10-main \
+  --target-path /absolute/path/to/th10/resources/th10.exe
+```
+
+Review the emitted paths and hashes, then copy the block into private service
+configuration. Never commit that operator configuration to a game repository.
+
 ## TH09 reference bootstrap
 
 TH09 is the first clean Factory-native instance. Its initial repository is
@@ -210,9 +262,26 @@ entry-point, and six mapped-byte checks. A target-bound
 `get_function_by_address(0x47D45F)` returned `start`, size `0x1D5`, with
 `authority=provisional-semantic-analysis` and `exactness_credit=none`.
 
-The provider is staged in private configuration but must not be described as
-available through the public endpoint until the active Factory process has been
-deliberately restarted and the public validation has passed.
+The provider was activated and publicly validated in the later Factory 0.6.0
+deployment; it remains the native IDA reference.
+
+## TH10 native Ghidra reference bootstrap
+
+TH10 is the first clean native Ghidra instance, locally organized as
+`th10-reconstruction/th10`. The original Japanese v1.00a target is size
+`487936`, SHA-256
+`2f14760b6fbbf57549541583283badb9a19a4222b90f0a146d5aa17f01dc9040`,
+PE32 i386 at image base `0x00400000`, entry `0x004537DC`. PE linker 7.10
+and dominant Rich build-6030 records support only a VC7.1 SP1-era hypothesis;
+compiler surfaces, flags, source partition, libraries, resources, and link order
+remain unknown.
+
+The first hash-attested Ghidra 12.1.3/JDK 21.0.12.1+1 import produced 1,195
+provisional candidates, all `unknown/review`, with zero source mappings and zero
+exact claims. Native discovery and a real entry-function query both passed the
+Factory's independent PE identity plus six mapped-byte observations. This is
+the reusable Ghidra bootstrap, not evidence that any function is authored or
+reconstructed.
 
 ## Migration and future providers
 
@@ -221,8 +290,6 @@ backends so existing work continues. Do not copy them into new repositories.
 Migrate one existing game at a time only after its repo/project/target binding
 and representative operations pass parity checks.
 
-A Factory-native Ghidra project selector is still incomplete. The desired
-boundary is already fixed—one shared immutable Ghidra/JDK installation with
-game-bound project and target state—but the current TH04 and TH095 HTTP adapters
-must remain until the native broker is implemented and verified. Record this as
-unknown/incomplete rather than claiming TH09's IDA mechanism already solves it.
+TH10 is the validated native Ghidra selector reference. TH04 and TH095 remain
+on compatibility bridges until their existing projects can be migrated and
+representative results checked without disturbing active reconstruction state.

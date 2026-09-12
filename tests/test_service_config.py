@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import tempfile
 import unittest
 
 from reconstruction_factory.errors import ServiceConfigError
+from reconstruction_factory.oracle_receipts import canonical_sha256
 from reconstruction_factory.service_config import load_service_config
 
 
@@ -281,6 +283,41 @@ timeout_seconds = 120
         path.write_text(document + 'endpoint = "http://127.0.0.1:8767/mcp"\n')
         with self.assertRaisesRegex(ServiceConfigError, "extra=.*endpoint"):
             load_service_config(path)
+
+    def test_native_ghidra_provider_is_read_only_and_path_redacted(self) -> None:
+        command = self.root / "python"
+        wrapper = self.root / "ghidra.py"
+        target = self.root / "target.exe"
+        for path in (command, wrapper, target):
+            path.write_bytes(b"fixture")
+        implementation_sha256 = canonical_sha256(
+            [hashlib.sha256(wrapper.read_bytes()).hexdigest()]
+        )
+        path = self.write_config()
+        path.write_text(
+            path.read_text(encoding="utf-8")
+            + f'''
+
+[[analysis_providers]]
+id = "th08-ghidra-native"
+repository_id = "th08"
+target_identity_id = "target:th08-v1.00d-original"
+backend = "attested-ghidra-command-v1"
+command = "{command.as_posix()}"
+arguments = ["{wrapper.as_posix()}"]
+target_path = "{target.as_posix()}"
+implementation_files = ["{wrapper.as_posix()}"]
+implementation_sha256 = "{implementation_sha256}"
+timeout_seconds = 900
+''',
+            encoding="utf-8",
+        )
+        provider = load_service_config(path).analysis_provider("th08-ghidra-native")
+        public = provider.public_dict()
+        self.assertTrue(public["read_only"])
+        self.assertFalse(public["database_metadata_writable"])
+        self.assertNotIn(str(wrapper), json.dumps(public))
+        self.assertNotIn(str(target), json.dumps(public))
 
     def test_analysis_provider_cannot_cross_repository_target(self) -> None:
         path = self.write_config()
