@@ -627,6 +627,185 @@ class Th09FunctionDriver(ReplayDriver):
         )
 
 
+class Th10FunctionDriver(ReplayDriver):
+    """Recompile one canonical TH10 normal-COFF unit under headless VC7.1 SP1."""
+
+    driver_id = "th10-vc71sp1-normal-coff-function-v1"
+    adapter_id = "windows-pe-ledgers-v1"
+    oracle_id = "windows.msvc71.normal-coff-function-exact"
+
+    def supports(self, snapshot: RepositorySnapshot, claim: Claim) -> bool:
+        return (
+            snapshot.project.id == "th10"
+            and snapshot.adapter_id == self.adapter_id
+            and claim.type is ClaimType.CODEGEN_EXACT
+            and claim.value.get("exact") is True
+        )
+
+    def prepare(
+        self,
+        root: Path,
+        snapshot: RepositorySnapshot,
+        claim: Claim,
+        subject: Subject,
+        run_id: str,
+    ) -> ReplayPlan:
+        start, size = _extent(subject)
+        unit_name = _unit_name(claim)
+        manifest = _toml(root, "config/match-units.toml")
+        units = manifest.get("units")
+        if (
+            not isinstance(units, dict)
+            or unit_name not in units
+            or not isinstance(units[unit_name], dict)
+        ):
+            raise ReplayError(f"TH10 claim unit is absent from manifest: {unit_name}")
+        unit = units[unit_name]
+        profile = unit.get("profile")
+        if (
+            unit.get("artifact_kind") != "coff"
+            or not isinstance(profile, list)
+            or not profile
+            or not all(isinstance(flag, str) for flag in profile)
+            or any(flag.lower() == "/gl" for flag in profile)
+        ):
+            raise ReplayError(
+                f"TH10 claim unit is not a declared normal-COFF profile: {unit_name}"
+            )
+        if (
+            not isinstance(unit.get("target_address"), int)
+            or unit["target_address"] != int(start, 0)
+            or not isinstance(unit.get("size"), int)
+            or unit["size"] != size
+        ):
+            raise ReplayError(
+                f"TH10 claim extent differs from manifest unit: {unit_name}"
+            )
+
+        build = _repo_file(root, "scripts/build-match-unit.py")
+        compare = _repo_file(root, "scripts/compare-coff-function.py")
+        tool_root = Path(
+            os.environ.get(
+                "TH10_MSVC71_ROOT", str(root / ".tools/msvc710-sp1")
+            )
+        ).expanduser()
+        vc7 = tool_root / "Vc7"
+        xvfb_run = Path(shutil.which("xvfb-run") or "/missing/xvfb-run")
+        xvfb = Path(shutil.which("Xvfb") or "/missing/Xvfb")
+        specs = (
+            ComponentSpec(
+                "vc71sp1-compiler",
+                vc7 / "bin/cl.exe",
+                "$TH10_MSVC71_ROOT/Vc7/bin/cl.exe",
+                "native-attestation",
+            ),
+            ComponentSpec(
+                "vc71sp1-bin",
+                vc7 / "bin",
+                "$TH10_MSVC71_ROOT/Vc7/bin",
+            ),
+            ComponentSpec(
+                "vc71sp1-include",
+                vc7 / "include",
+                "$TH10_MSVC71_ROOT/Vc7/include",
+            ),
+            ComponentSpec(
+                "vc71sp1-platformsdk-include",
+                vc7 / "PlatformSDK/Include",
+                "$TH10_MSVC71_ROOT/Vc7/PlatformSDK/Include",
+            ),
+            ComponentSpec(
+                "runtime-xvfb-run", xvfb_run, "$XVFB_RUN", "runtime"
+            ),
+            ComponentSpec("runtime-xvfb", xvfb, "$XVFB", "runtime"),
+            *_runtime_components(),
+        )
+        return ReplayPlan(
+            driver_id=self.driver_id,
+            oracle_id=self.oracle_id,
+            coldness=Coldness.FORCED_RECOMPILE,
+            stages=(
+                ReplayStagePlan(
+                    "compile",
+                    (
+                        sys.executable,
+                        str(build.relative_to(root)),
+                        "--unit",
+                        unit_name,
+                    ),
+                    root,
+                ),
+                ReplayStagePlan(
+                    "compare",
+                    (
+                        sys.executable,
+                        str(compare.relative_to(root)),
+                        "--unit",
+                        unit_name,
+                        "--json",
+                    ),
+                    root,
+                ),
+            ),
+            oracle_inputs=_identity_inputs(
+                root,
+                (
+                    "scripts/build-match-unit.py",
+                    "scripts/compile-probe.sh",
+                    "scripts/run-headless-wine.sh",
+                    "scripts/compare-coff-function.py",
+                    "config/match-units.toml",
+                    "config/target.toml",
+                    "config/tools.lock.toml",
+                ),
+            ),
+            target_path=_repo_file(root, "resources/th10.exe"),
+            toolchain_components=specs,
+            environment_names=(
+                "HOME",
+                "PATH",
+                "PYTHONPATH",
+                "TH10_MSVC71_ROOT",
+                "TH10_WINEPREFIX",
+                "WINE",
+                "WINEPREFIX",
+            ),
+            metadata={
+                "unit": unit_name,
+                "artifact_kind": "coff",
+                "proof_scope": (
+                    "target-bound-vc71sp1-normal-coff-function-codegen"
+                ),
+            },
+        )
+
+    def decode(
+        self,
+        plan: ReplayPlan,
+        claim: Claim,
+        subject: Subject,
+        executions: Sequence[RawExecution],
+    ) -> NativeOutcome:
+        if len(executions) != 2 or executions[0].exit_code != 0:
+            return NativeOutcome(
+                Verdict.ERROR, 0, None, ("native-compile-stage-failed",)
+            )
+        report = _json_stdout(executions[-1])
+        if report.get("artifact_kind") != "coff":
+            return NativeOutcome(
+                Verdict.INCOMPLETE,
+                0,
+                report,
+                ("native-artifact-kind-binding-mismatch",),
+            )
+        return _decode_linear_function_report(
+            report,
+            subject,
+            unit=str(plan.metadata["unit"]),
+            size_key="size",
+        )
+
+
 class Th095WholeBuildDriver(ReplayDriver):
     """Cold-build the complete declared TH095 production graph."""
 
@@ -1041,6 +1220,7 @@ BUILTIN_DRIVERS: tuple[ReplayDriver, ...] = (
     Th04OwnedExtentDriver(),
     Th08FunctionDriver(),
     Th09FunctionDriver(),
+    Th10FunctionDriver(),
     Th095FunctionDriver(),
     Th095WholeBuildDriver(),
     Th105FunctionDriver(),

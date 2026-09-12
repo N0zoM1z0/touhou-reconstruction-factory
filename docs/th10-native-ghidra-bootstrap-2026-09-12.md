@@ -35,10 +35,37 @@ localized executable found beside it:
 
 The version classification is pinned to thcrap's version database at commit
 `f08b582ce57bce800955dd371fc9a68dbad5b324`. The Rich stream contains 232
-build-6030 records across product IDs 15, 90, 95, 96, and 100. That supports a
-VC7.1 SP1-era family hypothesis only. Exact compiler/linker files, flags,
-translation-unit partition, libraries, resources, and link order remain
+build-6030 records across product IDs 15, 90, 95, 96, and 100. Product IDs 95,
+96, and 100 specifically record 131 normal C, 15 normal C++, and 52 LTCG C++
+inputs. That establishes a mixed VC7.1 SP1-generation build rather than a
+uniform standalone-COFF model. Per-unit flags and ownership, translation-unit
+partition, libraries, the production resource graph, and link order remain
 unknown.
+
+## Compiler feedback-loop completion
+
+The same-day follow-up pins the operator-supplied
+`archaic-msvc/msvc710_sp1` checkout at commit
+`cf62606064633dd8441aa2feffe34792099cc366`. The Factory manifest locks the
+compiler, both language frontends, optimizer, linker, PDB backend, resource
+compiler, and resource converter individually. The selected compiler and linker
+report build 6030, independently corroborating the target's observed
+generation. The upstream checkout declares no license, so neither Factory nor
+TH10 redistributes it.
+
+The payload is immutable and shared; TH10 owns its ignored selector, win32 Wine
+prefix, wrappers, build outputs, and evidence. The repo-local verifier always
+uses Xvfb and exercises normal C COFF, normal C++ COFF, C++ `/GL` LTCG,
+resource compilation, and a linked PE32 i386 image. This establishes a usable
+headless feedback loop, not a target codegen or product-closure result.
+
+The target's mixed inputs forced an explicit Oracle boundary. TH10's first
+controlled replay driver accepts only a manifest unit that explicitly declares
+`artifact_kind = "coff"` and has no `/GL` flag. LTCG candidates stay unknown
+until a linked-image extent Oracle can bind their physical ownership. This is a
+bootstrap invariant for future games: identify, pin, provision, and execute the
+historical compiler path before advertising an exact campaign as ready, while
+refusing to convert a successful smoke into target truth.
 
 ## Tool and project ownership
 

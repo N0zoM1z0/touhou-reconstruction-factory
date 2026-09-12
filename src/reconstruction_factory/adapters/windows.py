@@ -98,7 +98,10 @@ class WindowsPeRepositoryAdapter(RepositoryAdapter):
                 "text_start": pe_data.get("text_start", ""),
                 "text_end": pe_data.get("text_end", ""),
                 "toolchain_family": toolchain_data.get("family", ""),
-                "ltcg_cpp_records": toolchain_data.get("rich_utc1400_ltcg_cpp"),
+                "ltcg_cpp_records": toolchain_data.get(
+                    "rich_utc1400_ltcg_cpp",
+                    toolchain_data.get("ltcg_cpp_object_count"),
+                ),
             },
         )
         tool_lock = reader.toml("config/tools.lock.toml")

@@ -436,7 +436,7 @@ async def _analysis(url: str, report: dict[str, Any]) -> None:
 
 
 async def _repository_toolchains(url: str, report: dict[str, Any]) -> None:
-    """Exercise every registered legacy toolchain through live-repository Bash.
+    """Exercise every registered toolchain through live-repository Bash.
 
     These probes prove only that Factory exposes the selected repository's current
     tool environment.  They deliberately do not create Oracle receipts or grant
@@ -478,6 +478,23 @@ async def _repository_toolchains(url: str, report: dict[str, Any]) -> None:
             "\"$probe_dir/probe.obj\" /O2 /GR /EHsc /MT\n"
             "test -s \"$probe_dir/probe.obj\"\n"
             "printf 'th095 VC7.1/Wine probe passed\\n'\n"
+        ),
+        "th10": (
+            "set -euo pipefail\n"
+            "probe_dir=$(mktemp -d)\n"
+            "trap 'rm -rf -- \"$probe_dir\"' EXIT\n"
+            "python3 scripts/verify-toolchain.py --execute --json "
+            "> \"$probe_dir/attestation.json\"\n"
+            "python3 - \"$probe_dir/attestation.json\" <<'PY'\n"
+            "import json, pathlib, sys\n"
+            "report = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+            "assert report['ready'] is True\n"
+            "assert report['identity_pass'] is True\n"
+            "assert report['execution_pass'] is True\n"
+            "assert report['wine_architecture'] == 'win32'\n"
+            "assert report['display_mode'] == 'xvfb-headless'\n"
+            "PY\n"
+            "printf 'th10 VC7.1 SP1 headless COFF/LTCG/link probe passed\\n'\n"
         ),
         "th105": (
             "set -euo pipefail\n"

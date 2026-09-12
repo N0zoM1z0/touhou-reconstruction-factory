@@ -28,6 +28,7 @@ Read these instructions before editing, using factory_repository_run_shell:
 - /home/pentester/coding/codex_ida/th10-reconstruction/th10/docs/RE_HANDOFF.md
 - /home/pentester/coding/codex_ida/th10-reconstruction/th10/docs/RE_WORKFLOW.md
 - /home/pentester/coding/codex_ida/th10-reconstruction/th10/docs/ORACLES.md
+- /home/pentester/coding/codex_ida/th10-reconstruction/th10/docs/TOOLS.md
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v5.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
 - /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/ontology.md
@@ -51,9 +52,9 @@ Ground rules:
    function extent, ABI, type, object owner, toolchain flag, equality, or
    completion.
 2. Exercise broad engineering autonomy. Compose repository Bash, Python, Git,
-   the shared VC7.1/Wine toolchain when available, and discovered atomic Ghidra
-   operations. The Factory improves feedback and identity binding; it is not a
-   substitute for judgment.
+   the hash-pinned VC7.1 SP1 toolchain through its headless-Wine wrapper, and
+   discovered atomic Ghidra operations. The Factory improves feedback and
+   identity binding; it is not a substitute for judgment.
 3. Attempt, commit, build, analysis, exactness, whole-product closure, runtime
    validation, and Truth Kernel acceptance are different states. Report them
    separately.
@@ -142,14 +143,23 @@ Autonomous exact loop:
 4. Recover ABI, layout, constants, globals, side effects, error paths, and
    compiler-sensitive source shape. Add source presence without claiming a
    match.
-5. Establish only compiler/profile facts demonstrated by focused probes. PE
-   linker 7.10 and dominant Rich build-6030 records support a VC7.1 SP1-era
-   family hypothesis, but exact compiler surfaces, flags, translation-unit
-   partition, libraries, resources, and link order begin unknown.
-6. Run the cheapest focused compile/diff feedback first, then the affected
-   translation unit and available whole-build diagnostic at useful milestones.
-   Compare complete owned extents and relocations. Distinguish source mismatch,
-   compiler-profile mismatch, boundary error, owner error, and library code.
+5. Start from only the compiler facts already demonstrated by the tracked lock
+   and real preflight. The pinned VC7.1 SP1 candidate reports compiler/linker
+   build 6030. Target Rich product IDs record 131 normal C, 15 normal C++, and
+   52 LTCG C++ inputs at build 6030. Per-function profile and physical owner,
+   translation-unit partition, libraries, production resources, and link order
+   remain unknown and must be established from TH10 evidence.
+6. Run the cheapest focused compile/diff feedback first. Use
+   `scripts/compile-probe.sh` for hypotheses. A canonical exact unit must
+   explicitly declare `artifact_kind = "coff"`; use
+   `scripts/build-match-unit.py` and `scripts/compare-coff-function.py` to
+   compare its complete owned extent and relocations. Those scripts deliberately
+   reject `/GL`. Do not strip LTCG merely to fit the standalone-object Oracle:
+   preserve the LTCG hypothesis and exactness as unknown until a target-bound
+   linked-image extent workflow exists. Distinguish source mismatch,
+   compiler-profile mismatch, boundary error, owner error, optimizer context,
+   and library code. Exercise the honest whole-build diagnostic at useful
+   milestones without confusing it with product closure.
 7. Add canonical match/exact ledger rows only after a repeatable zero-difference
    target-bound check. Never promote a Ghidra observation or plausible C source.
 8. Review status and complete diffs, run focused validation, update the handoff

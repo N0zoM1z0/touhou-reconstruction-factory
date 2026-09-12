@@ -37,6 +37,8 @@ git_author_email = "gpt-web@example.invalid"
 # Prefer one immutable Factory-managed installation for reusable executables
 # such as Ghidra/JDK/toolchain packages. Per-game repositories select versions,
 # wrappers, Wine prefixes, analysis projects, and Oracle workflows.
+# Canonical public manifests and provisioners under config/toolchains/ and
+# scripts/ identify these payloads without publishing their binaries.
 # Also mount the Factory contracts and docs read-only so Web prompts can read
 # their named guidance paths even when ChatGPT does not inject plugin skills:
 # shared_tool_roots = [
@@ -134,6 +136,10 @@ target_identity_ids = ["target:th10-main"]
 # TH095 remains useful as a provisional adjacent reference while its semantic
 # reconstruction continues; all three references remain read-only hypotheses.
 reference_repository_ids = ["th08", "th09", "th095"]
+# The repo-local ignored .tools/msvc710-sp1 selector may point into a shared
+# tool root. Its .tools/wineprefix-msvc710-sp1 remains mutable game-bound state.
+# Explicit work_environment/work_state_roots are needed only when a deployment
+# relocates that default prefix outside the repository.
 
 [[repositories]]
 id = "th105"

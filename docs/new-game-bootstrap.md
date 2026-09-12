@@ -68,10 +68,14 @@ progress.
    provenance. Bind repository tools and the private analyzer provider to this
    WSL-local copy. Use `unknown` for facts not demonstrated by the file or a
    pinned source.
-3. **Identify only evidenced toolchain facts.** PE linker and Rich-header facts
-   may identify a compiler generation. They do not reveal flags, translation
-   units, library selection, resources, or link order; initialize those as
-   unknown.
+3. **Identify and execute the historical toolchain before an exact campaign.**
+   PE linker and Rich-header facts may identify a compiler generation. They do
+   not reveal flags, translation units, library selection, resources, or link
+   order; initialize those as unknown. Pin the selected compiler payload by
+   immutable origin and component hashes, provision an ignored selector plus a
+   game-bound Wine prefix, and exercise the real compile/artifact/link path in
+   the repository's headless environment. If that feedback loop is unavailable,
+   label it `unprovisioned` and do not advertise the exact campaign as ready.
 4. **Create zero-state Truth Kernel inputs.** Import the disassembler's
    candidate inventory as provisional boundaries/origins. Start source,
    ownership, and exactness ledgers empty. A discovered function is not
@@ -115,6 +119,41 @@ progress.
     phase closure. Do not mention an operator's browser scheduler or userscript
     in the prompt. The repository and handoff are the only continuation
     interface the reconstruction agent needs.
+
+## Shared historical compiler provisioning
+
+Tracked Factory manifests define immutable compiler payload identity; they do
+not redistribute third-party binaries and do not assert that a payload is
+installed on a particular host. The operator provisions one verified shared
+payload, while each game owns its ignored selector, Wine prefix, build output,
+profiles, and evidence. A shared Wine executable is likewise infrastructure,
+not shared mutable target state.
+
+For the VC7.1 SP1 build-6030 candidate used by TH10:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/provision-msvc710-sp1.py \
+  --destination /private/factory/tools/msvc710-sp1 \
+  --game-root /path/to/th10-reconstruction/th10
+
+python3 /path/to/th10-reconstruction/th10/scripts/verify-toolchain.py --execute
+```
+
+The provisioner clones the exact commit named by
+`config/toolchains/msvc710-sp1.toml`, rejects origin/commit/component-hash
+drift, and creates only the ignored game selector. The game verifier owns the
+execution contract: win32 prefix, Xvfb-only Wine wrapper, compiler/linker banner
+checks, normal C/C++ COFF, C++ LTCG, resource compilation, and PE32 link. A
+smoke pass proves availability and artifact-family support only. It grants no
+target source, per-unit flags or ownership, codegen exactness, or product
+closure.
+
+The upstream compatibility checkout currently declares no license. Treat it as
+an operator-supplied local input: do not vendor it, publish it, or copy it into a
+game repository. A future compiler family should receive its own canonical
+manifest, provisioner or provider-specific acquisition procedure, game-local
+headless execution wrapper, and real artifact smoke before bootstrap is called
+ready.
 
 Run the staged native-provider check with no public-service restart:
 
@@ -287,9 +326,11 @@ TH10 is the first clean native Ghidra instance, locally organized as
 `th10-reconstruction/th10`. The original Japanese v1.00a target is size
 `487936`, SHA-256
 `2f14760b6fbbf57549541583283badb9a19a4222b90f0a146d5aa17f01dc9040`,
-PE32 i386 at image base `0x00400000`, entry `0x004537DC`. PE linker 7.10
-and dominant Rich build-6030 records support only a VC7.1 SP1-era hypothesis;
-compiler surfaces, flags, source partition, libraries, resources, and link order
+PE32 i386 at image base `0x00400000`, entry `0x004537DC`. PE linker 7.10 and
+Rich product IDs at build 6030 identify normal C, normal C++, and LTCG C++
+inputs from the VC7.1 SP1 generation. A hash-pinned build-6030 candidate now
+passes a real headless compile/resource/link smoke. Per-unit profile and owner,
+source partition, libraries, the production resource graph, and link order
 remain unknown.
 
 The first hash-attested Ghidra 12.1.3/JDK 21.0.12.1+1 import produced 1,195

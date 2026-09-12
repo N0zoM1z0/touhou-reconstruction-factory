@@ -1,0 +1,42 @@
+schema_version = 1
+id = "msvc710-sp1-cf626060"
+family = "Microsoft Visual C++ .NET 2003 SP1"
+repository = "https://github.com/archaic-msvc/msvc710_sp1.git"
+commit = "cf62606064633dd8441aa2feffe34792099cc366"
+repository_license_state = "not-declared"
+compiler_banner = "Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 13.10.6030 for 80x86"
+linker_banner = "Microsoft (R) Incremental Linker Version 7.10.6030"
+required_directories = [
+  "Vc7/include",
+  "Vc7/lib",
+  "Vc7/PlatformSDK/Include",
+  "Vc7/PlatformSDK/Lib",
+]
+
+[files]
+"Vc7/bin/cl.exe" = "333254d73ee602f6ec14b00e9bf40f533a1b181429943e3634971642af00c9f7"
+"Vc7/bin/c1.dll" = "a47ff094f591ac85777f568c44f2d0c9e94295184faa1fb785bbc6f89d887f07"
+"Vc7/bin/c1xx.dll" = "42fd57f25e0b536b0b7a817f4ab3ec0aa23fcc5f8e52104ad6f12de167ad2cfa"
+"Vc7/bin/c2.dll" = "7a6f6d8e4da7b518384ff78f2c41028805d3a1d1a40dc2cc857c391ec81763f5"
+"Vc7/bin/link.exe" = "3e6526234cce5ce962d22f267f84f01d3c540b8ee9129c53f127c5e124fa2b20"
+"Vc7/bin/mspdb71.dll" = "e952861ef44831b5cfaf44cc33dcfadcb77b550a3d1e27337e4727c07d332051"
+"Vc7/bin/rc.exe" = "139597123a5daa11148da6704c779152dc6b693bde65222e6855639164aaf9bb"
+"Vc7/bin/cvtres.exe" = "c08ec0a3053434a0ba017d50cf1fcd8a3bcc32cb67e43a2aefe3c01a41eedbf7"
+
+[execution]
+host_runtime = "system-wine"
+wine_architecture = "win32"
+display_mode = "xvfb-headless"
+shared_payload = true
+wine_prefix_scope = "game-bound"
+
+[authority]
+identity = "observed-candidate"
+proves = ["tool-file-identity", "compiler-linker-generation", "execution-capability"]
+does_not_prove = [
+  "target-source",
+  "per-unit-profile",
+  "translation-unit-owner",
+  "codegen-exactness",
+  "whole-build-closure",
+]

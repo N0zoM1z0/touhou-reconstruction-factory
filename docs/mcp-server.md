@@ -257,7 +257,9 @@ against all six registered repositories: TH04, TH08, TH09, TH095, TH10, and
 TH105. The earlier four exercise mature historical fixtures and replay paths;
 TH09 and TH10 exercise the zero-historical-fixture boundary and both native
 analysis-provider families. TH09 additionally has a controlled exact replay
-driver; TH10 does not yet gain replay acceptance from analysis alone.
+driver. TH10 now has a separate controlled normal-COFF replay driver, but its
+Ghidra output still grants no replay acceptance and its zero-state exact ledger
+supplies no claim to run.
 
 ## Plugin UX layer
 

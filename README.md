@@ -200,6 +200,14 @@ bounded, redacted, and worth zero exactness credit. See the
 [`attested analysis provider`](docs/analysis-provider.md) and the
 [`new-game bootstrap`](docs/new-game-bootstrap.md).
 
+Historical compilers follow the same shared-payload/game-bound-state rule. The
+Factory pins the TH10 VC7.1 SP1 candidate in
+[`config/toolchains/msvc710-sp1.toml`](config/toolchains/msvc710-sp1.toml) and
+provides a hash-verifying provisioner; TH10 owns its ignored selector, win32
+Wine prefix, headless wrapper, profiles, outputs, and target-bound evidence.
+The bootstrap guide requires a real compile/artifact/link smoke before an exact
+campaign is advertised as ready.
+
 The repository also publishes a minimal plugin that combines the remote MCP
 connection with end-to-end reconstruction and semantic workflows plus separate
 analysis, optional-workspace, and evidence-preserving replay skills. Select
@@ -241,8 +249,9 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP
 PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --all
 ```
 
-The toolchain option executes the four maintained, non-committing compatibility
-probes through live-repository Bash for TH04, TH08, TH095, and TH105. `--all`
+The toolchain option executes five maintained, non-committing capability probes
+through live-repository Bash for TH04, TH08, TH095, TH10, and TH105. TH10's
+probe is a fully headless VC7.1 SP1 COFF/LTCG/resource/link smoke. `--all`
 additionally creates and discards a temporary TH105
 workspace and submits one canonical TH105 smoke replay. See
 [`docs/validation.md`](docs/validation.md) for the validation contract and latest

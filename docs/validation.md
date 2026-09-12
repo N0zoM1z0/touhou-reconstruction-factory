@@ -66,13 +66,15 @@ ignored `.tools`, or the network, and confirms its Git metadata is read-only. It
 then verifies command output and a candidate diff across a new MCP session,
 removes its marker, requires a zero-byte final diff, and discards the workspace.
 
-The live toolchain check invokes `factory_repository_run_shell` for the four
+The live toolchain check invokes `factory_repository_run_shell` for the five
 maintained operational probes. It performs two deterministic
 Borland/TASM/TLINK rounds for TH04, checks TH08 VC7 through its historical Wine
-prefix, and compiles fresh temporary objects with TH095 VC7.1 and TH105 VC8
-SP1. It requires identical before/after HEAD and status digests and no created
-commits. These are compatibility probes, not a claim that every registered game
-has a configured product toolchain, and they are not Oracle receipts.
+prefix, compiles fresh temporary objects with TH095 VC7.1 and TH105 VC8 SP1,
+and makes TH10 attest its pinned VC7.1 SP1 components before headlessly
+compiling normal C/C++ COFF and C++ LTCG, compiling a resource, and linking a
+PE32 i386 image. It requires identical before/after HEAD and status digests and
+no created commits. These are capability probes, not target-codegen or product
+closure receipts.
 
 The replay check discovers rather than invents the known TH105 smoke claim. It
 submits a durable job, requires `completed`, `pass`, and `accepted` independently,
