@@ -40,6 +40,7 @@ git_author_email = "gpt-web@example.invalid"
 # Also mount the Factory contracts and docs read-only so Web prompts can read
 # their named guidance paths even when ChatGPT does not inject plugin skills:
 # shared_tool_roots = [
+#   "/srv/touhou-factory/tools",
 #   "/srv/touhou-reconstruction-factory/contracts",
 #   "/srv/touhou-reconstruction-factory/docs",
 # ]
@@ -55,8 +56,36 @@ target_identity_id = "target:th09-main"
 backend = "attested-ida-stdio-v1"
 command = "/opt/ida-python/python.exe"
 arguments = ["D:\\IDA\\python\\Lib\\site-packages\\ida_pro_mcp\\server.py"]
-target_path = "/srv/private-targets/th09.exe"
+target_path = "/srv/reconstructions/th09/resources/th09.exe"
 timeout_seconds = 120
+
+# The preferred Ghidra provider is also Factory-native. Do not calculate its
+# implementation binding by hand: run render-native-ghidra-registration.py and
+# copy its complete reviewed output into the private configuration. This block
+# stays commented because its paths and digest are operator-specific.
+# [[analysis_providers]]
+# id = "th10-ghidra"
+# repository_id = "th10"
+# target_identity_id = "target:th10-main"
+# backend = "attested-ghidra-command-v1"
+# command = "/srv/touhou-reconstruction-factory/.venv/bin/python"
+# arguments = ["/srv/reconstructions/th10/scripts/ghidra.py"]
+# target_path = "/srv/reconstructions/th10/resources/th10.exe"
+# implementation_files = [
+#   "/srv/reconstructions/th10/config/target.toml",
+#   "/srv/reconstructions/th10/config/tools.lock.toml",
+#   "/srv/reconstructions/th10/scripts/ghidra.py",
+#   "/srv/reconstructions/th10/scripts/ghidra/DecompileFunctions.java",
+#   "/srv/reconstructions/th10/scripts/ghidra/ExportArchitecture.java",
+#   "/srv/reconstructions/th10/scripts/ghidra/ExportInventory.java",
+#   "/srv/reconstructions/th10/scripts/ghidra/QueryProgram.java",
+#   "/srv/reconstructions/th10/scripts/ghidra/VerifyTarget.java",
+#   "/srv/reconstructions/th10/scripts/target_identity.py",
+#   "/srv/reconstructions/th10/scripts/verify-analysis-tools.py",
+#   "/srv/reconstructions/th10/scripts/verify-target.py",
+# ]
+# implementation_sha256 = "<generated aggregate SHA-256>"
+# timeout_seconds = 900
 
 [[repositories]]
 id = "th04"
@@ -96,6 +125,15 @@ adapter_id = "windows-pe-ledgers-v1"
 target_identity_ids = ["target:th095-main"]
 # work_environment = { WINEPREFIX = "/srv/reconstruction-state/th095/wine" }
 # work_state_roots = ["/srv/reconstruction-state/th095/wine"]
+
+[[repositories]]
+id = "th10"
+path = "/srv/reconstructions/th10"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:th10-main"]
+# TH095 remains useful as a provisional adjacent reference while its semantic
+# reconstruction continues; all three references remain read-only hypotheses.
+reference_repository_ids = ["th08", "th09", "th095"]
 
 [[repositories]]
 id = "th105"

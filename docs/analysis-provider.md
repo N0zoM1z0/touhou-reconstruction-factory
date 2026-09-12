@@ -57,21 +57,22 @@ games remain on compatibility providers only until their working analysis
 state can be migrated and re-attested.
 
 TH10 is the first fully Factory-native Ghidra game. Its public repository owns
-the small headless wrapper and Java query scripts, while private Factory state
-owns the single shared Ghidra/JDK payload and `resources/th10.exe`. The mutable
-`ghidra-project/TH10` database remains game-specific and ignored. This selector
-replaces both the legacy per-game HTTP bridge and any per-game public URL.
+the small headless wrapper and Java query scripts. Operator-owned ignored state
+provides the game-local `resources/th10.exe`, the mutable
+`ghidra-project/TH10` database, and selectors for the single shared private
+Ghidra/JDK payload. This replaces both the legacy per-game HTTP bridge and any
+per-game public URL.
 
 The private single-operator configuration registers:
 
 | Provider | Repository | Backend | Target scope |
 | --- | --- | --- | --- |
-| `th04-ghidra` | `th04` | attested headless Ghidra | `target:th04-main` |
-| `th08-ida` | `th08` | attested IDA Pro | `target:th08-main` |
+| `th04-ghidra` | `th04` | legacy attested Ghidra proxy | `target:th04-main` |
+| `th08-ida` | `th08` | legacy attested IDA proxy | `target:th08-main` |
 | `th09-ida` | `th09` | Factory-native IDA Pro | `target:th09-main` |
-| `th095-ghidra` | `th095` | attested headless Ghidra | `target:th095-main` |
+| `th095-ghidra` | `th095` | legacy attested Ghidra proxy | `target:th095-main` |
 | `th10-ghidra` | `th10` | Factory-native headless Ghidra | `target:th10-main` |
-| `th105-ida` | `th105` | attested IDA Pro | `target:th105-main` |
+| `th105-ida` | `th105` | legacy attested IDA proxy | `target:th105-main` |
 
 This is operator configuration, not a cross-game claim that one backend is
 universally correct. A provider can be absent, offline, busy, or correctly fail
@@ -166,8 +167,14 @@ implementation_files = [
   "/absolute/path/to/th10/config/target.toml",
   "/absolute/path/to/th10/config/tools.lock.toml",
   "/absolute/path/to/th10/scripts/ghidra.py",
+  "/absolute/path/to/th10/scripts/ghidra/DecompileFunctions.java",
+  "/absolute/path/to/th10/scripts/ghidra/ExportArchitecture.java",
+  "/absolute/path/to/th10/scripts/ghidra/ExportInventory.java",
   "/absolute/path/to/th10/scripts/ghidra/QueryProgram.java",
   "/absolute/path/to/th10/scripts/ghidra/VerifyTarget.java",
+  "/absolute/path/to/th10/scripts/target_identity.py",
+  "/absolute/path/to/th10/scripts/verify-analysis-tools.py",
+  "/absolute/path/to/th10/scripts/verify-target.py",
 ]
 implementation_sha256 = "<aggregate lowercase SHA-256>"
 timeout_seconds = 900

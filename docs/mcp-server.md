@@ -100,11 +100,13 @@ For semantic target analysis, first list providers for the repository and then
 list the selected provider's operation schemas. Pass one discovered operation
 and a JSON object string to `factory_analysis_call`. The response binds the
 current adapter target, provider identity, operation, arguments, attestation, and
-observation time while fixing `exactness_credit` to `none`. Native analysis
-for TH09 goes directly from the shared Factory process to `ida-pro-mcp` over
-stdio. Its discovered operations include non-byte IDA database metadata
-edits, while target-byte patching and legacy bridges' host Bash tools remain
-absent. See
+observation time while fixing `exactness_credit` to `none`. Native analysis for
+TH09 goes directly from the shared Factory process to `ida-pro-mcp` over stdio.
+TH10 uses the Factory-native fixed-grammar Ghidra command provider and its
+game-bound headless project; it does not run another MCP or HTTP bridge. IDA's
+discovered operations include non-byte database metadata edits, while TH10's
+native Ghidra surface is currently read-only. Target-byte patching and legacy
+bridges' host Bash tools remain absent. See
 [`analysis-provider.md`](analysis-provider.md).
 
 ## Tools
@@ -250,9 +252,12 @@ metadata equality, and the absence of native mutation/bridge-shell authority.
 The live inventory contains no game-knowledge publication or promotion tool.
 
 Read-only capability questions for future MCP regression runs are in
-[`factory-mcp.xml`](../evaluations/factory-mcp.xml). Live validation should also
-run against registered TH04, TH08, TH095, and TH105 repositories because their
-different adapters and replay drivers are the reason this boundary exists.
+[`factory-mcp.xml`](../evaluations/factory-mcp.xml). Live validation should run
+against all six registered repositories: TH04, TH08, TH09, TH095, TH10, and
+TH105. The earlier four exercise mature historical fixtures and replay paths;
+TH09 and TH10 exercise the zero-historical-fixture boundary and both native
+analysis-provider families. TH09 additionally has a controlled exact replay
+driver; TH10 does not yet gain replay acceptance from analysis alone.
 
 ## Plugin UX layer
 

@@ -126,7 +126,7 @@ PYTHONPATH=src .venv/bin/python scripts/validate-native-analysis-provider.py \
   --arguments-json '{"addresses":["0x004537DC"]}'
 ```
 
-### Hot-reload compatibility trap
+### Historical hot-reload compatibility incidents
 
 The Factory MCP loads operator configuration for each public tool call. That is
 useful for compatible repository/path changes, but it means configuration is
@@ -211,8 +211,14 @@ implementation_files = [
   "/absolute/path/to/th10/config/target.toml",
   "/absolute/path/to/th10/config/tools.lock.toml",
   "/absolute/path/to/th10/scripts/ghidra.py",
+  "/absolute/path/to/th10/scripts/ghidra/DecompileFunctions.java",
+  "/absolute/path/to/th10/scripts/ghidra/ExportArchitecture.java",
+  "/absolute/path/to/th10/scripts/ghidra/ExportInventory.java",
   "/absolute/path/to/th10/scripts/ghidra/QueryProgram.java",
   "/absolute/path/to/th10/scripts/ghidra/VerifyTarget.java",
+  "/absolute/path/to/th10/scripts/target_identity.py",
+  "/absolute/path/to/th10/scripts/verify-analysis-tools.py",
+  "/absolute/path/to/th10/scripts/verify-target.py",
 ]
 implementation_sha256 = "<aggregate lowercase SHA-256>"
 timeout_seconds = 900

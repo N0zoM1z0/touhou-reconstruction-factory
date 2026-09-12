@@ -1,5 +1,10 @@
 # TH10 Factory-native Ghidra bootstrap
 
+> **Historical measured record.** This document preserves the 2026-09-12 TH10
+> bootstrap and Factory 0.7.0 activation evidence. Its counts, hashes, provider
+> observations, and service state remain valid only for their named artifacts
+> and checkpoint; query current repository and service state before reuse.
+
 ## Result
 
 TH10 is the first new reconstruction whose Ghidra path is owned end to end by

@@ -1,5 +1,11 @@
 # Controlled replay validation
 
+> **Historical evidence record.** Every commit, digest, receipt, registry ID,
+> count, timing, and availability statement in this document belongs to its
+> named 2026-09-09 or 2026-09-10 checkpoint. It does not describe the current
+> live registry. Use [`validation.md`](validation.md) for the current procedure
+> and query the live Factory for current accepted facts.
+
 This document records the first live integration validation of the
 factory-controlled replay contract. It is deliberately narrow: four known
 exact claims test four materially different repository/toolchain workflows.

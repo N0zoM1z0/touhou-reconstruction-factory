@@ -140,6 +140,9 @@ should use a game-bound state root from the beginning. TH09 is the first clean
 instance: its repo is registered directly with the shared Factory MCP and its
 IDA provider is Factory-owned rather than copied into the game. Existing games
 can be migrated one at a time after historical replay parity is demonstrated.
+TH10 is the corresponding first clean Factory-native Ghidra instance, with a
+shared hash-pinned Ghidra/JDK installation and a game-local ignored analysis
+project.
 
 ## Checkpoint workflow
 

@@ -1,5 +1,10 @@
 # TH09 and TH095 overnight GPT-web pilot
 
+> **Historical measured record.** This document describes only the observation
+> window named below. Its commits, counts, dirty state, provider availability,
+> and receipt status are not current-state assertions. Inspect the repositories
+> and Factory service again before acting on them.
+
 ## Scope and evidence boundary
 
 This report records the first simultaneous overnight use of a fresh

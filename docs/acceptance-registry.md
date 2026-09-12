@@ -68,7 +68,7 @@ acceptance decisions are never retained across requests.
 ## Explicit policy
 
 [`policies/strict-live-v1.json`](../policies/strict-live-v1.json) is the first
-published policy. It allows the four current exact drivers plus the TH095
+published policy. It allows the five current exact drivers plus the TH095
 product-closure driver and requires:
 
 - a live repository binding for every accepted target;

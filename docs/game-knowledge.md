@@ -17,11 +17,12 @@ The boundary is machine-visible and fail closed:
 - the public MCP has no tool that promotes this input into the packaged Factory
   catalog.
 
-GPT-web may propose changes to this file inside a disposable source workspace.
-The exported diff remains candidate source work. Local Codex reviews and applies
-it like any other game-repository change. Future cross-game extraction will be a
-separate repository-history analysis; it is intentionally not implemented by
-this contract.
+GPT-web may update this file directly in the registered live game repository
+and include it in a coherent local `gpt-web:` checkpoint. An explicitly
+disposable workspace may instead export a candidate diff for later local review.
+Neither path publishes the content to the Factory catalog. Future cross-game
+extraction remains a separate repository-history analysis and is intentionally
+not implemented by this contract.
 
 ## Canonical document
 

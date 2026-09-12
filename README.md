@@ -11,9 +11,18 @@ specification selects a coherent family of providers and produces a
 `ReconstructionKit` whose claims, oracle results, artifacts, gates, and
 workflows share one vocabulary.
 
-The architecture and repository archaeology are recorded in
-[`docs/factory-analysis.md`](docs/factory-analysis.md). The normative vocabulary
-is in [`docs/ontology.md`](docs/ontology.md).
+New maintainers and agents should start with [`AGENTS.md`](AGENTS.md) and the
+[`documentation authority map`](docs/README.md). The normative vocabulary is
+in [`docs/ontology.md`](docs/ontology.md); the original architecture and
+repository archaeology remain available as a dated, non-normative
+[`working paper`](docs/factory-analysis.md).
+
+The tracked release version is defined in [`pyproject.toml`](pyproject.toml); at
+this checkpoint the Factory models six registered game repositories. TH09 is
+the Factory-native IDA reference and TH10 is the Factory-native Ghidra
+reference; earlier analysis bridges remain migration compatibility. This is
+structural release information, not a claim about live service health, provider
+availability, game progress, or accepted facts.
 
 ## System and reconstruction flow
 
@@ -44,8 +53,8 @@ flowchart LR
     L -.-> P["Later local Codex retrospective<br/>completed history · scripts · tests · receipts<br/>cross-game publication not automated"]:::memory
     P -.-> K
 
-    P98["PC-98 era family<br/>TH01–TH05<br/>currently validated: TH04"]:::platform --> C
-    PE["Windows PE era family<br/>TH06+<br/>currently validated: TH08 / TH09 / TH095 / TH10 / TH105"]:::platform --> C
+    P98["PC-98 era family<br/>TH01–TH05<br/>implemented registration: TH04"]:::platform --> C
+    PE["Windows PE era family<br/>TH06+<br/>implemented: TH08 / TH09 / TH095 / TH10 / TH105"]:::platform --> C
 
     B["Registered atomic analysis<br/>native IDA / native Ghidra<br/>legacy bridge during migration"]:::evidence -->|"independent target attestation"| E
     S -.-> O["Optional disposable workspace<br/>explicitly isolated experiment<br/>committed source only"]:::platform
@@ -155,8 +164,9 @@ and commit without gaining Factory publication authority.
 
 Factory-controlled replay and content-addressed evidence are specified in
 [`docs/oracle-receipts.md`](docs/oracle-receipts.md).
-The first live TH04/TH08/TH095/TH105 replay matrix and its exact limitations
-are recorded in [`docs/replay-validation.md`](docs/replay-validation.md).
+The first live TH04/TH08/TH095/TH105 replay matrix and later chronological
+checkpoints are preserved as a point-in-time
+[`replay validation record`](docs/replay-validation.md).
 Only receipts admitted by an explicit live policy can enter accepted snapshots
 or receipt-backed knowledge queries; see the
 [`acceptance registry contract`](docs/acceptance-registry.md).
@@ -192,8 +202,9 @@ bounded, redacted, and worth zero exactness credit. See the
 
 The repository also publishes a minimal plugin that combines the remote MCP
 connection with end-to-end reconstruction and semantic workflows plus separate
-analysis, optional-workspace, and evidence-preserving replay skills. Reusable
-short prompts and complete standalone prompts live in
+analysis, optional-workspace, and evidence-preserving replay skills. Select
+reusable short prompts and complete standalone prompts through the
+[`prompt index`](prompts/README.md); the generic entry is
 [`prompts/gpt-web-reconstruction.md`](prompts/gpt-web-reconstruction.md).
 The ready-to-run TH095 semantic campaign is in
 [`prompts/gpt-web-semantic-reconstruction.md`](prompts/gpt-web-semantic-reconstruction.md).
@@ -230,8 +241,8 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP
 PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py --url "$FACTORY_MCP_URL" --all
 ```
 
-The toolchain option executes non-committing probes through live-repository Bash
-for every game with a configured historical compiler surface. `--all`
+The toolchain option executes the four maintained, non-committing compatibility
+probes through live-repository Bash for TH04, TH08, TH095, and TH105. `--all`
 additionally creates and discards a temporary TH105
 workspace and submits one canonical TH105 smoke replay. See
 [`docs/validation.md`](docs/validation.md) for the validation contract and latest

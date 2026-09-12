@@ -209,14 +209,16 @@ place:
 
 Migration is allowed to change repository layout and scripts. It must preserve
 or strengthen the evidence meaning, carry explicit unknowns forward, and prove
-parity with historical fixtures before the old bridge is removed. Therefore a
-new TH09 repository should start in the target format, while TH04, TH08, TH095,
-and TH105 may temporarily use accurate per-repository compatibility profiles.
+parity with historical fixtures before the old bridge is removed. TH09 and
+TH10 demonstrate starting directly in the target format, while TH04, TH08,
+TH095, and TH105 may temporarily use accurate per-repository compatibility
+profiles.
 
 ## Scope
 
 The registered repository ID is the source-work selection boundary. The shared
 Factory MCP serves every game, while adapters and provider registrations bind
 the selected repository to its targets, toolchain family, analysis provider,
-and replay workflow. Adding TH09 therefore means registering and adapting the
-TH09 repository once; GPT-web continues to use the same MCP and prompt.
+and replay workflow. TH09 and TH10 each required one Factory registration and
+adapter-compatible repository; GPT-web continued to use the same MCP and prompt
+family.

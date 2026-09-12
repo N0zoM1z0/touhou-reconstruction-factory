@@ -1,5 +1,13 @@
 # Touhou Reconstruction Factory: Evidence, Architecture, and Roadmap
 
+> **Historical architecture archaeology, not a current runbook.** This working
+> paper preserves the 2026-09-10 discovery process, repository observations,
+> proposals, and rejected directions. Some inventories and implementation plans
+> were superseded later the same week. Use [`README.md`](README.md) to select
+> current operating documents and query live state instead of reusing counts,
+> commits, paths, or availability claims from this file. The original temporary
+> notes named below are provenance only and are not required reading.
+
 > Status: architecture working paper with an executable Factory foundation
 > Snapshot date: 2026-09-10
 > Primary requirements source: `/tmp/vc_sth.txt`

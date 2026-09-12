@@ -46,10 +46,12 @@ knowledge or bypass replay-receipt acceptance.
   machine-readable `gpt-web-reconstruction-session-v5` contract. Version 5
   separates long campaign duration from adaptive bounded Web conversations and
   preserves continuation in repository state without exposing external browser
-  scheduling. Version 4 added independent exactness, production-closure, runtime-storage, and runtime-scenario
-  reporting plus their coupled feedback loop. Version 3 preserves the earlier
-  live-repository autonomy and Git-checkpoint contract; versions 1 through 3
-  remain committed as historical contracts.
+  scheduling. Version 4 added independent exactness, production-closure,
+  runtime-storage, and runtime-scenario reporting plus their coupled feedback
+  loop. Version 3 preserves the earlier live-repository autonomy and
+  Git-checkpoint contract. Versions 1 through 4 remain committed as historical
+  contracts; use [`contracts/README.md`](../contracts/README.md) to select the
+  current version.
 - [`gpt-web-semantic-reconstruction.md`](../prompts/gpt-web-semantic-reconstruction.md)
   provides a ready-to-run TH095 prompt and standalone fallback under
   `gpt-web-semantic-reconstruction-session-v4`. Version 4 keeps the campaign
@@ -58,7 +60,8 @@ knowledge or bypass replay-receipt acceptance.
   conditions and phase closure, defaults every resume to active-incomplete,
   adversarially reviews earlier readiness prose, and rotates coverage after a
   local plateau. Version 2 retains the earlier autonomous loop and self-audited
-  stop contract; version 1 remains the historical one-batch contract.
+  stop contract; version 1 remains the historical one-batch contract. Versions
+  1 through 3 are historical; version 4 is the current launch contract.
 - [`touhou-reconstruction-factory-mcp.service`](../ops/touhou-reconstruction-factory-mcp.service)
   serves stateless Streamable HTTP on loopback.
 - [`touhou-reconstruction-factory-worker.service`](../ops/touhou-reconstruction-factory-worker.service)
@@ -88,7 +91,8 @@ ChatGPT exposes three similar identifiers. They are not interchangeable:
 | App Id | `asdk_app_6aa21bec66888191bd24c118e47ddee6` | Commit this value as `.app.json` `apps.<alias>.id`. |
 | Version Id | `asdk_app_v_6aa21bec66988191a434524226c15aee` | Identifies one app version. Record it only for diagnostics; never use it in `.app.json`. |
 
-The current development registration was checked on 2026-09-10:
+The development registration below was observed on 2026-09-10. Its version ID
+and review state are diagnostic history, not a live registration query:
 
 | Field | Value |
 | --- | --- |
@@ -322,8 +326,17 @@ at
 [`gpt-web-th09-exact-reconstruction.md`](../prompts/gpt-web-th09-exact-reconstruction.md).
 It assumes no injected skill, reads both game and Factory guidance by explicit
 path, recovers dirty work first, uses the Factory-native IDA provider, and keeps
-exact, Windows i386 product, semantic, and port gates separate. Use it only
-after the staged provider is active and passes the public smoke test.
+exact, Windows i386 product, semantic, and port gates separate. The provider was
+activated and publicly validated with Factory 0.6.0; always rediscover and
+attest it in the current conversation instead of assuming availability from
+that historical success.
+
+The TH10 exact-reconstruction campaign has a complete standalone prompt at
+[`gpt-web-th10-exact-reconstruction.md`](../prompts/gpt-web-th10-exact-reconstruction.md).
+It uses the Factory-native Ghidra provider, treats its initial candidate
+inventory as provisional, and names TH08, TH09, and TH095 only as read-only
+hypothesis sources. Factory 0.7.0 activated this provider; current discovery and
+target attestation remain mandatory before source work.
 
 The mature PC-98 TH04 exact campaign has its own complete prompt at
 [`gpt-web-th04-exact-reconstruction.md`](../prompts/gpt-web-th04-exact-reconstruction.md).
@@ -530,7 +543,7 @@ Then create a separate TH105 workspace and inspect the corresponding committed
 source. The analysis result guides the hypothesis; only a later replay can
 verify it.
 
-## Current live autonomy checkpoint
+## Historical live autonomy checkpoint: 2026-09-10
 
 The operator-private public URL was revalidated after adding the semantic
 workflow on 2026-09-10. Discovery returned exactly 33 tools: the prior 32 plus the live-
@@ -581,7 +594,7 @@ is covered in temporary repositories by the release suite, including a
 `gpt-web:` commit after a nonzero command, durable output recovery, timeout
 persistence, and output truncation that does not abort later work.
 
-The final current-run TH105 replay completed as job
+The final TH105 replay in that run completed as job
 `job:6206df3280854c9e968254b615b3daf7`, produced passing receipt
 `receipt:72e09c88ba2379229e29f80cf5bbee1eb3478ae49f632a04c0020033b5a0e24e`,
 and was accepted by registry
@@ -589,7 +602,7 @@ and was accepted by registry
 A subsequent read reported 17 candidates, one current accepted TH105 result,
 16 rejected candidates, and zero invalid candidates.
 
-## Initial isolated-provider checkpoint
+## Historical initial isolated-provider checkpoint: 2026-09-10
 
 The operator-private public URL was exercised without credentials on
 2026-09-10. Remote discovery returned exactly 29 factory tools: 15
@@ -644,7 +657,7 @@ current game-knowledge boundary checkpoint is recorded separately in
 `NoNewPrivileges=yes`, `PrivateTmp=yes`, a 768-task limit, a 3 GiB
 memory limit with swap disabled, a private umask, and core dumps disabled.
 
-## TH09 Factory-native provider checkpoint
+## Historical TH09 staging checkpoint: 2026-09-10
 
 TH09 is the first new game that does not copy or run `mcp_for_gptweb`. The
 private Factory configuration registers `th09`, `target:th09-main`, one shared
@@ -662,15 +675,18 @@ and zero exactness credit.
 Twelve discovered operations update non-byte IDA database metadata: comments,
 function/global/local/stack names, prototypes, and types. This is intentional
 agent autonomy, not truth promotion. Their results remain target-bound analysis
-hypotheses. Activation and a public GPT-web smoke test are deferred until the
-active TH095 session can tolerate a Factory process restart.
+hypotheses. At this checkpoint, activation and a public GPT-web smoke test were
+deferred until the active TH095 session could tolerate a Factory process
+restart.
 
 The first staging attempt also exposed an important hot-reload boundary. The
 running 0.4.0 server reloads its operator TOML on every call, so placing 0.5.0
 native-provider fields in the watched live file caused TH095 control-plane calls
 to fail before command creation even without a process restart. Restoring the
-four-game live file immediately restored public describe, TH095 status, and
-repository-shell execution at unchanged HEAD `0e6f0ef`, with zero tracked dirty
-changes and the same four pre-existing untracked files. The TH09 registration
-now lives only in `service.next.toml` until coordinated activation. Future
-code-dependent provider changes must follow the same sidecar-validation pattern.
+then-live four-game file immediately restored public describe, TH095 status,
+and repository-shell execution at unchanged HEAD `0e6f0ef`, with zero tracked
+dirty changes and the same four pre-existing untracked files. The TH09
+registration then lived only in `service.next.toml` until coordinated
+activation. Factory 0.6.0 later activated and publicly validated it; the
+historical staging state is not current provider status. Future code-dependent
+provider changes must follow the same sidecar-validation pattern.

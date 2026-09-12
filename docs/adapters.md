@@ -14,7 +14,7 @@ The governing rule is accuracy before completeness:
   invalid extent graphs fail closed;
 - an imported exact ledger row becomes an imported `codegen_exact` claim, but
   not a factory acceptance result;
-- a factory `OracleResult(pass)` requires a future cold replay through a
+- a factory `OracleResult(pass)` requires a separate cold replay through a
   versioned factory oracle envelope.
 
 ## Implemented adapters
@@ -54,12 +54,12 @@ Inputs:
 - optional `config/function-byte-ownership.toml`
 - optional TH095 `scripts/build-whole.py`
 
-The adapter covers the TH09 and TH095 VC7.1 plus TH105 VC8 LTCG ledger forms.
-It separates provisional boundary extents, origin, source presence, exact
-codegen, and physical ownership into independent claims. The TH105 ownership
-manifest is target-bound and validated for main size, exclusions, ordered
-non-overlapping remote chunks, candidate-start intrusion, byte totals, and
-remote-exact evidence.
+The adapter covers the related TH09, TH095, and TH10 Windows ledger forms plus
+the TH105 VC8 LTCG form. It separates provisional boundary extents, origin,
+source presence, exact codegen, and physical ownership into independent claims.
+The TH105 ownership manifest is target-bound and validated for main size,
+exclusions, ordered non-overlapping remote chunks, candidate-start intrusion,
+byte totals, and remote-exact evidence.
 
 When TH095 has the maintained whole-build script, the adapter also emits one
 extent-free product subject and one `whole_build_closed` candidate. Its source
@@ -72,13 +72,16 @@ The Windows target identity is marked `manifest-declared`, not `hash-attested`,
 because the read adapter deliberately does not access or hash the private
 executable.
 
-TH09 validates the clean zero-state contract. Its bootstrap contains 2,159
-provisional nonzero IDA candidates, all with unknown origin and review state,
-while mappings, implemented rows, match rows, and exact units are empty. The
-adapter consequently imports boundary and unknown-origin claims but produces no
-oracle result and no exactness credit. Private executable rehashing belongs to
-the separately configured Factory-native analysis provider and controlled
-replay drivers, not this public repository reader.
+TH09's 2026-09-10 bootstrap validated the clean zero-state contract. It
+contained 2,159 provisional nonzero IDA candidates, all with unknown origin and
+review state, while mappings, implemented rows, match rows, and exact units were
+empty. TH10's 2026-09-12 Ghidra bootstrap similarly began with 1,195
+provisional `unknown/review` candidates and empty source and exact ledgers.
+Those numbers describe bootstrap checkpoints, not either repository's current
+progress. In both cases the adapter imported boundary and unknown-origin claims
+but produced no Oracle result and no exactness credit. Private executable
+rehashing belongs to the separately configured Factory-native analysis provider
+and controlled replay drivers, not this public repository reader.
 
 `vc8_runtime` is normalized to the generic `library` origin while the native
 value is retained in claim data. Unrecognized origin values produce error
@@ -117,12 +120,17 @@ and rejects a report if validation changed the working tree.
 PYTHONPATH=src python3 -m reconstruction_factory validate-live \
   /path/to/th04 \
   /path/to/th08 \
+  /path/to/th09 \
   /path/to/th095 \
+  /path/to/th10 \
   /path/to/th105
 ```
 
-At the 2026-09-09 development snapshot, validation compared 36 TH04 metrics,
-11 TH08 metrics, 10 TH095 metrics, and 12 TH105 metrics with exact parity.
+At the historical 2026-09-09 development snapshot, validation compared 36 TH04
+metrics, 11 TH08 metrics, 10 TH095 metrics, and 12 TH105 metrics with exact
+parity. That record predates TH09 and TH10 registration. The current deployed
+procedure validates all six adapters; see [`validation.md`](validation.md) and
+query current repository state rather than carrying these counts forward.
 
 ## Snapshot inspection
 
@@ -134,7 +142,7 @@ The summary includes the selected provider family, input fingerprint, metrics,
 diagnostics, and entity counts. Omit `--summary` for the complete normalized
 snapshot.
 
-## Deliberate v0 limits
+## Deliberate current limits
 
 - Adapters do not execute compilers, disassemblers, exact comparators, or
   whole-build commands. They may import a typed replay candidate for a

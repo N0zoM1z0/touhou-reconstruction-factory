@@ -1,5 +1,11 @@
 # Release and live validation
 
+The validation contract below is current. The checkpoint sections between it
+and `Deliberate limitations` are point-in-time evidence records, including
+headings that begin with `Recorded`, `Bounded`, or `Earlier`; they are not a
+live status page. Never carry their receipt IDs, counts, commits, timings, or
+provider availability forward without a new observation.
+
 ## Validation contract
 
 The Factory has two complementary validation entry points.
@@ -40,8 +46,9 @@ strict policy, all six registered adapters, imported-versus-accepted evidence
 separation, real Git HEAD/dirty state, the TH095 semantic router's authority and
 source binding, live accepted snapshots, registry partition, explicit unknown
 knowledge, and committed historical fixtures. Mature TH04/TH08/TH095/TH105
-coverage must remain nonzero; fresh TH09 and TH10 accurately report zero until
-meaningful historical regressions are admitted.
+historical-fixture coverage must remain nonzero; the newer TH09 and TH10
+registrations accurately report zero historical fixtures until meaningful
+regressions are reviewed and admitted.
 
 Mutation and bridge checks are explicit:
 
@@ -59,13 +66,13 @@ ignored `.tools`, or the network, and confirms its Git metadata is read-only. It
 then verifies command output and a candidate diff across a new MCP session,
 removes its marker, requires a zero-byte final diff, and discards the workspace.
 
-The live toolchain check invokes `factory_repository_run_shell` for each game
-with a configured historical compiler surface. It performs two deterministic
-Borland/TASM/TLINK rounds for TH04,
-checks TH08 VC7 through its historical Wine prefix, and compiles fresh temporary
-objects with TH095 VC7.1 and TH105 VC8 SP1. It requires identical before/after
-HEAD and status digests and no created commits. These are operational probes,
-not Oracle receipts.
+The live toolchain check invokes `factory_repository_run_shell` for the four
+maintained operational probes. It performs two deterministic
+Borland/TASM/TLINK rounds for TH04, checks TH08 VC7 through its historical Wine
+prefix, and compiles fresh temporary objects with TH095 VC7.1 and TH105 VC8
+SP1. It requires identical before/after HEAD and status digests and no created
+commits. These are compatibility probes, not a claim that every registered game
+has a configured product toolchain, and they are not Oracle receipts.
 
 The replay check discovers rather than invents the known TH105 smoke claim. It
 submits a durable job, requires `completed`, `pass`, and `accepted` independently,
@@ -447,12 +454,17 @@ between replay-execution identity and control-plane presentation.
 
 ## Deliberate limitations
 
-These runs prove only their explicitly listed receipt claims. The latest live
-store admits 13 TH095 function-exact claims and one TH095 Windows i386 product-
-closure claim; it does not thereby prove whole-image equality, every initialized-
-data owner, runtime equivalence, semantic correctness, or game completion.
-Unreceipted claims for TH04, TH08, TH095, and TH105 remain unknown until a
-supported factory-controlled replay produces a fresh receipt accepted by policy.
+Each recorded run proves only its explicitly listed receipt claims. In
+particular, the 0.7.0 activation record above observed zero accepted candidates
+in its new runner epoch and 125 older rejected candidates; older sections record
+different stores and runner epochs. None is an evergreen description of the
+live registry. Query it again before reporting accepted facts.
+
+An accepted bounded exact or product-closure receipt does not thereby prove
+whole-image equality, every initialized-data owner, runtime equivalence,
+semantic correctness, or game completion. Every claim without a current,
+supported, policy-accepted Factory replay remains unknown, for all registered
+games.
 Local validators prove the prompt assets, plugin structure, and recorded
 behavioral scenarios; they cannot prove that a particular ChatGPT account has
 refreshed the new plugin version or will automatically select the orchestration
