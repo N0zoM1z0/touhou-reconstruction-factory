@@ -348,8 +348,9 @@ async def _analysis(url: str, report: dict[str, Any]) -> None:
     }
     outcomes: dict[str, Any] = {}
     expected_unavailable = {
-        "th08-ida": "active IDA database is not TH08",
-        "th105-ida": "active IDA database metadata is not canonical TH105",
+        "th08-ida": ("active IDA database is not TH08",),
+        "th09-ida": ("IDA metadata does not match the registered target identity",),
+        "th105-ida": ("active IDA database metadata is not canonical TH105",),
     }
     async with Client(url, read_timeout_seconds=120) as client:
         listed = await _call(client, "factory_list_analysis_providers")
@@ -367,9 +368,9 @@ async def _analysis(url: str, report: dict[str, Any]) -> None:
                     for block in operations.content
                     if getattr(block, "type", None) == "text"
                 )
-                expected = expected_unavailable.get(provider_id)
+                expected = expected_unavailable.get(provider_id, ())
                 _check(
-                    expected is not None and expected in detail,
+                    any(message in detail for message in expected),
                     f"unexpected analysis discovery failure for {provider_id}",
                 )
                 outcomes[provider_id] = {

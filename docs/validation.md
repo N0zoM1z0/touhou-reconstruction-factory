@@ -79,6 +79,39 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --replay-idempotency-key <existing-identical-key>
 ```
 
+## Recorded 0.7.0 TH10 native-Ghidra deployment: 2026-09-12
+
+The portable release gate passed all 155 tests with no skips. Ruff, bytecode
+compilation, Git whitespace, three CLI construction checks, 42 JSON documents,
+two TOML documents, two evaluation XML documents, and an isolated 0.7.0 wheel
+build passed. The native-Ghidra analysis skill passed its quick validator. The
+plugin cachebuster is `0.7.0+codex.20260912065904`; the local plugin validator
+still reports only its recorded stale-schema objection to the ChatGPT
+`.app.json` `required` field, which remains intentionally present.
+
+The MCP and worker were restarted together behind the unchanged private Funnel
+route and stayed active with zero restarts. Public read-only validation passed
+the same 33 tools and six registered games. TH10 reported 2,390 imported claims,
+zero accepted Oracle results, and zero historical fixtures. Across the current
+runner epoch the registry accurately classified all 125 older candidates as
+rejected and none as invalid; activation did not manufacture accepted facts.
+
+The public analysis run target-attested TH04 and TH095 legacy Ghidra, TH10
+Factory-native Ghidra, and the currently active TH105 IDA database. TH08 and
+TH09 IDA accurately reported unavailable because a different Windows database
+was active. TH10 exposed all ten bounded schemas, passed `check` and
+`list_functions(limit=1)`, and returned the entry function at `0x004537DC`
+through a separate public call. That result carried target `target:th10-main`,
+transport `factory-native-command`, six mapped-byte samples, implementation
+binding `62c66f14aa31c4ed6ed51a57276c2b14ad2b2f7110402a2ad750319228a58f9a`,
+provisional authority, and zero exactness credit.
+
+A public TH10 live-repository probe verified the target, Ghidra/JDK pins, all
+1,195 provisional tracking rows, progress artifacts, public CI, and readable
+TH08/TH09/TH095 adjacent repositories. It exited zero with unchanged HEAD and
+status and created no commit. TH10's public GitHub CI passed independently at
+commit `2c0a6ab`.
+
 ## Recorded 0.6.0 and overnight-pilot deployment: 2026-09-11
 
 The portable release gate passed all 152 tests with no skips. Ruff, bytecode

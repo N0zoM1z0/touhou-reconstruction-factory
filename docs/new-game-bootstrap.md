@@ -143,6 +143,16 @@ TH095 HEAD and dirty counts; the native TH09 registration moved to
 created during the failure. The durable rule is: **never stage a code-dependent
 configuration variant in the path watched by an incompatible live process**.
 
+The same class recurred during the TH10 bootstrap when the native-Ghidra block
+reached the watched live file before the resident 0.6.0 MCP was activated as
+0.7.0. The old process rejected the new backend fields, and the worker's normal
+restart policy could not repair a version mismatch. After Web work stopped, the
+code and configuration were activated together; both services then stayed active
+with zero restarts and the public six-repository validation passed. This second
+observation is stronger than a documentation warning: validate new
+configuration against new code under a separate path, commit it, and switch the
+process and watched configuration as one maintenance operation.
+
 ## Native IDA registration
 
 `attested-ida-stdio-v1` replaces the old per-game MCP layer:

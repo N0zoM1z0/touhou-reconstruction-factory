@@ -102,6 +102,28 @@ independent PE observation. The portable Factory 0.7.0 release gate passed all
 two TOML, two evaluation XML documents, all three CLI constructions, and an
 isolated wheel build. Public MCP activation remains a separate measured gate.
 
+Factory 0.7.0 was then activated behind the unchanged private Funnel route. The
+MCP and worker entered active state together with zero restart count. Public
+read-only validation passed the unchanged 33-tool inventory and all six
+repositories. TH10 normalized to 2,390 imported claims while retaining zero
+accepted Oracle results and zero historical fixtures. All 125 service-wide
+receipt candidates from the prior runner epoch were accurately rejected rather
+than silently retained as current acceptance.
+
+The public analysis suite target-attested legacy TH04/TH095 Ghidra, native TH10
+Ghidra, and the currently active TH105 IDA database; TH08 and TH09 IDA were
+accurately unavailable because neither was the active Windows database. TH10
+passed discovery, `check`, and bounded `list_functions`. A separate public
+`function(0x004537DC)` call returned the measured entry metadata above with the
+same six samples and implementation binding, provisional authority, and zero
+exactness credit.
+
+Finally, a public TH10 repository-shell probe ran target verification, quick
+Ghidra/JDK attestation, 1,195-row tracking validation, generated-progress check,
+the complete public CI script, and committed-HEAD reads from TH08, TH09, and
+TH095. It exited zero without changing HEAD or worktree status and created no
+commit. The public TH10 GitHub workflow also passed at commit `2c0a6ab`.
+
 ## Campaign handoff
 
 The standalone prompt is
