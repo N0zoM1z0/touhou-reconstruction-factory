@@ -88,6 +88,41 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --replay-idempotency-key <existing-identical-key>
 ```
 
+## Recorded 0.8.0 TH10 compiler-loop deployment: 2026-09-12
+
+The portable release gate passed all 157 tests with no skips, plus Ruff,
+bytecode compilation, Git whitespace, 42 JSON documents, three TOML documents,
+two evaluation XML documents, all three CLI constructions, and an isolated
+0.8.0 wheel build. A fresh temporary provision test cloned the canonical VC7.1
+SP1 payload at commit `cf62606064633dd8441aa2feffe34792099cc366` and
+verified every locked component.
+
+TH10 commit `1c89a91` passed target and Ghidra/JDK attestation, 1,195-row
+tracking validation, its zero-unit normal-COFF graph check, generated-progress
+validation, and the public CI script. With `DISPLAY` absent, the game verifier
+passed normal C/C++ COFF, C++ LTCG, resource compilation, and a PE32 i386 link.
+The same full smoke also passed while initializing a fresh empty win32 Wine prefix.
+A deliberate substitution of TH095's RTM VC7.1 payload failed immediately on
+the compiler hash instead of silently accepting the wrong generation. The
+public TH10 GitHub CI workflow also passed for commit `1c89a91`.
+
+The MCP and worker were restarted together behind the unchanged private route
+and both returned active with zero restarts. Public read-only validation passed
+the 33-tool inventory and all six repositories. The current registry partition
+was 131 candidates, zero accepted, 131 rejected, and zero invalid; TH10 retained
+2,390 imported claims, zero accepted Oracle results, and zero historical
+fixtures. The refreshed native-Ghidra implementation binding passed a real
+target-attested `check`, including the normalized count of 52 LTCG C++ inputs.
+
+A focused public TH10 repository-shell probe then re-attested the pinned
+components and repeated the complete headless compiler/resource/link smoke at
+commit `1c89a91`. HEAD and status digest were identical before and after, and
+the command created no commit. The aggregate five-repository toolchain run was
+also attempted, but a pre-existing GPT-web TH105 PGO/Wine command held TH105's
+repository lock long enough for the final request to time out. That run is not
+recorded as a pass. It did not affect the completed TH10 probe or either service;
+the full cross-game probe should be repeated at a later idle boundary.
+
 ## Recorded 0.7.0 TH10 native-Ghidra deployment: 2026-09-12
 
 The portable release gate passed all 155 tests with no skips. Ruff, bytecode
