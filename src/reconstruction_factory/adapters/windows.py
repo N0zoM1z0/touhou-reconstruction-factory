@@ -310,6 +310,17 @@ class WindowsPeRepositoryAdapter(RepositoryAdapter):
                 )
             if address in matches:
                 match = matches[address]
+                unit_name = str(match.get("unit", ""))
+                unit = match_units.get(unit_name) if isinstance(match_units, dict) else None
+                if not isinstance(unit, dict):
+                    raise AdapterError(
+                        f"matches.csv references an unknown match unit {unit_name!r}"
+                    )
+                artifact_kind = unit.get("artifact_kind")
+                if artifact_kind not in {"coff", "coff-archive", "linked-pe"}:
+                    raise AdapterError(
+                        f"match unit {unit_name!r} has an unsupported artifact kind"
+                    )
                 claims.append(
                     Claim(
                         id=f"claim:{subject_id}:codegen-exact",
@@ -321,7 +332,8 @@ class WindowsPeRepositoryAdapter(RepositoryAdapter):
                             "exact": True,
                             "size": parse_int(match["size"], "match size"),
                             "match_percent": match.get("match_percent", ""),
-                            "unit": match.get("unit", ""),
+                            "unit": unit_name,
+                            "artifact_kind": artifact_kind,
                         },
                         evidence_class=EvidenceClass.CORROBORATED,
                         metadata={"native_evidence": match.get("evidence", "")},

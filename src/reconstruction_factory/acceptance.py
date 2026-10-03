@@ -9,7 +9,7 @@ import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 from .adapters import inspect_repository
 from .artifact_store import ArtifactStore
@@ -661,6 +661,32 @@ def build_acceptance_registry(
         return _build_acceptance_registry_locked(store, policy, repository_map)
 
 
+def build_receipt_acceptance_registry(
+    store: ArtifactStore,
+    policy: AcceptancePolicy,
+    *,
+    receipt_id: str,
+    target_identity_id: str,
+    repository: str | Path,
+) -> AcceptanceRegistry:
+    """Classify one completed replay without locking unrelated repositories."""
+
+    if not re.fullmatch(r"receipt:[0-9a-f]{64}", receipt_id):
+        raise AcceptanceError("receipt-scoped registry requires a receipt identity")
+    _require_id(target_identity_id, "repository target identity")
+    root = Path(repository).expanduser().resolve(strict=True)
+    candidate = store.receipts / f"{receipt_id.removeprefix('receipt:')}.json"
+    if candidate.is_symlink() or not candidate.is_file():
+        raise AcceptanceError("completed replay receipt is absent from the evidence store")
+    with repository_lock(root, exclusive=False):
+        return _build_acceptance_registry_locked(
+            store,
+            policy,
+            {target_identity_id: root},
+            candidates=(candidate,),
+        )
+
+
 def build_acceptance_registry_and_facts(
     store: ArtifactStore,
     policy: AcceptancePolicy,
@@ -697,12 +723,17 @@ def _build_acceptance_registry_locked(
     store: ArtifactStore,
     policy: AcceptancePolicy,
     repository_map: Mapping[str, Path],
+    *,
+    candidates: Iterable[Path] | None = None,
 ) -> AcceptanceRegistry:
     entries = []
     accepted: dict[str, OracleReceipt] = {}
     freshness_observations = FreshnessObservationCache()
-    candidates = sorted(store.receipts.glob("*.json"), key=lambda path: path.name)
-    for path in candidates:
+    candidate_paths = sorted(
+        candidates if candidates is not None else store.receipts.glob("*.json"),
+        key=lambda path: path.name,
+    )
+    for path in candidate_paths:
         candidate_path = path.relative_to(store.root).as_posix()
         if path.is_symlink() or not path.is_file():
             entries.append(

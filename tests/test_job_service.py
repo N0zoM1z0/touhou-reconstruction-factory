@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from reconstruction_factory.acceptance import build_receipt_acceptance_registry
+from reconstruction_factory.errors import ReplayError
 from reconstruction_factory.job_service import FactoryService, ReplayWorker
 from reconstruction_factory.jobs import JobState
 from reconstruction_factory.ontology import (
@@ -301,6 +303,44 @@ target_identity_ids = ["target:test-main"]
                 facts["items"][0]["result"]["coverage"]["domain"],
                 "production-translation-units",
             )
+
+    def test_receipt_acceptance_retries_repository_contention_without_replay(self) -> None:
+        patches = self.factory_patches()
+        attempts = 0
+
+        def classify(*args, **kwargs):
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                raise ReplayError("another factory operation owns test repository")
+            return build_receipt_acceptance_registry(*args, **kwargs)
+
+        with (
+            patches[0],
+            patches[1],
+            patches[2],
+            patches[3],
+            patch(
+                "reconstruction_factory.job_service.build_receipt_acceptance_registry",
+                side_effect=classify,
+            ),
+            patch("reconstruction_factory.job_service.time.sleep"),
+        ):
+            service = FactoryService.from_path(self.config)
+            submitted = service.submit_replay(
+                "test", self.snapshot.claims[0].id, "chat-turn-contention"
+            )
+            completed = ReplayWorker(
+                self.config, worker_id="worker-contention"
+            ).run_once()
+
+        self.assertEqual(completed.job_id, submitted["job"]["job_id"])
+        self.assertEqual(completed.state, JobState.COMPLETED)
+        self.assertEqual(completed.outcome.acceptance_decision, "accepted")
+        self.assertEqual(attempts, 2)
+        self.assertEqual(
+            len(list((self.base / "evidence" / "receipts").glob("*.json"))), 1
+        )
 
     def test_source_change_after_submission_fails_without_receipt(self) -> None:
         patches = self.factory_patches()

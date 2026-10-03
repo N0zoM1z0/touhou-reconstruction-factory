@@ -34,6 +34,14 @@ prevents two factory operations from observing a half-completed native replay,
 although non-factory programs that ignore the lock remain outside this
 coordination boundary.
 
+Durable job completion classifies only the receipt just produced and acquires a
+shared lock only for that receipt's repository. Brief same-repository
+contention is retried while the job lease remains live. This keeps replay and
+its immediate policy decision independent from unrelated repository work and
+prevents a completed native replay from being repeated merely because a global
+snapshot could not acquire every repository lock. Explicit registry and
+accepted-fact queries retain the all-repository point-in-time lock set below.
+
 An accepted-knowledge query acquires shared locks for all selected repositories
 before revalidating any fact, so a factory replay cannot produce a mixed-time
 multi-repository answer. Artifact objects must be regular files opened without

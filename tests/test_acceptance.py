@@ -12,6 +12,7 @@ from reconstruction_factory.acceptance import (
     AcceptancePolicy,
     build_acceptance_registry,
     build_acceptance_registry_and_facts,
+    build_receipt_acceptance_registry,
     load_acceptance_policy,
 )
 from reconstruction_factory.artifact_store import ArtifactStore
@@ -302,6 +303,33 @@ class AcceptanceRegistryTests(unittest.TestCase):
             item.id for item in materialized.oracle_results
         })
         self.assertEqual(materialized.artifacts, self.receipt.artifacts)
+
+    def test_receipt_scoped_registry_ignores_unrelated_candidates_and_locks_one_repo(
+        self,
+    ) -> None:
+        (self.store.receipts / "unrelated.json").write_text(
+            "not json\n", encoding="utf-8"
+        )
+        with (
+            patch(
+                "reconstruction_factory.acceptance.repository_lock",
+                return_value=nullcontext(),
+            ) as lock,
+            patch(
+                "reconstruction_factory.acceptance.verify_live_freshness",
+                return_value=(),
+            ),
+        ):
+            registry = build_receipt_acceptance_registry(
+                self.store,
+                policy(),
+                receipt_id=self.receipt.receipt_id,
+                target_identity_id=self.receipt.target.identity_id,
+                repository=self.repository,
+            )
+        self.assertEqual(len(registry.entries), 1)
+        self.assertEqual(registry.accepted_count, 1)
+        lock.assert_called_once_with(self.repository.resolve(), exclusive=False)
 
     def test_registry_is_content_addressed_and_deterministic(self) -> None:
         left = self.build()

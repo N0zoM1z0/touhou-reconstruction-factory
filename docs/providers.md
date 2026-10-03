@@ -56,8 +56,10 @@ objects, and receipts remain game-bound.
 
 TH10 demonstrates why `msvc71` cannot mean “standalone COFF everywhere.” Its
 Rich records contain normal C, normal C++, and LTCG C++ inputs from the same
-build-6030 generation. The current TH10 driver therefore requires explicit
-`artifact_kind = "coff"` and rejects `/GL`; LTCG exactness remains unknown until
-a target-bound linked-image extent driver exists. The canonical VC7.1 SP1
-payload and provisioning contract are pinned in
+build-6030 generation. TH10 claims carry their manifest-declared
+`artifact_kind`: the normal-COFF driver requires `coff` and rejects `/GL`, while
+the linked-PE driver requires `linked-pe`, `/GL`, `/ltcg`, and a complete
+target-bound PE/map/PDB contribution replay. Archive-member COFF remains a
+separate unsupported route until its immutable rematerialization has an honest
+coldness vocabulary. The canonical VC7.1 SP1 payload and provisioning contract are pinned in
 [`config/toolchains/msvc710-sp1.toml`](../config/toolchains/msvc710-sp1.toml).

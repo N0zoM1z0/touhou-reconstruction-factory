@@ -205,6 +205,26 @@ tailscale funnel status
 ### Restart and reconnect contract
 
 Treat server readiness and GPT-web connection readiness as two separate gates.
+For a behavior-only deployment that preserves the MCP version, tool names,
+schemas, annotations, public hostname, and high-entropy path, use the stateless
+HTTP endpoint's blue/green boundary:
+
+1. start the candidate checkout/config on an unused loopback port;
+2. validate discovery and the affected operations directly on that port;
+3. validate the candidate through a temporary private path or an equivalent
+   loopback Host/Origin probe;
+4. atomically repoint only the existing Tailscale Serve path to the candidate
+   port and immediately validate the unchanged public URL;
+5. restart or replace the worker only after no replay job is active, then drain
+   the old MCP process after public traffic reaches the candidate.
+
+Because Streamable HTTP is configured with `stateless_http=True`, this switch
+does not carry server-side MCP session state and does not require a ChatGPT
+connection refresh when tool metadata is byte-for-byte unchanged. Preserve the
+old process until the public probe passes so rollback is another proxy switch.
+Do not use this exception when a deployment changes any tool metadata or server
+version.
+
 After changing MCP code, tool schemas, annotations, or version metadata:
 
 1. wait until no replay job is running, then restart the worker and MCP service;

@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tomllib
 from typing import Any, Mapping, Sequence
@@ -187,6 +188,37 @@ def _runtime_components() -> tuple[ComponentSpec, ...]:
 
 def _identity_inputs(root: Path, relatives: Sequence[str]) -> tuple[Path, ...]:
     return tuple(_repo_file(root, relative) for relative in relatives)
+
+
+def _th10_repo_python_runtime(root: Path) -> tuple[Path, Path, Path]:
+    """Resolve the interpreter and pinned Capstone package selected by TH10."""
+
+    wrapper = _repo_file(root, "scripts/repo-python")
+    try:
+        completed = subprocess.run(
+            (
+                str(wrapper),
+                "-c",
+                "import capstone,sys; print(sys.executable); print(capstone.__file__)",
+            ),
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise ReplayError(f"TH10 repository Python selection failed: {error}") from error
+    lines = completed.stdout.splitlines()
+    if completed.returncode != 0 or len(lines) != 2:
+        detail = completed.stderr.strip() or completed.stdout.strip()
+        raise ReplayError(f"TH10 repository Python selection failed: {detail}")
+    interpreter = Path(lines[0]).expanduser().resolve(strict=True)
+    capstone_init = Path(lines[1]).expanduser().resolve(strict=True)
+    if not interpreter.is_file() or not capstone_init.is_file():
+        raise ReplayError("TH10 repository Python selected invalid runtime files")
+    return wrapper, interpreter, capstone_init
 
 
 def driver_version(plan: ReplayPlan) -> str:
@@ -640,6 +672,7 @@ class Th10FunctionDriver(ReplayDriver):
             and snapshot.adapter_id == self.adapter_id
             and claim.type is ClaimType.CODEGEN_EXACT
             and claim.value.get("exact") is True
+            and claim.value.get("artifact_kind") == "coff"
         )
 
     def prepare(
@@ -754,6 +787,7 @@ class Th10FunctionDriver(ReplayDriver):
                     "scripts/compile-probe.sh",
                     "scripts/run-headless-wine.sh",
                     "scripts/compare-coff-function.py",
+                    "scripts/msvc_symbols.py",
                     "config/match-units.toml",
                     "config/target.toml",
                     "config/tools.lock.toml",
@@ -803,6 +837,263 @@ class Th10FunctionDriver(ReplayDriver):
             subject,
             unit=str(plan.metadata["unit"]),
             size_key="size",
+        )
+
+
+class Th10LinkedPeFunctionDriver(ReplayDriver):
+    """Cold-link one canonical TH10 LTCG contribution and replay its fields."""
+
+    driver_id = "th10-vc71sp1-linked-pe-function-v1"
+    adapter_id = "windows-pe-ledgers-v1"
+    oracle_id = "windows.msvc71.linked-pe-function-exact"
+
+    def supports(self, snapshot: RepositorySnapshot, claim: Claim) -> bool:
+        return (
+            snapshot.project.id == "th10"
+            and snapshot.adapter_id == self.adapter_id
+            and claim.type is ClaimType.CODEGEN_EXACT
+            and claim.value.get("exact") is True
+            and claim.value.get("artifact_kind") == "linked-pe"
+        )
+
+    def prepare(
+        self,
+        root: Path,
+        snapshot: RepositorySnapshot,
+        claim: Claim,
+        subject: Subject,
+        run_id: str,
+    ) -> ReplayPlan:
+        start, size = _extent(subject)
+        unit_name = _unit_name(claim)
+        manifest = _toml(root, "config/match-units.toml")
+        units = manifest.get("units")
+        if (
+            not isinstance(units, dict)
+            or unit_name not in units
+            or not isinstance(units[unit_name], dict)
+        ):
+            raise ReplayError(f"TH10 claim unit is absent from manifest: {unit_name}")
+        unit = units[unit_name]
+        profile = unit.get("profile")
+        link_profile = unit.get("link_profile")
+        if (
+            unit.get("artifact_kind") != "linked-pe"
+            or not isinstance(profile, list)
+            or not profile
+            or not all(isinstance(flag, str) for flag in profile)
+            or not any(flag.lower() == "/gl" for flag in profile)
+            or not isinstance(link_profile, list)
+            or not link_profile
+            or not all(isinstance(flag, str) for flag in link_profile)
+            or not any(flag.lower() == "/ltcg" for flag in link_profile)
+        ):
+            raise ReplayError(
+                f"TH10 claim unit is not a declared linked-PE/LTCG profile: {unit_name}"
+            )
+        if (
+            not isinstance(unit.get("target_address"), int)
+            or unit["target_address"] != int(start, 0)
+            or not isinstance(unit.get("size"), int)
+            or unit["size"] != size
+        ):
+            raise ReplayError(
+                f"TH10 claim extent differs from manifest unit: {unit_name}"
+            )
+
+        build = _repo_file(root, "scripts/build-match-unit.py")
+        compare = _repo_file(root, "scripts/compare-linked-function.py")
+        tool_root = Path(
+            os.environ.get(
+                "TH10_MSVC71_ROOT", str(root / ".tools/msvc710-sp1")
+            )
+        ).expanduser()
+        vc7 = tool_root / "Vc7"
+        xvfb_run = Path(shutil.which("xvfb-run") or "/missing/xvfb-run")
+        xvfb = Path(shutil.which("Xvfb") or "/missing/Xvfb")
+        winepath = Path(shutil.which("winepath") or "/missing/winepath")
+        repo_python, selected_python, capstone_init = _th10_repo_python_runtime(root)
+        capstone_root = capstone_init.parent
+        specs = (
+            ComponentSpec(
+                "vc71sp1-compiler",
+                vc7 / "bin/cl.exe",
+                "$TH10_MSVC71_ROOT/Vc7/bin/cl.exe",
+                "native-attestation",
+            ),
+            ComponentSpec(
+                "vc71sp1-linker",
+                vc7 / "bin/link.exe",
+                "$TH10_MSVC71_ROOT/Vc7/bin/link.exe",
+                "native-attestation",
+            ),
+            ComponentSpec("vc71sp1-bin", vc7 / "bin", "$TH10_MSVC71_ROOT/Vc7/bin"),
+            ComponentSpec(
+                "vc71sp1-include", vc7 / "include", "$TH10_MSVC71_ROOT/Vc7/include"
+            ),
+            ComponentSpec("vc71sp1-lib", vc7 / "lib", "$TH10_MSVC71_ROOT/Vc7/lib"),
+            ComponentSpec(
+                "vc71sp1-platformsdk-include",
+                vc7 / "PlatformSDK/Include",
+                "$TH10_MSVC71_ROOT/Vc7/PlatformSDK/Include",
+            ),
+            ComponentSpec(
+                "vc71sp1-platformsdk-lib",
+                vc7 / "PlatformSDK/Lib",
+                "$TH10_MSVC71_ROOT/Vc7/PlatformSDK/Lib",
+            ),
+            ComponentSpec(
+                "capstone-python-wrapper",
+                capstone_init,
+                "$PYTHON_CAPSTONE/capstone/__init__.py",
+                "runtime",
+            ),
+            ComponentSpec(
+                "capstone-x86-wrapper",
+                capstone_root / "x86.py",
+                "$PYTHON_CAPSTONE/capstone/x86.py",
+                "runtime",
+            ),
+            ComponentSpec(
+                "capstone-x86-constants",
+                capstone_root / "x86_const.py",
+                "$PYTHON_CAPSTONE/capstone/x86_const.py",
+                "runtime",
+            ),
+            ComponentSpec(
+                "capstone-native-library",
+                capstone_root / "lib/libcapstone.so",
+                "$PYTHON_CAPSTONE/capstone/lib/libcapstone.so",
+                "runtime",
+            ),
+            ComponentSpec("runtime-winepath", winepath, "$WINEPATH", "runtime"),
+            ComponentSpec(
+                "runtime-th10-python", selected_python, "$TH10_PYTHON_SELECTED", "runtime"
+            ),
+            ComponentSpec("runtime-xvfb-run", xvfb_run, "$XVFB_RUN", "runtime"),
+            ComponentSpec("runtime-xvfb", xvfb, "$XVFB", "runtime"),
+            *_runtime_components(),
+        )
+        return ReplayPlan(
+            driver_id=self.driver_id,
+            oracle_id=self.oracle_id,
+            coldness=Coldness.FORCED_RECOMPILE,
+            stages=(
+                ReplayStagePlan(
+                    "compile-link",
+                    (
+                        str(repo_python),
+                        str(build.relative_to(root)),
+                        "--unit",
+                        unit_name,
+                    ),
+                    root,
+                ),
+                ReplayStagePlan(
+                    "compare",
+                    (
+                        str(repo_python),
+                        str(compare.relative_to(root)),
+                        "--unit",
+                        unit_name,
+                        "--json",
+                    ),
+                    root,
+                ),
+            ),
+            oracle_inputs=_identity_inputs(
+                root,
+                (
+                    "scripts/build-match-unit.py",
+                    "scripts/repo-python",
+                    "scripts/ltcg_link.py",
+                    "scripts/runtime_archive.py",
+                    "scripts/compile-probe.sh",
+                    "scripts/run-headless-wine.sh",
+                    "scripts/compare-linked-function.py",
+                    "scripts/linked_image.py",
+                    "config/match-units.toml",
+                    "config/target.toml",
+                    "config/tools.lock.toml",
+                ),
+            ),
+            target_path=_repo_file(root, "resources/th10.exe"),
+            toolchain_components=specs,
+            environment_names=(
+                "HOME",
+                "PATH",
+                "PYTHONPATH",
+                "TH10_MSVC71_ROOT",
+                "TH10_PYTHON",
+                "TH10_WINEPREFIX",
+                "CONDA_PREFIX",
+                "WINE",
+                "WINEPREFIX",
+            ),
+            metadata={
+                "unit": unit_name,
+                "artifact_kind": "linked-pe",
+                "proof_scope": "target-bound-vc71sp1-linked-pe-function-codegen",
+            },
+        )
+
+    def decode(
+        self,
+        plan: ReplayPlan,
+        claim: Claim,
+        subject: Subject,
+        executions: Sequence[RawExecution],
+    ) -> NativeOutcome:
+        if len(executions) != 2 or executions[0].exit_code != 0:
+            return NativeOutcome(
+                Verdict.ERROR, 0, None, ("native-compile-link-stage-failed",)
+            )
+        report = _json_stdout(executions[-1])
+        if report.get("artifact_kind") != "linked-pe":
+            return NativeOutcome(
+                Verdict.INCOMPLETE,
+                0,
+                report,
+                ("native-artifact-kind-binding-mismatch",),
+            )
+        compared_size = report.get("compared_size")
+        _, expected_size = _extent(subject)
+        if (
+            not isinstance(compared_size, int)
+            or compared_size < expected_size
+            or not isinstance(report.get("normalization_complete"), bool)
+            or not isinstance(report.get("linkages"), list)
+            or not isinstance(report.get("data_spans"), list)
+        ):
+            return NativeOutcome(
+                Verdict.INCOMPLETE,
+                0,
+                report,
+                ("native-linked-report-incomplete",),
+            )
+        if report.get("result") == "exact" and report.get(
+            "matched_compared_bytes"
+        ) != compared_size:
+            return NativeOutcome(
+                Verdict.ERROR,
+                0,
+                report,
+                ("native-linked-exact-count-inconsistent",),
+            )
+        outcome = _decode_linear_function_report(
+            report,
+            subject,
+            unit=str(plan.metadata["unit"]),
+            size_key="size",
+        )
+        return NativeOutcome(
+            outcome.verdict,
+            outcome.observed_bytes,
+            outcome.report,
+            outcome.diagnostics,
+            ("linked-pe-symbolic-field-replay-v1",),
+            outcome.attestation,
+            outcome.coverage,
         )
 
 
@@ -1221,6 +1512,7 @@ BUILTIN_DRIVERS: tuple[ReplayDriver, ...] = (
     Th08FunctionDriver(),
     Th09FunctionDriver(),
     Th10FunctionDriver(),
+    Th10LinkedPeFunctionDriver(),
     Th095FunctionDriver(),
     Th095WholeBuildDriver(),
     Th105FunctionDriver(),

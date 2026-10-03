@@ -14,6 +14,7 @@ import uuid
 from .acceptance import (
     build_acceptance_registry,
     build_acceptance_registry_and_facts,
+    build_receipt_acceptance_registry,
 )
 from .adapters import inspect_repository
 from .artifact_store import ArtifactStore
@@ -22,6 +23,7 @@ from .errors import (
     JobError,
     JobStateError,
     ReplayCancelled,
+    ReplayError,
     ServiceConfigError,
 )
 from .jobs import JobOutcome, JobRecord, JobState, JobStore, ReplayJobSpec
@@ -666,11 +668,28 @@ class ReplayWorker:
                 raise JobError(
                     "service configuration changed during replay; receipt was not promoted by this job"
                 )
-            registry = build_acceptance_registry(
-                service.store,
-                current.policy,
-                current.repository_map(),
-            )
+            classification_deadline = time.monotonic() + job.spec.timeout_seconds
+            while True:
+                try:
+                    registry = build_receipt_acceptance_registry(
+                        service.store,
+                        current.policy,
+                        receipt_id=run.receipt.receipt_id,
+                        target_identity_id=job.spec.target_identity_id,
+                        repository=registration.path,
+                    )
+                    break
+                except ReplayError as error:
+                    if cancelled():
+                        raise ReplayCancelled(
+                            "replay was cancelled while its receipt awaited acceptance"
+                        ) from error
+                    if time.monotonic() >= classification_deadline:
+                        raise JobError(
+                            "receipt acceptance timed out waiting for its repository lock"
+                        ) from error
+                    progress("acceptance", None)
+                    time.sleep(min(current.worker_poll_seconds, 1.0))
             entries = [
                 item
                 for item in registry.entries

@@ -173,7 +173,8 @@ family = "{family}"
     write(
         root,
         "config/match-units.toml",
-        f"[units.test-unit]\nsource = \"src/Test.cpp\"\n{profile}",
+        f"[units.test-unit]\nartifact_kind = \"coff\"\n"
+        f"source = \"src/Test.cpp\"\n{profile}",
     )
     if whole_build:
         write(root, "scripts/build-whole.py", "raise SystemExit(0)\n")
@@ -340,6 +341,7 @@ class AdapterTests(unittest.TestCase):
                 claim for claim in snapshot.claims if claim.type is ClaimType.CODEGEN_EXACT
             ]
             self.assertEqual(len(exact_claims), 1)
+            self.assertEqual(exact_claims[0].value["artifact_kind"], "coff")
             self.assertEqual(kit_for_snapshot(snapshot).toolchain.id, "msvc71")
 
     def test_th095_declares_independent_product_build_candidate(self) -> None:
