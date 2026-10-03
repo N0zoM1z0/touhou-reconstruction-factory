@@ -107,8 +107,9 @@ def make_windows(
     vc8: bool = False,
     bad_owner_target: bool = False,
     whole_build: bool = False,
+    project: str | None = None,
 ) -> None:
-    project = "th105" if vc8 else "th095"
+    project = project or ("th105" if vc8 else "th095")
     family = (
         "Microsoft Visual C++ 2005 (VC8)"
         if vc8
@@ -332,7 +333,7 @@ class AdapterTests(unittest.TestCase):
     def test_windows_import_does_not_manufacture_oracle_passes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            make_windows(root)
+            make_windows(root, project="th10")
             snapshot = inspect_repository(root)
             self.assertEqual(metric(snapshot, "exact.functions"), 1)
             self.assertEqual(snapshot.targets[0].canonicality, "manifest-declared")
