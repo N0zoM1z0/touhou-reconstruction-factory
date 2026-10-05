@@ -8,6 +8,7 @@ from functools import partial
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import shutil
@@ -354,7 +355,7 @@ class AnalysisGateway:
                     {
                         "name": tool["name"],
                         "description": tool.get("description"),
-                        "input_schema": tool.get("inputSchema"),
+                        "input_schema": _ida_input_schema(tool.get("inputSchema")),
                     }
                 )
             if document.get("hasMore") is not True:
@@ -395,7 +396,7 @@ class AnalysisGateway:
                 {
                     "name": name,
                     "description": description,
-                    "input_schema": _mcp_tool_input_schema(tool),
+                    "input_schema": _ida_input_schema(_mcp_tool_input_schema(tool)),
                     "mutates_analysis_database": name
                     in _IDA_METADATA_WRITE_ALLOWED,
                 }
@@ -411,9 +412,21 @@ class AnalysisGateway:
             args=list(provider.arguments),
             cwd=str(self.config.repository(provider.repository_id).path),
         )
+        diagnostics = tempfile.TemporaryFile()
+
+        def connection_error(reason: str) -> AnalysisError:
+            diagnostics.seek(0, os.SEEK_END)
+            diagnostics.seek(max(0, diagnostics.tell() - 4096))
+            detail = _redact(diagnostics.read().decode("utf-8", "replace"), self.config).strip()
+            return AnalysisError(
+                f"native IDA provider {provider.id} in repository {provider.repository_id} "
+                f"could not complete its headless session ({reason}); verify its "
+                "registered command/database and retry. Other games remain available"
+                + (f". Provider diagnostic: {detail}" if detail else "")
+            )
         try:
             with anyio.fail_after(provider.timeout_seconds):
-                async with stdio_client(server) as (read_stream, write_stream):
+                async with stdio_client(server, errlog=diagnostics) as (read_stream, write_stream):
                     async with ClientSession(read_stream, write_stream) as session:
                         await session.initialize()
                         yield session
@@ -424,16 +437,14 @@ class AnalysisGateway:
             if analysis_error is not None:
                 raise analysis_error from error
             if _contained_exception(error, TimeoutError) is not None:
-                raise AnalysisError("native IDA provider timed out") from error
-            raise AnalysisError(
-                "native IDA provider connection failed: ExceptionGroup"
-            ) from error
+                raise connection_error(f"timeout after {provider.timeout_seconds}s") from error
+            raise connection_error("connection failed: ExceptionGroup") from error
         except TimeoutError as error:
-            raise AnalysisError("native IDA provider timed out") from error
+            raise connection_error(f"timeout after {provider.timeout_seconds}s") from error
         except Exception as error:
-            raise AnalysisError(
-                f"native IDA provider connection failed: {type(error).__name__}"
-            ) from error
+            raise connection_error(type(error).__name__) from error
+        finally:
+            diagnostics.close()
 
     async def _native_ida_call(
         self, session: ClientSession, tool: str, arguments: dict[str, Any]
@@ -1056,8 +1067,7 @@ def _validate_ida_arguments(operation: str, arguments: dict[str, Any]) -> None:
         raise AnalysisError("analysis arguments contain a forbidden authority field")
     for key, value in arguments.items():
         if key in {"address", "start_address", "function_address", "memory_address"}:
-            if not isinstance(value, str) or not _ADDRESS.fullmatch(value):
-                raise AnalysisError(f"{key} must be a bounded hexadecimal address")
+            arguments[key] = _normalize_address(value, label=f"IDA {key}")
         if key == "offset":
             if operation == "create_stack_frame_variable":
                 if not isinstance(value, str) or re.fullmatch(
@@ -1085,6 +1095,45 @@ def _mcp_tool_input_schema(tool: Any) -> Any:
     if schema is not None:
         return schema
     return getattr(tool, "inputSchema", None)
+
+
+def _ida_input_schema(schema: Any) -> Any:
+    """Advertise Factory address normalization without changing upstream tools."""
+    if not isinstance(schema, dict):
+        return schema
+    result = json.loads(json.dumps(schema))
+    for key, value in result.get("properties", {}).items():
+        if key not in {"address", "start_address", "function_address", "memory_address"}:
+            continue
+        result["properties"][key] = {
+            "anyOf": [
+                {"type": "string", "minLength": 1, "maxLength": 64},
+                {"type": "integer", "minimum": 0, "maximum": 0xFFFFFFFFFFFFFFFF},
+            ],
+            "description": (value.get("description", "") + " Hex string (0x or 0X), decimal string, or unsigned integer; surrounding whitespace is trimmed.").strip(),
+            **{field: item for field, item in value.items() if field in {"title", "default"}},
+        }
+    return result
+
+
+def _normalize_address(value: Any, *, label: str, allow_segmented: bool = False) -> str:
+    if isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 0xFFFFFFFFFFFFFFFF:
+        return f"0x{value:x}"
+    if isinstance(value, str):
+        value = value.strip()
+        if value.startswith("0X"):
+            value = "0x" + value[2:]
+        elif value.isascii() and value.isdecimal() and len(value) <= 20:
+            number = int(value, 10)
+            if number <= 0xFFFFFFFFFFFFFFFF:
+                value = f"0x{number:x}"
+        if _ADDRESS.fullmatch(value) or (allow_segmented and _SEGMENTED_ADDRESS.fullmatch(value)):
+            return value
+    raise AnalysisError(
+        f"{label} is invalid; use address or addresses with a hex string (0x or 0X), "
+        "decimal string, or unsigned integer up to 64 bits"
+        + (", or 16-bit segment:offset strings for MZ targets" if allow_segmented else "")
+    )
 
 
 def _contains_field(value: Any, names: set[str]) -> bool:
@@ -1138,20 +1187,8 @@ def _validate_ghidra_arguments(
         if isinstance(addresses, (str, int)) and not isinstance(addresses, bool):
             addresses = [addresses]
         if isinstance(addresses, list):
-            normalized = []
-            for address in addresses:
-                if isinstance(address, int) and not isinstance(address, bool) and 0 <= address <= 0xFFFFFFFFFFFFFFFF:
-                    address = f"0x{address:x}"
-                elif isinstance(address, str):
-                    address = address.strip()
-                    if address.startswith("0X"):
-                        address = "0x" + address[2:]
-                    elif address.isascii() and address.isdecimal() and len(address) <= 20:
-                        value = int(address, 10)
-                        if value <= 0xFFFFFFFFFFFFFFFF:
-                            address = f"0x{value:x}"
-                normalized.append(address)
-            addresses = normalized
+            addresses = [_normalize_address(address, label="Ghidra address", allow_segmented=allow_segmented)
+                         for address in addresses]
         if (
             not isinstance(addresses, list)
             or not 1 <= len(addresses) <= 16

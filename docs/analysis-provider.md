@@ -39,7 +39,7 @@ Four contracts are supported during migration:
   every bounded read performs target/project attestation in the same headless
   process as the query;
 - `attested-ida-stdio-v1` is Factory-native. It declares the shared IDA Python
-  executable, `ida-pro-mcp` server argument, and exact private target file. The
+  executable, stdio server argument, and exact private target file. The
   Factory launches stdio itself; there is no endpoint or upstream wrapper tool;
 - `attested-ida-proxy-v1` calls only upstream `ida_call`;
 - `attested-ghidra-proxy-v1` calls only upstream `ghidra_call`.
@@ -72,11 +72,11 @@ The private single-operator configuration registers:
 | `th03-op-ghidra` | `th03` | Factory-native headless Ghidra | `target:th03-op` |
 | `th03-zun-ghidra` | `th03` | Factory-native headless Ghidra | `target:th03-zun` |
 | `th04-ghidra` | `th04` | legacy attested Ghidra proxy | `target:th04-main` |
-| `th08-ida` | `th08` | legacy attested IDA proxy | `target:th08-main` |
+| `th08-ida` | `th08` | Factory-native headless IDAlib | `target:th08-main` |
 | `th09-ida` | `th09` | Factory-native IDA Pro | `target:th09-main` |
 | `th095-ghidra` | `th095` | legacy attested Ghidra proxy | `target:th095-main` |
 | `th10-ghidra` | `th10` | Factory-native headless Ghidra | `target:th10-main` |
-| `th105-ida` | `th105` | legacy attested IDA proxy | `target:th105-main` |
+| `th105-ida` | `th105` | Factory-native headless IDAlib | `target:th105-main` |
 
 This is operator configuration, not a cross-game claim that one backend is
 universally correct. A provider can be absent, offline, busy, or correctly fail
@@ -90,6 +90,20 @@ Factory-managed storage, selected by ignored repo-local links, and paired with
 one mutable project per game. Sharing analyzer binaries is never permission to
 share project or target identity.
 
+TH08 and TH105 use `scripts/ida-headless-stdio.py` with the installed Windows
+IDA Python. The helper opens one operator-bound private PE copy and a separate
+`.i64` database through IDAlib; it never opens an IDA GUI or connects to the
+shared GUI RPC port. Database files, IDA user configuration and cache state are
+game-specific. A file lock coordinates that database across hot MCP instances.
+The canonical target remains independently attested by the Factory.
+
+The helper runs IDA operations on the library initialization thread, translates
+the installed protocol's TypedDict annotations for Python 3.11, and saves
+metadata changes before returning their response. A subsequent fresh stdio
+session therefore sees saved names and comments. Installed analyzer packages
+are not modified. Startup failures include bounded, redacted diagnostics and
+the affected repository/provider IDs so Web can adjust and retry.
+
 ## Discovery and calls
 
 `factory_list_analysis_providers` returns configured IDs but deliberately marks
@@ -101,7 +115,7 @@ closed loop before exposing tools:
 2. hash the private executable and compare SHA-256, MD5, and size;
 3. parse the private PE and compare declared image base, image size, entry point,
    and `.text` extent;
-4. start the shared `ida-pro-mcp` stdio client and compare active IDA metadata;
+4. start the registered stdio client and compare active IDA metadata;
 5. confirm the active entry point and six deterministic distributed mapped
    `.text` byte samples; and
 6. expose only tools actually advertised by that initialized session and
@@ -130,6 +144,12 @@ TH03's loaded Ghidra address. Discovery advertises the target-specific forms.
 Whitespace is trimmed; invalid input reports accepted fields and address
 formats so Web can correct and retry. PE and IDA address spaces keep their
 existing representation boundary.
+
+IDA address fields (`address`, `start_address`, `function_address`, and
+`memory_address`) also accept unsigned integers, decimal strings and `0x`/`0X`
+hex strings with surrounding whitespace. Discovery advertises these forms;
+Factory converts them to bounded hex strings before calling native or legacy
+IDA. The upstream parameter names and required fields remain intact.
 
 For broader autonomous work, `factory_repository_run_shell` provides composable
 repository Bash, local compiler/Oracle execution and allowlisted read-only

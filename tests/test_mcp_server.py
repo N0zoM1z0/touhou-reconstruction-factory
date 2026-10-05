@@ -99,6 +99,58 @@ target_identity_ids = ["target:th08-v1.00d-original"]
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
+    async def test_hot_registration_uses_explicit_worker_binding_for_replays(self) -> None:
+        worker = self.root / "worker.toml"
+        worker.write_text(self.config.read_text())
+        shutil.copytree(self.root / "repository", self.root / "new-repository")
+        with self.config.open("a") as handle:
+            handle.write('''
+[[repositories]]
+id = "th03"
+path = "new-repository"
+adapter_id = "th08-vc7-ledgers-v1"
+target_identity_ids = ["target:th03-fixture"]
+''')
+        from reconstruction_factory.service_config import load_service_config
+        expected = load_service_config(worker).replay_sha256
+        self.assertNotEqual(load_service_config(self.config).replay_sha256, expected)
+
+        def submit(service, repository_id, claim_id, idempotency_key):
+            return {"configuration_sha256": service.config.replay_sha256}
+
+        with patch("reconstruction_factory.mcp_server.FactoryService.submit_replay", submit):
+            async with Client(build_mcp_server(self.config, replay_config_path=worker)) as client:
+                described = await client.call_tool("factory_describe")
+                self.assertEqual(described.structured_content["replay_submission"]["configuration_sha256"], expected)
+                self.assertEqual(described.structured_content["replay_submission"]["repository_ids"], ["th08"])
+                result = await client.call_tool("factory_submit_replay", {
+                    "repository_id": "th08", "claim_id": "claim:fixture",
+                    "idempotency_key": "hot-worker-binding"})
+                self.assertFalse(result.is_error)
+                self.assertEqual(result.structured_content["configuration_sha256"], expected)
+                missing = await client.call_tool("factory_submit_replay", {
+                    "repository_id": "th03", "claim_id": "claim:fixture",
+                    "idempotency_key": "missing-worker-binding"})
+                self.assertTrue(missing.is_error)
+                self.assertIn("not registered with the configured replay worker", str(missing.content))
+
+    async def test_explicit_worker_binding_rejects_changed_authority(self) -> None:
+        worker = self.root / "worker.toml"
+        original = self.config.read_text()
+        for changed, message in (
+            (original.replace('replay_timeout_seconds = 60', 'replay_timeout_seconds = 61'),
+             "policy, storage or execution settings"),
+            (original.replace("target:th08-v1.00d-original", "target:th08-other"),
+             "target or source registration differs"),
+        ):
+            worker.write_text(changed)
+            async with Client(build_mcp_server(self.config, replay_config_path=worker)) as client:
+                result = await client.call_tool("factory_submit_replay", {
+                    "repository_id": "th08", "claim_id": "claim:fixture",
+                    "idempotency_key": "wrong-worker-binding"})
+                self.assertTrue(result.is_error)
+                self.assertIn(message, str(result.content))
+
     async def test_one_repository_backlog_does_not_starve_other_games(self) -> None:
         shutil.copytree(self.root / "repository", self.root / "second-repository")
         with self.config.open("a", encoding="utf-8") as handle:

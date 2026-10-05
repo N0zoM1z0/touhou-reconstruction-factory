@@ -20,7 +20,7 @@ import uvicorn
 
 from .job_service import FactoryService
 from .analysis_mcp import AnalysisGateway
-from .errors import FactoryError
+from .errors import FactoryError, ServiceConfigError
 from .jobs import JobState
 from .knowledge import KnowledgeStatus
 from .ontology import ClaimType
@@ -124,10 +124,50 @@ _ANALYSIS_CALL = ToolAnnotations(
 )
 
 
-def build_mcp_server(config_path: str | Path) -> MCPServer:
+def _replay_submission_service(
+    path: Path, worker_path: Path | None, repository_id: str
+) -> FactoryService:
+    """Bind submissions to an explicitly selected, unchanged worker config."""
+    current = load_service_config(path)
+    current_registration = current.repository(repository_id)
+    if worker_path is None:
+        return FactoryService(current)
+    worker = load_service_config(worker_path)
+    current_identity = current.replay_identity_dict()
+    worker_identity = worker.replay_identity_dict()
+    current_identity.pop("repositories")
+    worker_identity.pop("repositories")
+    if current_identity != worker_identity:
+        raise ServiceConfigError(
+            "replay worker configuration differs in policy, storage or execution settings; "
+            "the operator must align the explicit worker binding before retrying"
+        )
+    try:
+        registration = worker.repository(repository_id)
+    except ServiceConfigError as error:
+        raise ServiceConfigError(
+            f"repository {repository_id} is not registered with the configured replay worker; "
+            "repository shell and analysis remain available, but native replay needs "
+            "an operator worker registration"
+        ) from error
+    if current_registration.replay_identity_dict() != registration.replay_identity_dict():
+        raise ServiceConfigError(
+            f"repository {repository_id} target or source registration differs from its "
+            "configured replay worker; align the binding before retrying"
+        )
+    return FactoryService(worker)
+
+
+def build_mcp_server(
+    config_path: str | Path, *, replay_config_path: str | Path | None = None
+) -> MCPServer:
     """Create a stateless tool server over one private operator configuration."""
 
     path = Path(config_path).expanduser().resolve(strict=True)
+    worker_path = (
+        Path(replay_config_path).expanduser().resolve(strict=True)
+        if replay_config_path is not None else None
+    )
     server = MCPServer(
         "touhou-reconstruction-factory",
         version="0.8.0",
@@ -200,7 +240,18 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
         structured_output=True,
     )
     async def factory_describe() -> dict[str, Any]:
-        return await invoke(lambda: service().describe())
+        def describe() -> dict[str, Any]:
+            result = service().describe()
+            if worker_path is not None:
+                worker = load_service_config(worker_path)
+                result["replay_submission"] = {
+                    "binding": "explicit-worker-configuration",
+                    "configuration_sha256": worker.replay_sha256,
+                    "repository_ids": [item.id for item in worker.repositories],
+                    "compatibility_checked": "per-submission",
+                }
+            return result
+        return await invoke(describe)
 
     @server.tool(
         description=(
@@ -636,7 +687,8 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
         idempotency_key: IdempotencyKey,
     ) -> dict[str, Any]:
         return await invoke(
-            lambda: service().submit_replay(repository_id, claim_id, idempotency_key)
+            lambda: _replay_submission_service(path, worker_path, repository_id)
+            .submit_replay(repository_id, claim_id, idempotency_key)
         )
 
     @server.tool(
@@ -912,6 +964,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("FACTORY_SERVICE_CONFIG"),
     )
     parser.add_argument(
+        "--replay-config",
+        type=Path,
+        default=os.environ.get("FACTORY_REPLAY_SERVICE_CONFIG"),
+        help="Explicit unchanged worker config for replay submissions during hot migration",
+    )
+    parser.add_argument(
         "--transport", choices=("stdio", "streamable-http"), default="stdio"
     )
     parser.add_argument("--host", default="127.0.0.1")
@@ -937,7 +995,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.config is None:
         raise SystemExit("--config or FACTORY_SERVICE_CONFIG is required")
-    server = build_mcp_server(args.config)
+    server = build_mcp_server(args.config, replay_config_path=args.replay_config)
     if args.transport == "stdio":
         server.run("stdio")
         return 0

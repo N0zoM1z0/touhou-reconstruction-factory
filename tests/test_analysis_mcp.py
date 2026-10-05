@@ -9,6 +9,7 @@ try:
         _arguments,
         _analysis_slot,
         _ACTIVE_PROVIDERS,
+        _ida_input_schema,
         _mcp_tool_input_schema,
         _validate_native_ghidra_attestation,
         _validate_ghidra_arguments,
@@ -103,6 +104,27 @@ class AnalysisGatewayTests(unittest.TestCase):
             _validate_ida_arguments(
                 "read_memory_bytes", {"memory_address": "0x401000", "size": 257}
             )
+
+    def test_ida_normalizes_addresses_for_native_and_legacy_calls(self) -> None:
+        for address in (4198400, "4198400", " 0X401000 ", "0x401000"):
+            for field in ("address", "start_address", "function_address", "memory_address"):
+                arguments = {field: address}
+                _validate_ida_arguments("get_function_by_address", arguments)
+                self.assertEqual(int(arguments[field], 16), 0x401000)
+        for address in (True, -1, 1 << 64, "10000:0000", "0x1; id", "", {}):
+            with self.subTest(address=address):
+                with self.assertRaisesRegex(AnalysisError, "IDA address is invalid; use"):
+                    _validate_ida_arguments("get_function_by_address", {"address": address})
+
+    def test_ida_discovery_advertises_normalization_without_mutating_upstream(self) -> None:
+        schema = {"type": "object", "properties": {
+            "address": {"type": "string", "title": "Address"},
+            "size": {"type": "integer"}}, "required": ["address", "size"]}
+        advertised = _ida_input_schema(schema)
+        self.assertEqual(schema["properties"]["address"], {"type": "string", "title": "Address"})
+        self.assertEqual(advertised["properties"]["address"]["anyOf"][1]["type"], "integer")
+        self.assertEqual(advertised["properties"]["size"], schema["properties"]["size"])
+        self.assertEqual(advertised["required"], schema["required"])
 
     def test_ghidra_operations_are_exact_and_bounded(self) -> None:
         forwarded = _validate_ghidra_arguments(

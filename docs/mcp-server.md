@@ -180,6 +180,21 @@ surfaces are part of replay identity. A receipt produced by a worker in one
 virtual environment is correctly stale when queried by an MCP process whose
 driver plan resolves a different Python executable or toolchain environment.
 
+During a hot migration, the shared MCP may register additional games while an
+existing worker keeps its original configuration. Start the new MCP with
+`--replay-config /private/path/original-worker.toml`, or set
+`FACTORY_REPLAY_SERVICE_CONFIG`, to bind submissions explicitly to that worker.
+Each submission reloads both configurations and requires identical policy,
+storage, timeout and worker settings, plus the selected game's source/target
+registration. The resulting job carries the worker's original configuration
+fingerprint. Unrelated added games and analysis providers do not invalidate it.
+`factory_describe.replay_submission` exposes the effective worker fingerprint
+and its registered repository IDs, without revealing its configuration path.
+An absent worker registration returns corrective feedback before queuing a job;
+that game's repository shell and analysis remain available. The default without
+this option retains the single-configuration behavior. This binding does not
+bypass worker checks or refresh runner/driver identities.
+
 For a same-machine MCP client, use stdio:
 
 ```bash
