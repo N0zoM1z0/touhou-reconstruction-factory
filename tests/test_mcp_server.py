@@ -6,9 +6,14 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import threading
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 try:
+    import anyio
+
     from mcp import Client
     from reconstruction_factory.mcp_server import (
         BearerTokenMiddleware,
@@ -93,6 +98,57 @@ target_identity_ids = ["target:th08-v1.00d-original"]
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
+
+    async def test_one_repository_backlog_does_not_starve_other_games(self) -> None:
+        shutil.copytree(self.root / "repository", self.root / "second-repository")
+        with self.config.open("a", encoding="utf-8") as handle:
+            handle.write('''
+[[repositories]]
+id = "th03"
+path = "second-repository"
+adapter_id = "th08-vc7-ledgers-v1"
+target_identity_ids = ["target:th03-fixture"]
+''')
+        entered = threading.Event()
+        release = threading.Event()
+
+        def status(repository_id):
+            if repository_id == "th08":
+                entered.set()
+                release.wait(5)
+            return {"repository_id": repository_id}
+
+        limiter = anyio.to_thread.current_default_thread_limiter()
+        original_tokens = limiter.total_tokens
+        limiter.total_tokens = 2
+        try:
+            with patch("reconstruction_factory.mcp_server.FactoryService.from_path",
+                       return_value=SimpleNamespace(repository_status=status)):
+                async with Client(build_mcp_server(self.config)) as client:
+                    async def queued():
+                        result = await client.call_tool(
+                            "factory_get_repository_status", {"repository_id": "th08"}
+                        )
+                        self.assertFalse(result.is_error)
+
+                    async with anyio.create_task_group() as tasks:
+                        for _ in range(4):
+                            tasks.start_soon(queued)
+                        while not entered.is_set():
+                            await anyio.sleep(0.01)
+                        await anyio.sleep(0.05)
+                        try:
+                            with anyio.fail_after(1):
+                                result = await client.call_tool(
+                                    "factory_get_repository_status", {"repository_id": "th03"}
+                                )
+                                self.assertFalse(result.is_error)
+                                self.assertEqual(result.structured_content["repository_id"], "th03")
+                        finally:
+                            release.set()
+        finally:
+            release.set()
+            limiter.total_tokens = original_tokens
 
     async def test_discovery_exposes_only_bounded_factory_tools(self) -> None:
         async with Client(build_mcp_server(self.config)) as client:

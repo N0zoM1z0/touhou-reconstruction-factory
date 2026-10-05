@@ -64,6 +64,8 @@ without a new observation:
   TH03 headless PC-98 tools, native MZ providers and a stateless hot deployment;
 - [`reference-mount-hot-validation-2026-10-05.md`](reference-mount-hot-validation-2026-10-05.md):
   discoverable read-only references and public MCP checks without worker restarts;
+- [`th03-mcp-isolation-validation-2026-10-05.md`](th03-mcp-isolation-validation-2026-10-05.md):
+  cross-game capacity fixes and public MCP compiler, exact Oracle and recovery checks;
 - the dated `Recorded ...` sections in [`validation.md`](validation.md) and the
   historical deployment checkpoints in [`gpt-web-plugin.md`](gpt-web-plugin.md).
 

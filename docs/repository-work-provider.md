@@ -43,6 +43,11 @@ only the replay/acceptance path can add a fact to the Truth Kernel.
 
 Commands are serialized per repository and take the same Factory repository
 lock used by replay, acceptance, analysis, and snapshot operations. This
+serialization starts in an asynchronous per-repository MCP queue: pending shell,
+status, semantic-debt and output-page requests do not occupy execution threads
+while another request owns that worktree. A backlog for one game therefore does
+not exhaust the shared thread pool or stall another game's work or discovery.
+File locks continue to coordinate separate MCP instances and workers. This
 coordinates all Factory-owned access, while ordinary local terminals and other
 programs remain outside that advisory lock. Commands run non-transactionally. Edits and
 artifacts survive a nonzero exit or timeout. This is necessary for normal

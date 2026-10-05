@@ -115,7 +115,8 @@ class RepositoryWorkStore:
             or not 1 <= timeout_seconds <= self.policy.command_timeout_seconds
         ):
             raise RepositoryWorkError(
-                "timeout_seconds exceeds the configured repository-work command limit"
+                "timeout_seconds must be an integer from 1 through "
+                f"{self.policy.command_timeout_seconds}; adjust it and retry the command"
             )
         registration = self.config.repository(repository_id)
         repository = registration.path
@@ -401,7 +402,8 @@ class RepositoryWorkStore:
                 yield
         except ReplayError as error:
             raise RepositoryWorkError(
-                "another Factory operation currently owns this repository"
+                f"another Factory operation currently owns repository {registration.id}; "
+                "retry after its writer or replay finishes. Other repositories remain available"
             ) from error
 
 

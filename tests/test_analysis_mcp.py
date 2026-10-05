@@ -3,8 +3,12 @@ from __future__ import annotations
 import unittest
 
 try:
+    import anyio
+
     from reconstruction_factory.analysis_mcp import (
         _arguments,
+        _analysis_slot,
+        _ACTIVE_PROVIDERS,
         _mcp_tool_input_schema,
         _validate_native_ghidra_attestation,
         _validate_ghidra_arguments,
@@ -40,6 +44,52 @@ class AnalysisGatewayTests(unittest.TestCase):
             with self.subTest(invalid=invalid[:20]):
                 with self.assertRaises(AnalysisError):
                     _arguments(invalid)
+
+    def test_analysis_capacity_is_independent_between_repositories(self) -> None:
+        async def check():
+            async with _analysis_slot("other-main", "other", 1):
+                async with _analysis_slot("other-op", "other", 1):
+                    async with _analysis_slot("th03-main", "th03", 1):
+                        self.assertEqual(len(_ACTIVE_PROVIDERS), 3)
+                        with self.assertRaisesRegex(AnalysisError, "other-extra.*other"):
+                            async with _analysis_slot("other-extra", "other", 0.01):
+                                self.fail("same repository exceeded its limit")
+            self.assertEqual(_ACTIVE_PROVIDERS, {})
+        anyio.run(check)
+
+    def test_overlapping_provider_waits_then_runs_without_overlap(self) -> None:
+        async def check():
+            entered = anyio.Event()
+            finished = anyio.Event()
+            async def first():
+                async with _analysis_slot("th03-main", "th03", 1):
+                    entered.set()
+                    await anyio.sleep(0.1)
+                finished.set()
+            async def second():
+                await entered.wait()
+                async with _analysis_slot("th03-main", "th03", 1):
+                    self.assertTrue(finished.is_set())
+            async with anyio.create_task_group() as tasks:
+                tasks.start_soon(first)
+                tasks.start_soon(second)
+            self.assertEqual(_ACTIVE_PROVIDERS, {})
+        anyio.run(check)
+
+    def test_cancelled_waiter_and_owner_do_not_leak_analysis_capacity(self) -> None:
+        async def check():
+            with self.assertRaisesRegex(RuntimeError, "owner failed"):
+                async with _analysis_slot("th03-main", "th03", 1):
+                    with anyio.move_on_after(0.02) as scope:
+                        async with _analysis_slot("th03-main", "th03", 1):
+                            self.fail("same provider overlapped")
+                    self.assertTrue(scope.cancel_called)
+                    self.assertEqual(_ACTIVE_PROVIDERS, {"th03-main": "th03"})
+                    raise RuntimeError("owner failed")
+            self.assertEqual(_ACTIVE_PROVIDERS, {})
+            async with _analysis_slot("th03-main", "th03", 1):
+                pass
+        anyio.run(check)
 
     def test_ida_allowlisted_arguments_cannot_smuggle_host_authority(self) -> None:
         _validate_ida_arguments("get_function_by_address", {"address": "0x00401000"})

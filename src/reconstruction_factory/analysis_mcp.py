@@ -14,6 +14,7 @@ import shutil
 import struct
 import subprocess
 import tempfile
+import time
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -22,7 +23,7 @@ from mcp import Client, ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 from .adapters import inspect_repository
-from .errors import AnalysisError
+from .errors import AnalysisError, ReplayError
 from .mz_analysis import (
     inspect_mz_target as _inspect_private_mz_target,
     validate_mz_attestation as _validate_native_mz_attestation,
@@ -35,8 +36,8 @@ from .service_config import AnalysisProviderRegistration, ServiceConfig
 
 _MAX_ARGUMENT_BYTES = 65536
 _MAX_OUTPUT_BYTES = 262144
-_MAX_ACTIVE_ANALYSES = 2
-_ACTIVE_PROVIDERS: set[str] = set()
+_MAX_ACTIVE_ANALYSES_PER_REPOSITORY = 2
+_ACTIVE_PROVIDERS: dict[str, str] = {}
 
 _IDA_READ_ALLOWED = frozenset(
     {
@@ -158,7 +159,7 @@ class AnalysisGateway:
                 "attestation_state": "not-probed",
                 **_page(operations, limit, offset),
             }
-        async with _analysis_slot(provider.id):
+        async with _analysis_slot(provider.id, provider.repository_id, provider.timeout_seconds):
             target = await self._target(provider)
             if provider.backend == "attested-ghidra-command-v1":
                 attestation, _ = await self._native_ghidra_call(
@@ -201,7 +202,7 @@ class AnalysisGateway:
     ) -> dict[str, Any]:
         provider = self.config.analysis_provider(provider_id)
         arguments = _arguments(arguments_json)
-        async with _analysis_slot(provider.id):
+        async with _analysis_slot(provider.id, provider.repository_id, provider.timeout_seconds):
             target = await self._target(provider)
             if provider.backend == "attested-ghidra-command-v1":
                 if operation not in _GHIDRA_OPERATIONS:
@@ -287,8 +288,15 @@ class AnalysisGateway:
         registration = self.config.repository(provider.repository_id)
 
         def load() -> TargetIdentity:
-            with repository_lock(registration.path, exclusive=False):
-                snapshot = inspect_repository(registration.path)
+            try:
+                with repository_lock(registration.path, exclusive=False):
+                    snapshot = inspect_repository(registration.path)
+            except ReplayError as error:
+                raise AnalysisError(
+                    f"repository {provider.repository_id} cannot currently be read for "
+                    f"provider {provider.id}; a repository writer or replay may be active. "
+                    "Retry after that operation finishes; no other repository is blocked"
+                ) from error
             if snapshot.adapter_id != registration.adapter_id:
                 raise AnalysisError("analysis repository adapter binding changed")
             targets = [
@@ -963,21 +971,32 @@ def _contained_exception(
 
 
 class _analysis_slot:
-    def __init__(self, provider_id: str) -> None:
+    def __init__(self, provider_id: str, repository_id: str, timeout_seconds: float) -> None:
         self.provider_id = provider_id
+        self.repository_id = repository_id
+        self.wait_seconds = min(timeout_seconds, 60)
 
     async def __aenter__(self) -> None:
-        if (
+        deadline = time.monotonic() + self.wait_seconds
+        while (
             self.provider_id in _ACTIVE_PROVIDERS
-            or len(_ACTIVE_PROVIDERS) >= _MAX_ACTIVE_ANALYSES
+            or sum(repo == self.repository_id for repo in _ACTIVE_PROVIDERS.values())
+            >= _MAX_ACTIVE_ANALYSES_PER_REPOSITORY
         ):
-            raise AnalysisError(
-                "analysis capacity is busy; retry the same bounded request later"
-            )
-        _ACTIVE_PROVIDERS.add(self.provider_id)
+            if time.monotonic() >= deadline:
+                raise AnalysisError(
+                    f"analysis queue timed out after {self.wait_seconds:g}s for "
+                    f"provider {self.provider_id} in repository {self.repository_id}; "
+                    "retry the same request after its active analysis finishes. "
+                    "Other repositories have independent analysis capacity"
+                )
+            await anyio.sleep(min(0.05, max(0, deadline - time.monotonic())))
+        # There is no await between the check and reservation. Waiting requests
+        # never consume another repository's capacity or overlap this provider.
+        _ACTIVE_PROVIDERS[self.provider_id] = self.repository_id
 
     async def __aexit__(self, *_args: Any) -> None:
-        _ACTIVE_PROVIDERS.discard(self.provider_id)
+        _ACTIVE_PROVIDERS.pop(self.provider_id, None)
 
 
 def _arguments(raw: str) -> dict[str, Any]:

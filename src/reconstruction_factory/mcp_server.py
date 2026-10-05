@@ -163,8 +163,25 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     def analysis() -> AnalysisGateway:
         return AnalysisGateway(load_service_config(path))
 
+    repository_queues = {
+        repository.id: anyio.Lock()
+        for repository in load_service_config(path).repositories
+    }
+
     async def invoke(function: Callable[[], _T]) -> _T:
         return await _thread(function, config_path=path)
+
+    async def repository_invoke(repository_id: str, function: Callable[[], _T]) -> _T:
+        queue = repository_queues.get(repository_id)
+        if queue is None:
+            # Preserve the usual unknown-registration error without allocating
+            # queues for arbitrary unregistered IDs.
+            return await invoke(function)
+        # File locks still coordinate separate services and workers. Wait here
+        # before taking a thread so one game's queued work cannot exhaust the
+        # shared thread pool and stall unrelated games or discovery.
+        async with queue:
+            return await invoke(function)
 
     async def analysis_invoke(function: Callable[[], Any]) -> Any:
         try:
@@ -208,7 +225,7 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
     async def factory_get_repository_status(
         repository_id: RepositoryId,
     ) -> dict[str, Any]:
-        return await invoke(lambda: service().repository_status(repository_id))
+        return await repository_invoke(repository_id, lambda: service().repository_status(repository_id))
 
     @server.tool(
         description=(
@@ -228,7 +245,8 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
         limit: PageLimit = 20,
         offset: Offset = 0,
     ) -> dict[str, Any]:
-        return await invoke(
+        return await repository_invoke(
+            repository_id,
             lambda: service().repository_semantic_debt_report(
                 repository_id,
                 relative_path=relative_path,
@@ -257,7 +275,8 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
         relative_cwd: RelativePath = ".",
         timeout_seconds: CommandTimeout = 120,
     ) -> dict[str, Any]:
-        return await invoke(
+        return await repository_invoke(
+            repository_id,
             lambda: service().repository_run_shell(
                 repository_id,
                 script,
@@ -281,7 +300,8 @@ def build_mcp_server(config_path: str | Path) -> MCPServer:
         offset: Offset = 0,
         limit: ByteLimit = 16384,
     ) -> dict[str, Any]:
-        return await invoke(
+        return await repository_invoke(
+            repository_id,
             lambda: service().repository_command_output(
                 repository_id,
                 command_id,

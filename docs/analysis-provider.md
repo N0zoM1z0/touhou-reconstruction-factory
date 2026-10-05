@@ -67,6 +67,10 @@ The private single-operator configuration registers:
 
 | Provider | Repository | Backend | Target scope |
 | --- | --- | --- | --- |
+| `th03-ghidra` | `th03` | Factory-native headless Ghidra | `target:th03-main` |
+| `th03-mainl-ghidra` | `th03` | Factory-native headless Ghidra | `target:th03-mainl` |
+| `th03-op-ghidra` | `th03` | Factory-native headless Ghidra | `target:th03-op` |
+| `th03-zun-ghidra` | `th03` | Factory-native headless Ghidra | `target:th03-zun` |
 | `th04-ghidra` | `th04` | legacy attested Ghidra proxy | `target:th04-main` |
 | `th08-ida` | `th08` | legacy attested IDA proxy | `target:th08-main` |
 | `th09-ida` | `th09` | Factory-native IDA Pro | `target:th09-main` |
@@ -147,11 +151,21 @@ Factory validation remains closed-world but preserves useful analyzer autonomy:
   counts, and xref/search limits are bounded;
 - arguments cannot contain command, script, path, file, Python, or code
   authority fields;
-- at most two different providers run concurrently, and one provider cannot
-  receive overlapping factory requests;
+- analysis capacity is independent per repository: at most two different
+  providers from the same repository run concurrently, and one provider never
+  receives overlapping Factory requests. Conflicting requests wait for up to
+  60 seconds (or the shorter configured provider timeout), rather than failing
+  immediately. A queue timeout identifies the repository/provider and tells Web
+  to retry; another game's active analyses do not consume this capacity;
 - successful output is redacted for known Linux/Windows host paths and private
   provider endpoint components, then bounded to 256 KiB across text and
   structured content.
+
+A live repository writer or replay can still prevent analysis from reading
+that same repository. This is reported with the repository/provider IDs and a
+retry instruction, without exposing private paths or blocking another game.
+Repository Bash remains serialized per live worktree, including Borland builds;
+commands in different registered games execute independently.
 
 The upstream bridge may impose a smaller limit without returning a cryptographic
 completeness statement. The factory therefore reports
