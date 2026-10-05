@@ -17,6 +17,7 @@ from mcp import Client
 
 DEFAULT_URL = os.environ.get("FACTORY_MCP_URL")
 REPOSITORIES = {
+    "th03": "th03-pc98-v1",
     "th04": "th04-pc98-v1",
     "th08": "th08-vc7-ledgers-v1",
     "th09": "windows-pe-ledgers-v1",
@@ -339,6 +340,10 @@ async def _discovery_and_read_only(url: str, report: dict[str, Any]) -> None:
 
 async def _analysis(url: str, report: dict[str, Any]) -> None:
     probes = {
+        "th03-ghidra": ("check", "target:th03-main"),
+        "th03-op-ghidra": ("check", "target:th03-op"),
+        "th03-mainl-ghidra": ("check", "target:th03-mainl"),
+        "th03-zun-ghidra": ("check", "target:th03-zun"),
         "th04-ghidra": ("check", "target:th04-main"),
         "th08-ida": ("get_metadata", "target:th08-main"),
         "th09-ida": ("get_metadata", "target:th09-main"),
@@ -381,7 +386,7 @@ async def _analysis(url: str, report: dict[str, Any]) -> None:
             items = operations.structured_content["items"]
             names = {item["name"] for item in items}
             _check(operation in names, f"{provider_id} omitted {operation}")
-            if provider_id in {"th09-ida", "th10-ghidra"}:
+            if provider_id in {"th09-ida", "th10-ghidra"} or provider_id.startswith("th03"):
                 _check(
                     items
                     and all(isinstance(item.get("input_schema"), dict) for item in items),
@@ -508,6 +513,8 @@ async def _repository_toolchains(url: str, report: dict[str, Any]) -> None:
             "printf 'th105 VC8 SP1/Wine probe passed\\n'\n"
         ),
     }
+    probes["th03"] = ("export DISPLAY= WAYLAND_DISPLAY=\n"
+                       + probes["th04"].replace("th04", "th03"))
     outcomes: dict[str, Any] = {}
     async with Client(url, read_timeout_seconds=900) as client:
         for repository_id, script in probes.items():

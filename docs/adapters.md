@@ -19,6 +19,20 @@ The governing rule is accuracy before completeness:
 
 ## Implemented adapters
 
+### `th03-pc98-v1`
+
+TH03 uses the shared multi-product PC-98 adapter contract with
+`config/th03_function_boundaries.csv` and
+`config/th03_main_authored_functions.csv`. Its products are OP, MAIN, MAINL
+and ZUN. Only `game = "th03"` targets contribute to progress; optional
+cross-game calibration artifacts are excluded. Empty ledgers import zero
+source/ownership/exact claims rather than inheriting TH04 progress. Target
+version remains unknown when the manifest does not establish it.
+
+Native analysis uses the command backend with independent MZ/header/load,
+relocation and entry checks. TH03 exact-unit replay has no registered driver
+until its own source and extent contract are implemented.
+
 ### `th04-pc98-v1`
 
 Inputs:

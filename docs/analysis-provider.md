@@ -194,6 +194,22 @@ reviews it and deliberately refreshes the aggregate implementation binding.
 file list and digest for this private block; it prints to stdout and never edits
 service configuration.
 
+### PC-98 MZ command providers
+
+The same `attested-ghidra-command-v1` transport supports MZ targets, including
+TH03's four products. The registration selects its game-local
+`scripts/factory_ghidra.py --artifact ARTIFACT` wrapper and ignored private
+target. No per-game HTTP server is needed.
+
+Factory disk checks independently validate hashes, header and declared-size
+bounds, relocation-table/site bounds, load allocation and CS:IP. They derive
+the relocated image at load segment 0x1000 and distributed probes including
+relocation sites. The wrapper emits exactly one format-specific MZ marker
+only after full nonce-bound FileBytes, header/load mapping, relocation and
+entry checks in the same headless process as the read-only query. The marker
+must agree with the independent load digests and structure. PE/IDA contracts
+and operation schemas remain unchanged; all observations remain provisional.
+
 ## Relationship to repository work
 
 Analysis state is not granted authority merely because GPT-web also has broad

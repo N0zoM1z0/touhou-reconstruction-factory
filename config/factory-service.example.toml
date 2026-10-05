@@ -90,6 +90,22 @@ timeout_seconds = 120
 # timeout_seconds = 900
 
 [[repositories]]
+id = "th03"
+path = "/srv/reconstructions/th03"
+adapter_id = "th03-pc98-v1"
+target_identity_ids = [
+  "target:th03-main",
+  "target:th03-mainl",
+  "target:th03-op",
+  "target:th03-zun",
+]
+reference_repository_ids = ["th04"]
+# Native MZ Ghidra uses the same attested-ghidra-command-v1 backend.
+# Bind scripts/factory_ghidra.py --artifact th03-main and the independently
+# staged .analysis/targets/th03/main.exe. Pin the complete implementation
+# file set and aggregate just as for the PE provider; no extra HTTP bridge.
+
+[[repositories]]
 id = "th04"
 path = "/srv/reconstructions/th04"
 adapter_id = "th04-pc98-v1"

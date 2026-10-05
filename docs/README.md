@@ -60,6 +60,8 @@ without a new observation:
   first concurrent TH09 exact and TH095 semantic Web pilot;
 - [`th10-native-ghidra-bootstrap-2026-09-12.md`](th10-native-ghidra-bootstrap-2026-09-12.md):
   the TH10 repository and native-Ghidra activation record; and
+- [`th03-headless-bootstrap-2026-10-05.md`](th03-headless-bootstrap-2026-10-05.md):
+  TH03 headless PC-98 tools, native MZ providers and a stateless hot deployment;
 - the dated `Recorded ...` sections in [`validation.md`](validation.md) and the
   historical deployment checkpoints in [`gpt-web-plugin.md`](gpt-web-plugin.md).
 

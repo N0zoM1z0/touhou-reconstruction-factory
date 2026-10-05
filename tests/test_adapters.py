@@ -285,6 +285,26 @@ sha256 = "{HASH_B}"
 
 
 class AdapterTests(unittest.TestCase):
+    def test_th03_uses_independent_products_and_excludes_cross_game_controls(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_th04(root)
+            for path in list((root / "config").iterdir()):
+                content = path.read_text().replace("th04", "th03").replace("GENSO", "YUMEZIKU")
+                destination = path.with_name(path.name.replace("th04", "th03"))
+                if destination != path:
+                    path.unlink()
+                destination.write_text(content)
+            snapshot = inspect_repository(root)
+            self.assertEqual(snapshot.adapter_id, "th03-pc98-v1")
+            self.assertEqual(snapshot.project.id, "th03")
+            self.assertEqual([product.id for product in snapshot.products], ["th03-main"])
+            self.assertEqual(snapshot.toolchains[0].id, "toolchain:th03-borland16")
+            self.assertTrue(all(target.game == "th03" for target in snapshot.targets))
+            self.assertEqual(metric(snapshot, "exact.authored-functions"), 1)
+            self.assertTrue(all(claim.target_identity_id == "target:th03-main"
+                                for claim in snapshot.claims))
+
     def test_toml_cache_is_keyed_by_exact_bytes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

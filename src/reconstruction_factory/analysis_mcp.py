@@ -23,6 +23,10 @@ from mcp.client.stdio import stdio_client
 
 from .adapters import inspect_repository
 from .errors import AnalysisError
+from .mz_analysis import (
+    inspect_mz_target as _inspect_private_mz_target,
+    validate_mz_attestation as _validate_native_mz_attestation,
+)
 from .ontology import TargetIdentity, to_primitive
 from .oracle_receipts import canonical_sha256
 from .replay_identity import repository_lock
@@ -525,7 +529,8 @@ class AnalysisGateway:
                 "review the changed provider files and refresh private configuration"
             )
         disk = await anyio.to_thread.run_sync(
-            _inspect_private_pe_target, provider.target_path, target
+            _inspect_private_mz_target if target.format == "mz" else _inspect_private_pe_target,
+            provider.target_path, target
         )
         repository = self.config.repository(provider.repository_id).path
         try:
@@ -552,7 +557,9 @@ class AnalysisGateway:
             raise AnalysisError(
                 f"native Ghidra provider failed to start: {type(error).__name__}"
             ) from error
-        attestation = _validate_native_ghidra_attestation(stdout, disk, target)
+        attestation = (_validate_native_mz_attestation(stdout, disk, target)
+                       if target.format == "mz" else
+                       _validate_native_ghidra_attestation(stdout, disk, target))
         attestation["provider_implementation_sha256"] = implementation_sha256
         return attestation, _bounded_text_output(result_text, self.config)
 

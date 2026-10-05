@@ -18,7 +18,7 @@ repository archaeology remain available as a dated, non-normative
 [`working paper`](docs/factory-analysis.md).
 
 The tracked release version is defined in [`pyproject.toml`](pyproject.toml); at
-this checkpoint the Factory models six registered game repositories. TH09 is
+this checkpoint the Factory models seven registered game repositories. TH09 is
 the Factory-native IDA reference and TH10 is the Factory-native Ghidra
 reference; earlier analysis bridges remain migration compatibility. This is
 structural release information, not a claim about live service health, provider
@@ -53,7 +53,7 @@ flowchart LR
     L -.-> P["Later local Codex retrospective<br/>completed history · scripts · tests · receipts<br/>cross-game publication not automated"]:::memory
     P -.-> K
 
-    P98["PC-98 era family<br/>TH01–TH05<br/>implemented registration: TH04"]:::platform --> C
+    P98["PC-98 era family<br/>TH01–TH05<br/>implemented registration: TH03 / TH04"]:::platform --> C
     PE["Windows PE era family<br/>TH06+<br/>implemented: TH08 / TH09 / TH095 / TH10 / TH105"]:::platform --> C
 
     B["Registered atomic analysis<br/>native IDA / native Ghidra<br/>legacy bridge during migration"]:::evidence -->|"independent target attestation"| E

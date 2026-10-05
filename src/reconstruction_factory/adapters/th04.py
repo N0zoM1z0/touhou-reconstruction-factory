@@ -35,6 +35,10 @@ from .common import (
 
 class Th04RepositoryAdapter(RepositoryAdapter):
     id = "th04-pc98-v1"
+    game = "th04"
+    game_number = 4
+    boundary_path = "config/th04_function_boundaries.csv"
+    authored_path = "config/th04_main_authored_functions.csv"
 
     _required = (
         "config/targets.toml",
@@ -56,19 +60,19 @@ class Th04RepositoryAdapter(RepositoryAdapter):
 
         target_manifest = reader.toml("config/targets.toml")
         toolchain_manifest = reader.toml("config/toolchain.toml")
-        boundary_rows = reader.csv_dicts("config/th04_function_boundaries.csv")
-        authored_rows = reader.csv_dicts("config/th04_main_authored_functions.csv")
+        boundary_rows = reader.csv_dicts(self.boundary_path)
+        authored_rows = reader.csv_dicts(self.authored_path)
         unit_rows = reader.csv_dicts("config/units.csv")
 
-        project = Project(id="th04", name="Touhou 4 reconstruction")
+        project = Project(id=self.game, name=f"Touhou {self.game_number} reconstruction")
         source = target_manifest.get("source", {})
         artifacts = [
             item
             for item in target_manifest.get("artifacts", [])
-            if item.get("game") == "th04"
+            if item.get("game") == self.game
         ]
         if not artifacts:
-            raise AdapterError("config/targets.toml contains no TH04 artifacts")
+            raise AdapterError(f"config/targets.toml contains no {self.game.upper()} artifacts")
 
         products: list[Product] = []
         targets: list[TargetIdentity] = []
@@ -91,7 +95,7 @@ class Th04RepositoryAdapter(RepositoryAdapter):
                     id=target_id,
                     project_id=project.id,
                     product_id=product_id,
-                    game="th04",
+                    game=self.game,
                     version="unknown",
                     region="japanese-local-attested",
                     format=str(item["format"]).lower(),
@@ -118,7 +122,7 @@ class Th04RepositoryAdapter(RepositoryAdapter):
             if item.get("required", False)
         ]
         toolchain = ToolchainIdentity(
-            id="toolchain:th04-borland16",
+            id=f"toolchain:{self.game}-borland16",
             project_id=project.id,
             provider_id="borland16",
             family=str(exact_toolchain.get("family", "unknown Borland toolchain")),
@@ -141,7 +145,7 @@ class Th04RepositoryAdapter(RepositoryAdapter):
                 code="target-version-unrecorded",
                 severity=Severity.WARNING,
                 message=(
-                    "TH04 target artifacts are hash-attested but the target manifest "
+                    f"{self.game.upper()} target artifacts are hash-attested but the target manifest "
                     "has no explicit game version field."
                 ),
                 source="config/targets.toml",
@@ -220,8 +224,8 @@ class Th04RepositoryAdapter(RepositoryAdapter):
                     Diagnostic(
                         code="origin-vocabulary-unmapped",
                         severity=Severity.ERROR,
-                        message=f"Unmapped TH04 origin {row['origin']!r} for {subject_id}.",
-                        source="config/th04_function_boundaries.csv",
+                        message=f"Unmapped {self.game.upper()} origin {row['origin']!r} for {subject_id}.",
+                        source=self.boundary_path,
                     )
                 )
             else:
@@ -308,7 +312,7 @@ class Th04RepositoryAdapter(RepositoryAdapter):
                         f"Imported {zero_extent_count} boundary observations with zero "
                         "body size; they remain extent-incomplete."
                     ),
-                    source="config/th04_function_boundaries.csv",
+                    source=self.boundary_path,
                 ),
                 Diagnostic(
                     code="imported-exact-claims-unreplayed",
@@ -330,7 +334,7 @@ class Th04RepositoryAdapter(RepositoryAdapter):
             subjects=tuple(subjects),
             claims=tuple(claims),
             metrics=tuple(
-                _th04_metrics(artifacts, boundary_rows, authored_rows, unit_rows)
+                _th04_metrics(artifacts, boundary_rows, authored_rows, unit_rows, self.game)
             ),
             diagnostics=tuple(diagnostics),
             adapter_id=self.id,
@@ -343,6 +347,7 @@ def _th04_metrics(
     boundary_rows: list[dict[str, str]],
     authored_rows: list[dict[str, str]],
     unit_rows: list[dict[str, str]],
+    project_id: str = "th04",
 ) -> list[Metric]:
     by_artifact: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in boundary_rows:
@@ -415,5 +420,5 @@ def _th04_metrics(
                 )
             )
     for name, value in sorted(aggregate.items()):
-        metrics.append(Metric(name=name, value=value, scope_id="th04", caveat=caveat))
+        metrics.append(Metric(name=name, value=value, scope_id=project_id, caveat=caveat))
     return metrics

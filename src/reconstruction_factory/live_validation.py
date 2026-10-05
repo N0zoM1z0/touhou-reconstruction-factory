@@ -37,7 +37,7 @@ def validate_live_repository(root: str | Path) -> LiveValidationResult:
     resolved = Path(root).resolve(strict=True)
     dirty_before = _git_status(resolved)
     snapshot = inspect_repository(resolved)
-    if snapshot.project.id == "th04":
+    if snapshot.project.id in {"th03", "th04"}:
         result = _validate_th04(resolved, snapshot)
     elif snapshot.adapter_id == "th08-vc7-ledgers-v1":
         result = _validate_th08(resolved, snapshot)
@@ -87,6 +87,9 @@ def _validate_th04(root: Path, snapshot: RepositorySnapshot) -> LiveValidationRe
                 (artifact_id, "target.bytes"): report["target_size"],
             }
         )
+    # A native report may deliberately leave a function denominator unknown
+    # outside its reviewed function ledger. Do not compare None to a row count.
+    comparisons = {key: value for key, value in comparisons.items() if value is not None}
     _require_metric_parity(snapshot, comparisons)
     return LiveValidationResult(
         project_id=snapshot.project.id,
