@@ -41,3 +41,21 @@ replay implementation files and queued-job identities are unchanged. Registering
 a TH03 native replay driver requires including its adapter in the fingerprint
 and a coordinated worker migration; repository-shell Oracle runs do not
 publish Truth Kernel acceptance.
+
+## Follow-up native MZ address calls
+
+A public TH03 function query exposed a representation mismatch: the headless
+wrapper accepted `segment:offset`, but the Factory rejected it as a malformed
+linear address. Native MZ validation and discovery now accept this representation.
+Hex strings, decimal strings, unsigned integers, a single `address`, and scalar
+or list `addresses` are normalized so Web can reuse displayed addresses directly.
+Invalid inputs include accepted fields and formats in their retry guidance.
+PE and IDA retain their original address-space boundary. Byte/database
+attestation and exact receipt policy are unchanged.
+
+The release suite passed 166 tests. A new shared candidate and the unchanged
+public route both queried the real 26-byte polar function using a segmented
+address and an integer linear address, with passed target attestation. Reference
+read/write-denial checks and all existing repository status calls still passed.
+All 33 public tool definitions remained identical; all four prior MCP/worker
+processes retained their PIDs during the second hot switch.

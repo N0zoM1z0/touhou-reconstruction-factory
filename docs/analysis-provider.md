@@ -118,6 +118,19 @@ envelope is used because IDA and Ghidra expose different evolving query schemas;
 it avoids dozens of transport-level MCP tools while retaining operation-level
 discovery and factory validation.
 
+Ghidra address calls accept either `address` or `addresses`. A single value,
+a list of values, hexadecimal strings (including `0X`), decimal strings, and
+nonnegative integers are accepted and normalized. Native MZ providers also
+accept 16-bit `segment:offset`, for example `{"address":"1e8f:016d"}` for
+TH03's loaded Ghidra address. Discovery advertises the target-specific forms.
+Whitespace is trimmed; invalid input reports accepted fields and address
+formats so Web can correct and retry. PE and IDA address spaces keep their
+existing representation boundary.
+
+For broader autonomous work, `factory_repository_run_shell` provides composable
+repository Bash, local compiler/Oracle execution and allowlisted read-only
+references. Analyzer argument limits do not define the repository work catalog.
+
 Factory validation remains closed-world but preserves useful analyzer autonomy:
 
 - IDA operation names must be in the Factory's versioned atomic allowlist;

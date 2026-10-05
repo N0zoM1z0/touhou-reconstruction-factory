@@ -107,6 +107,7 @@ _GHIDRA_OPERATIONS = {
     "search_strings": "Search strings with a bounded query and result limit.",
 }
 _ADDRESS = re.compile(r"^0x[0-9a-fA-F]{1,16}$")
+_SEGMENTED_ADDRESS = re.compile(r"^[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}$")
 
 
 class AnalysisGateway:
@@ -168,7 +169,7 @@ class AnalysisGateway:
                     {
                         "name": name,
                         "description": description,
-                        "input_schema": _ghidra_schema(name),
+                        "input_schema": _ghidra_schema(name, allow_segmented=target.format.lower() == "mz"),
                         "mutates_analysis_database": False,
                     }
                     for name, description in _GHIDRA_OPERATIONS.items()
@@ -205,7 +206,9 @@ class AnalysisGateway:
             if provider.backend == "attested-ghidra-command-v1":
                 if operation not in _GHIDRA_OPERATIONS:
                     raise AnalysisError("unsupported Ghidra read-only operation")
-                forwarded = _validate_ghidra_arguments(operation, arguments)
+                forwarded = _validate_ghidra_arguments(
+                    operation, arguments, allow_segmented=target.format.lower() == "mz"
+                )
                 attestation, output = await self._native_ghidra_call(
                     provider, target, operation, forwarded
                 )
@@ -1076,7 +1079,7 @@ def _contains_field(value: Any, names: set[str]) -> bool:
 
 
 def _validate_ghidra_arguments(
-    operation: str, arguments: dict[str, Any]
+    operation: str, arguments: dict[str, Any], *, allow_segmented: bool = False
 ) -> dict[str, Any]:
     allowed_by_operation = {
         "check": set(),
@@ -1093,9 +1096,15 @@ def _validate_ghidra_arguments(
     allowed = allowed_by_operation.get(operation)
     if allowed is None:
         raise AnalysisError("unsupported Ghidra read-only operation")
-    if set(arguments) - allowed:
-        raise AnalysisError("Ghidra arguments contain unsupported fields")
     result = dict(arguments)
+    # Web callers often have a single displayed address rather than a list.
+    if "address" in result and "addresses" in allowed and "addresses" not in result:
+        result["addresses"] = [result.pop("address")]
+    if set(result) - allowed:
+        raise AnalysisError(
+            "Ghidra arguments contain unsupported fields; "
+            f"{operation} accepts: {', '.join(sorted(allowed)) or 'no arguments'}"
+        )
     addresses = result.get("addresses", [])
     address_operations = {
         "decompile",
@@ -1107,17 +1116,40 @@ def _validate_ghidra_arguments(
         "xrefs_from",
     }
     if operation in address_operations:
+        if isinstance(addresses, (str, int)) and not isinstance(addresses, bool):
+            addresses = [addresses]
+        if isinstance(addresses, list):
+            normalized = []
+            for address in addresses:
+                if isinstance(address, int) and not isinstance(address, bool) and 0 <= address <= 0xFFFFFFFFFFFFFFFF:
+                    address = f"0x{address:x}"
+                elif isinstance(address, str):
+                    address = address.strip()
+                    if address.startswith("0X"):
+                        address = "0x" + address[2:]
+                    elif address.isascii() and address.isdecimal() and len(address) <= 20:
+                        value = int(address, 10)
+                        if value <= 0xFFFFFFFFFFFFFFFF:
+                            address = f"0x{value:x}"
+                normalized.append(address)
+            addresses = normalized
         if (
             not isinstance(addresses, list)
             or not 1 <= len(addresses) <= 16
             or any(
-                not isinstance(item, str) or not _ADDRESS.fullmatch(item)
+                not isinstance(item, str) or not (
+                    _ADDRESS.fullmatch(item)
+                    or (allow_segmented and _SEGMENTED_ADDRESS.fullmatch(item))
+                )
                 for item in addresses
             )
         ):
             raise AnalysisError(
-                "Ghidra address operation requires 1 through 16 addresses"
+                "Ghidra address operation requires 1 through 16 addresses; "
+                "use address or addresses, with hex strings or integers"
+                + (", or 16-bit segment:offset strings for MZ targets" if allow_segmented else "")
             )
+        result["addresses"] = addresses
     elif addresses:
         raise AnalysisError("Ghidra operation does not accept addresses")
     if "query" in result and (
@@ -1185,7 +1217,7 @@ def _bounded_integer(value: Any, name: str, minimum: int, maximum: int) -> None:
         )
 
 
-def _ghidra_schema(operation: str) -> dict[str, Any]:
+def _ghidra_schema(operation: str, *, allow_segmented: bool = False) -> dict[str, Any]:
     properties: dict[str, Any] = {}
     required: list[str] = []
     if operation in {
@@ -1197,13 +1229,17 @@ def _ghidra_schema(operation: str) -> dict[str, Any]:
         "xrefs_to",
         "xrefs_from",
     }:
-        properties["addresses"] = {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 16,
-            "items": {"type": "string", "pattern": "^0x[0-9a-fA-F]{1,16}$"},
-        }
-        required.append("addresses")
+        formats = r"0[xX][0-9a-fA-F]{1,16}|[0-9]{1,20}"
+        if allow_segmented:
+            formats += r"|[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}"
+        address = {"anyOf": [
+            {"type": "string", "pattern": r"^\s*(?:" + formats + r")\s*$"},
+            {"type": "integer", "minimum": 0, "maximum": 0xFFFFFFFFFFFFFFFF},
+        ]}
+        properties["address"] = address
+        properties["addresses"] = {"anyOf": [address, {
+            "type": "array", "minItems": 1, "maxItems": 16, "items": address,
+        }]}
     if operation in {"list_functions", "search_strings"}:
         properties["query"] = {"type": "string", "maxLength": 1000}
         if operation == "search_strings":
@@ -1218,12 +1254,15 @@ def _ghidra_schema(operation: str) -> dict[str, Any]:
             "minimum": 1,
             "maximum": 500,
         }
-    return {
+    schema = {
         "type": "object",
         "additionalProperties": False,
         "properties": properties,
         "required": required,
     }
+    if "address" in properties:
+        schema["oneOf"] = [{"required": ["address"]}, {"required": ["addresses"]}]
+    return schema
 
 
 def _page(

@@ -67,6 +67,26 @@ class AnalysisGatewayTests(unittest.TestCase):
         with self.assertRaisesRegex(AnalysisError, "unsupported fields"):
             _validate_ghidra_arguments("check", {"limit": 1})
 
+    def test_ghidra_accepts_web_address_representations(self) -> None:
+        for arguments in ({"address": " 0X1EA5D "}, {"addresses": "0x1EA5D"},
+                          {"addresses": 125533}, {"addresses": ["125533"]}):
+            forwarded = _validate_ghidra_arguments("function", arguments)
+            self.assertEqual(int(forwarded["addresses"][0], 16), 0x1EA5D)
+        segmented = _validate_ghidra_arguments(
+            "function", {"address": "1e8f:016d"}, allow_segmented=True
+        )
+        self.assertEqual(segmented["addresses"], ["1e8f:016d"])
+        with self.assertRaises(AnalysisError):
+            _validate_ghidra_arguments("function", {"address": "1e8f:016d"})
+
+    def test_ghidra_recovers_formatting_without_accepting_invalid_addresses(self) -> None:
+        for address in (True, -1, 1 << 64, "10000:0000", "0000:10000", "0x1; id", {}, ""):
+            with self.subTest(address=address):
+                with self.assertRaisesRegex(AnalysisError, "use address or addresses"):
+                    _validate_ghidra_arguments("function", {"address": address}, allow_segmented=True)
+        with self.assertRaisesRegex(AnalysisError, "function accepts: addresses"):
+            _validate_ghidra_arguments("function", {"addresses": ["0x1"], "typo": 1})
+
     def test_native_ghidra_marker_must_match_independent_pe_observation(self) -> None:
         disk = {
             "sha256": "1" * 64,
