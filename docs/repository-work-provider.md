@@ -117,7 +117,12 @@ counts are public.
 
 `reference_repository_ids` is a per-game allowlist of other registered live
 repositories. Their current trees and Git history are mounted read-only at
-their canonical paths only inside the selected repository's shell. This makes
+their canonical paths and at `/references/<repository_id>` inside the selected
+repository's shell. Repository discovery returns `reference_repository_mounts`
+with these stable paths and `read_only: true`; callers need no host path.
+For example, a TH03 registration allowing TH04 can run
+`cat /references/th04/src/shared/math/vector.cpp`. Both paths refer to the same
+read-only tree, including when shell working directories change. This makes
 adjacent-game source available for composable searches without granting writes
 or silently exposing every game to every session. References are hypotheses,
 not evidence: prefer committed reference content, record its HEAD and dirty

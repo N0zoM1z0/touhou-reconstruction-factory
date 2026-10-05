@@ -250,6 +250,10 @@ class RepositoryWorkStore:
             ),
             registration.work_environment,
             registration.work_state_roots,
+            tuple(
+                (reference_id, self.config.repository(reference_id).path)
+                for reference_id in registration.reference_repository_ids
+            ),
         )
         try:
             process = subprocess.Popen(
@@ -531,6 +535,7 @@ def _sandbox_argv(
     shared_tool_roots: tuple[Path, ...],
     work_environment: tuple[tuple[str, str], ...],
     work_state_roots: tuple[Path, ...],
+    reference_repositories: tuple[tuple[str, Path], ...] = (),
 ) -> list[str]:
     argv = [
         nice,
@@ -582,6 +587,10 @@ def _sandbox_argv(
         argv.extend(("--bind", str(state_root), str(state_root)))
     _add_parent_dirs(argv, repository, created)
     argv.extend(("--bind", str(repository), str(repository)))
+    if reference_repositories:
+        argv.extend(("--dir", "/references"))
+        for reference_id, reference_path in reference_repositories:
+            argv.extend(("--symlink", str(reference_path), f"/references/{reference_id}"))
     argv.extend(
         (
             "--symlink",

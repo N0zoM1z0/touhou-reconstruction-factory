@@ -179,6 +179,10 @@ target_identity_ids = ["target:reference"]
 test "$(cat .tools/toolchain.txt)" = "repo-local toolchain"
 test "$(cat {self.shared_tools.as_posix()}/shared.txt)" = shared
 test "$(cat {self.reference_repository.as_posix()}/reference.txt)" = "adjacent hypothesis"
+test "$(cat /references/reference/reference.txt)" = "adjacent hypothesis"
+if printf 'forbidden\\n' > /references/reference/reference.txt 2>/dev/null; then
+  exit 92
+fi
 if printf 'forbidden\n' > {self.reference_repository.as_posix()}/reference.txt 2>/dev/null; then
   exit 91
 fi
@@ -195,6 +199,10 @@ exit 7
             timeout_seconds=10,
         )
         self.assertEqual(command["exit_code"], 7)
+        self.assertEqual(
+            self.config.repository("fixture").public_dict()["reference_repository_mounts"],
+            [{"repository_id": "reference", "path": "/references/reference", "read_only": True}],
+        )
         self.assertFalse(command["timed_out"])
         self.assertTrue(command["filesystem_persisted"])
         self.assertEqual(command["head_relation"], "advanced")

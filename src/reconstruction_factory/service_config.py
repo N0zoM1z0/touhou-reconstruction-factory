@@ -387,6 +387,11 @@ class RepositoryRegistration:
             "adapter_id": self.adapter_id,
             "target_identity_ids": list(self.target_identity_ids),
             "reference_repository_ids": list(self.reference_repository_ids),
+            "reference_repository_mounts": [
+                {"repository_id": reference_id, "path": f"/references/{reference_id}",
+                 "read_only": True}
+                for reference_id in self.reference_repository_ids
+            ],
             "work_environment_names": [name for name, _ in self.work_environment],
             "work_state_root_count": len(self.work_state_roots),
         }

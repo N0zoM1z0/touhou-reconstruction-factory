@@ -62,6 +62,8 @@ without a new observation:
   the TH10 repository and native-Ghidra activation record; and
 - [`th03-headless-bootstrap-2026-10-05.md`](th03-headless-bootstrap-2026-10-05.md):
   TH03 headless PC-98 tools, native MZ providers and a stateless hot deployment;
+- [`reference-mount-hot-validation-2026-10-05.md`](reference-mount-hot-validation-2026-10-05.md):
+  discoverable read-only references and public MCP checks without worker restarts;
 - the dated `Recorded ...` sections in [`validation.md`](validation.md) and the
   historical deployment checkpoints in [`gpt-web-plugin.md`](gpt-web-plugin.md).
 

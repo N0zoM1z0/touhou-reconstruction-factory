@@ -30,6 +30,7 @@ from reconstruction_factory.ontology import (
 )
 from reconstruction_factory.oracle_receipts import Coldness
 from reconstruction_factory.replay_drivers import (
+    BUILTIN_DRIVERS,
     ComponentSpec,
     NativeOutcome,
     ReplayDriver,
@@ -371,7 +372,34 @@ print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
                 for candidate in candidates:
                     if (package_root / candidate).is_file() and candidate not in paths:
                         missing.add((relative, candidate))
-        self.assertEqual(missing, set())
+        # TH03 is an inspection-only descriptor subclass. It has no replay
+        # driver and no executable overrides; keep existing queued replay
+        # identities stable while it is brought up on the control plane.
+        self.assertEqual(missing, {("adapters/__init__.py", "adapters/th03.py")})
+        descriptor = ast.parse((package_root / "adapters/th03.py").read_text())
+        self.assertEqual(len(descriptor.body), 3)
+        self.assertIsInstance(descriptor.body[0], ast.Expr)
+        self.assertIsInstance(descriptor.body[0].value, ast.Constant)
+        imported = descriptor.body[1]
+        self.assertIsInstance(imported, ast.ImportFrom)
+        self.assertEqual((imported.level, imported.module), (1, "th04"))
+        self.assertEqual([name.name for name in imported.names], ["Th04RepositoryAdapter"])
+        adapter = descriptor.body[2]
+        self.assertIsInstance(adapter, ast.ClassDef)
+        self.assertEqual(adapter.name, "Th03RepositoryAdapter")
+        self.assertEqual([base.id for base in adapter.bases], ["Th04RepositoryAdapter"])
+        self.assertFalse(adapter.decorator_list)
+        self.assertFalse(adapter.keywords)
+        names = set()
+        for assignment in adapter.body:
+            self.assertIsInstance(assignment, ast.Assign)
+            self.assertEqual(len(assignment.targets), 1)
+            self.assertIsInstance(assignment.targets[0], ast.Name)
+            names.add(assignment.targets[0].id)
+            self.assertTrue(all(isinstance(node, (ast.Constant, ast.Tuple, ast.Name, ast.Load))
+                                for node in ast.walk(assignment.value)))
+        self.assertEqual(names, {"id", "game", "game_number", "boundary_path", "authored_path", "_required"})
+        self.assertNotIn("th03-pc98-v1", {driver.adapter_id for driver in BUILTIN_DRIVERS})
 
     def test_product_replay_uses_driver_declared_nonbyte_coverage(self) -> None:
         self.snapshot = product_snapshot(self.root)
