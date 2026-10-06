@@ -41,6 +41,13 @@ PYTHONPATH=src FACTORY_MCP_URL="$FACTORY_MCP_URL" \
   .venv/bin/python scripts/validate-live-mcp.py
 ```
 
+A successful URL-based run establishes reachability through that client's
+resolver and proxy path. It can bypass public Funnel ingress through MagicDNS
+or an operator proxy. For public deployment readiness, also perform the
+[public connectivity probes](gpt-web-plugin.md#public-connectivity-diagnostics-without-magicdns)
+with current external DNS answers, a pinned public destination, proxy bypass,
+and certificate verification, then confirm an actual GPT-web call.
+
 The default checks the exact 33-tool inventory, annotations and bounded schemas,
 strict policy, all six registered adapters, imported-versus-accepted evidence
 separation, real Git HEAD/dirty state, the TH095 semantic router's authority and
@@ -87,6 +94,50 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --all \
   --replay-idempotency-key <existing-identical-key>
 ```
+
+## Recorded Funnel and GPT-web recovery: 2026-10-06
+
+A TH10 Web conversation reported `UNAVAILABLE: Connection failed`, including in
+a new conversation. Loopback MCP and MagicDNS HTTPS access worked, but direct
+TLS probes to both externally resolved public IPv4 relay addresses closed
+before presenting a certificate. Google and Cloudflare public DNS both returned
+address records. Initial HTTPS probes through the operator proxy also worked,
+but appeared at Factory with a tailnet source address; they did not establish
+public Funnel reachability.
+
+Restarting the active MCP process and re-publishing its unchanged Funnel mapping
+did not recover direct public TLS. At the operator's explicit request, the
+shared `tailscaled.service` was restarted at 11:36:15, Asia/Singapore. The daemon
+logged `Hostinfo.IngressEnabled changed to true`. Public probes initially still
+failed, then succeeded after ingress state publication. The complete Serve
+configuration, existing URL, and replay worker were preserved.
+
+Direct probes used `--noproxy '*'` and `--resolve` against each public IPv4
+address, with certificate verification enabled. Both paths returned HTTP 200
+for initialization, discovery of 33 tools, and a successful TH10 live-repository
+status call. An official MCP client session with proxy variables removed and
+DNS pinned to a public address also discovered the tools, queried TH10, and
+disconnected cleanly. These results support recovery of Funnel registration or
+ingress state after the daemon restart; the internal failure mechanism remains
+unknown. The full read-only live validator attempt had timed out, so this
+incident does not constitute a complete release or all-game validation run.
+
+The Web client subsequently reported `MCP -32001: Unknown tool` with qualified
+app labels for `factory_get_repository_status` and `factory_list_repositories`.
+Direct public calls using both bare names succeeded. A bounded ingress capture
+observed two OpenAI TH10 `factory_repository_run_shell` requests with bare names,
+but no status/list request in that window. It did not establish that the
+displayed prefix had been forwarded to Factory. No tool aliases, schemas,
+provider implementation hashes, or game files were changed.
+
+After the Plugins-detail Refresh and new-conversation procedure was recommended,
+the operator confirmed that GPT-web worked again. This separates public
+transport recovery from client tool binding recovery; neither restarting MCP
+alone nor successful MagicDNS access established end-to-end readiness. The
+reusable procedure is in
+[public diagnostics and recovery](gpt-web-plugin.md#public-connectivity-diagnostics-without-magicdns).
+Endpoints, credentials, operator configuration, and raw request captures are
+excluded from this record; the temporary raw capture was removed after review.
 
 ## Recorded 0.8.0 TH10 compiler-loop deployment: 2026-09-12
 

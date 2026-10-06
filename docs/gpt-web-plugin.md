@@ -204,7 +204,8 @@ tailscale funnel status
 
 ### Restart and reconnect contract
 
-Treat server readiness and GPT-web connection readiness as two separate gates.
+Treat loopback server readiness, public transport readiness, and an actual
+GPT-web call as separate gates.
 For a behavior-only deployment that preserves the MCP version, tool names,
 schemas, annotations, public hostname, and high-entropy path, use the stateless
 HTTP endpoint's blue/green boundary:
@@ -253,8 +254,117 @@ Diagnose the boundary before changing code:
   request evidence and repair that concrete server/tool failure.
 
 Do not repeatedly restart a healthy service while diagnosing a client-side
-connection cache. Report GPT-web ready only after the public validator passes;
-the operator then performs the one UI-only Refresh step.
+connection cache. Verify public transport with the probes below as well as the
+validator, perform the UI-only Refresh when needed, and report GPT-web ready
+only after an actual Web tool call succeeds.
+
+### Public connectivity diagnostics without MagicDNS
+
+Check loopback MCP, public Funnel transport, and an actual GPT-web tool call
+separately. Inside the tailnet, MagicDNS can resolve the public hostname to a
+`100.64.0.0/10` address. A successful HTTPS request through that address exercises
+Tailscale Serve without testing the public Funnel relays. `Funnel on` describes
+configuration; it does not establish public reachability.
+
+Obtain current relay addresses from an external resolver. Use placeholders in
+public records; keep the real hostname and route in private operator state:
+
+```bash
+factory_public_host='<node>.<tailnet>.ts.net'
+factory_mcp_path='/<private-mcp-path>'
+dig @1.1.1.1 "${factory_public_host}" A +short
+```
+
+If direct DNS queries are blocked, query an external DNS-over-HTTPS resolver:
+
+```bash
+curl --silent --show-error --max-time 15 --get \
+  --header 'Accept: application/dns-json' \
+  --data-urlencode "name=${factory_public_host}" \
+  --data-urlencode 'type=A' \
+  https://cloudflare-dns.com/dns-query
+```
+
+Select an IPv4 `Answer` entry with `type=1`, then repeat the following probes for
+each returned address. The DNS lookup may use an operator proxy, but the MCP
+probe must bypass it: a proxy can resolve or redirect the hostname back into the
+tailnet even when the client attempts to pin a public destination.
+
+```bash
+factory_public_ipv4='<address-from-public-dns>'
+
+factory_public_post() {
+  curl --noproxy '*' \
+    --resolve "${factory_public_host}:443:${factory_public_ipv4}" \
+    --connect-timeout 8 --max-time 20 --silent --show-error \
+    --header 'Content-Type: application/json' \
+    --header 'Accept: application/json, text/event-stream' \
+    --data-binary "$1" \
+    --write-out '\nHTTP %{http_code}; peer %{remote_ip}\n' \
+    "https://${factory_public_host}${factory_mcp_path}"
+}
+
+factory_public_post '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"factory-public-probe","version":"1"}}}'
+factory_public_post '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+factory_public_post '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"factory_list_repositories","arguments":{}}}'
+```
+
+These independent POST probes target the Factory's stateless, no-auth HTTP
+deployment. `--resolve` preserves the hostname for TLS SNI, certificate
+verification, and the HTTP Host header while selecting the public relay IP.
+`--noproxy '*'` bypasses environment-configured proxies. Do not replace the URL
+hostname with the IP or disable certificate verification. Check that `peer`
+matches the selected public address, initialization returns the expected server,
+and the discovered tool can actually be called without a JSON-RPC error or
+`isError=true`. HTTP 200 alone is insufficient.
+
+An IPv6 probe uses `--resolve "${factory_public_host}:443:[${factory_public_ipv6}]"`
+with a current public AAAA answer and a working local IPv6 route. Missing local
+IPv6 connectivity does not establish a Funnel failure. A normal validator run
+against the URL still uses its client's resolver and proxy settings; pair it
+with a verified public transport probe before calling it public validation.
+See [Tailscale's Funnel transport documentation](https://tailscale.com/docs/features/tailscale-funnel).
+
+### Recover the layer that failed
+
+| Observation | Next action |
+| --- | --- |
+| Loopback initialization or a correctly named tool fails | Inspect the active MCP process and its concrete error. Match the unit to the currently published loopback port before restarting it. |
+| Loopback works, public DNS returns relay addresses, and direct public TLS fails | Inspect Funnel registration, certificates, access controls, and daemon health. An authorized shared-daemon restart is a recovery option when the local mapping is correct. |
+| Direct public discovery and the bare tool call work, but GPT-web reports `Unknown tool` | Refresh the existing ChatGPT connection in its Plugins detail page, confirm its tool inventory, and begin a new conversation with that connection selected. |
+| The failed tool request reaches Factory | Inspect the actual request name, arguments, and MCP result; repair the demonstrated server failure. |
+
+A shared Tailscale daemon restart interrupts every Funnel mapping and any
+Tailscale-dependent operator proxy. Coordinate active Web work before executing:
+
+```bash
+sudo systemctl restart tailscaled.service
+systemctl is-active tailscaled.service
+tailscale status
+tailscale funnel status
+```
+
+Retain the existing public hostname, route, and proxy targets. Allow the daemon
+to publish its ingress state, then repeat the public probes; the first attempt
+immediately after restart can still fail. Verify that all mappings were
+preserved and that the MCP and replay worker remain active. Restarting the MCP
+process alone does not refresh the shared Funnel daemon. Restarting the worker
+is unnecessary for this transport repair.
+
+For `Unknown tool`, distinguish the qualified label displayed in GPT-web from
+the name actually sent in MCP `tools/call`. Factory advertises bare names such
+as `factory_list_repositories`. A displayed app namespace does not prove that
+the prefix reached Factory, and is not evidence for adding server aliases.
+Likewise, repeating tool search inside a chat is not the Plugins detail page's
+**Refresh** operation. Confirm recovery with an actual read-only Web call using
+the [official connection refresh procedure](https://developers.openai.com/plugins/deploy/connect-chatgpt#refresh-metadata).
+Keep any bounded request capture private, omit scripts and argument values from
+the summary, and remove the raw capture after review.
+
+The [2026-10-06 recovery record](validation.md#recorded-funnel-and-gpt-web-recovery-2026-10-06)
+documents a shared-daemon restart followed by ChatGPT connection recovery. It is
+evidence for that incident, not proof that every connection failure has the
+same cause or that the endpoint remains healthy.
 
 To remove only this public route while leaving other Funnel mappings intact:
 
