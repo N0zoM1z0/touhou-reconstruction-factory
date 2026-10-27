@@ -48,24 +48,30 @@ class RepositoryWorkStore:
         self.commands = self.root / "commands"
         self.locks = self.root / "locks"
 
-    def status(self, repository_id: str) -> dict[str, Any]:
+    def status(self, repository_id: str, *, include_git: bool = True) -> dict[str, Any]:
         self._require_enabled()
         registration = self.config.repository(repository_id)
+        if not include_git:
+            return {"repository_id": repository_id, "git_status_included": False,
+                    "recent_commands": self._recent_commands(repository_id)}
         with self._repository_lock(repository_id), self._factory_repository_lock(
             registration, exclusive=False
         ):
             status = _repository_status(registration)
-            records = heapq.nlargest(
-                5, (self.commands / repository_id).glob("*/record.json"),
-                key=lambda path: path.stat().st_mtime_ns,
-            )
-            status["recent_commands"] = [
-                {key: record.get(key) for key in (
-                    "command_id", "state", "started_at", "finished_at", "exit_code", "timed_out",
-                )}
-                for record in (json.loads(path.read_text(encoding="utf-8")) for path in records)
-            ]
+            status["recent_commands"] = self._recent_commands(repository_id)
             return status
+
+    def _recent_commands(self, repository_id: str) -> list[dict[str, Any]]:
+        records = heapq.nlargest(
+            5, (self.commands / repository_id).glob("*/record.json"),
+            key=lambda path: path.stat().st_mtime_ns,
+        )
+        return [
+            {key: record.get(key) for key in (
+                "command_id", "state", "started_at", "finished_at", "exit_code", "timed_out",
+            )}
+            for record in (_read_record(path) for path in records)
+        ]
 
     def semantic_debt_report(
         self,
@@ -227,15 +233,18 @@ class RepositoryWorkStore:
         # worktree lock and must not wait for an unrelated compiler in this repo.
         if record["state"] != "running":
             return self._output_page_unlocked(directory, record, stream, offset, limit)
-        with self._repository_lock(repository_id, blocking=False):
-            record = _read_record(directory / "record.json")
-            if record["state"] == "running":
-                record["state"] = "interrupted"
-                record["finished_at"] = _format_time(_now())
-                _write_json(directory / "record.json", record)
-            return self._output_page_unlocked(
-                directory, record, stream, offset, limit
-            )
+        try:
+            with self._repository_lock(repository_id, blocking=False):
+                record = _read_record(directory / "record.json")
+                if record["state"] == "running":
+                    record["state"] = "interrupted"
+                    record["finished_at"] = _format_time(_now())
+                    _write_json(directory / "record.json", record)
+        except RepositoryWorkError as error:
+            if not isinstance(error.__cause__, BlockingIOError):
+                raise
+            # The writer owns the lock; its capture can be read independently.
+        return self._output_page_unlocked(directory, record, stream, offset, limit)
 
     def _execute_shell(
         self,
@@ -316,6 +325,7 @@ class RepositoryWorkStore:
                     if remaining > 0:
                         payload = block[:remaining]
                         handles[key.fd].write(payload)
+                        handles[key.fd].flush()
                         captured[key.fd] += len(payload)
                         output_total += len(payload)
             returncode = process.wait()
@@ -351,9 +361,10 @@ class RepositoryWorkStore:
     ) -> dict[str, Any]:
         path = directory / f"{stream}.bin"
         size = path.stat().st_size if path.exists() else 0
+        running = record.get("state") == "running"
         with path.open("rb") if path.exists() else open(os.devnull, "rb") as handle:
             handle.seek(offset)
-            payload = handle.read(limit)
+            payload = handle.read(min(limit, max(0, size - offset)))
             # Complete a trailing UTF-8 code point so normal text logs stay text
             # even with tiny byte pages. Invalid/binary data remains lossless.
             try:
@@ -362,6 +373,8 @@ class RepositoryWorkStore:
                 if error.reason == "unexpected end of data":
                     candidate = payload
                     for _ in range(3):
+                        if handle.tell() >= size:
+                            break
                         extra = handle.read(1)
                         if not extra:
                             break
@@ -374,14 +387,24 @@ class RepositoryWorkStore:
                         else:
                             payload = candidate
                             break
+            if running:
+                try:
+                    payload.decode("utf-8")
+                except UnicodeDecodeError as error:
+                    if error.reason == "unexpected end of data":
+                        # Leave the incomplete code point for the next poll.
+                        payload = payload[:error.start]
         result: dict[str, Any] = {
             "stream": stream,
             "captured_size": size,
-            "observed_size": record[f"{stream}_observed_bytes"],
+            "observed_size": None if record.get("state") in {"running", "interrupted"}
+            else record[f"{stream}_observed_bytes"],
+            "command_state": record.get("state"),
+            "command_finished": not running,
             "offset": offset,
             "bytes_returned": len(payload),
             "next_offset": offset + len(payload)
-            if offset + len(payload) < size
+            if running or offset + len(payload) < size
             else None,
         }
         try:

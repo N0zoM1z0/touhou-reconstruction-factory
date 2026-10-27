@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import json
+import time
 import shutil
 import subprocess
 import tempfile
@@ -259,7 +260,7 @@ exit 7
         self.assertTrue((self.repository / "after-output.txt").is_file())
 
     @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
-    def test_completed_capture_reads_bypass_a_new_writer_and_running_reads_fail_promptly(self) -> None:
+    def test_capture_reads_bypass_a_writer_and_recover_orphans(self) -> None:
         command = self.store.run_shell("fixture", "printf 'earlier log'", relative_cwd=".", timeout_seconds=5)
         arguments = dict(stream="stdout", offset=0, limit=1024)
         with ThreadPoolExecutor(max_workers=1) as pool:
@@ -273,11 +274,68 @@ exit 7
         record["state"] = "running"
         record_path.write_text(json.dumps(record))
         with self.store._repository_lock("fixture"):
-            with self.assertRaisesRegex(RepositoryWorkError, "still running"):
-                self.store.command_output("fixture", command["command_id"], **arguments)
+            live = self.store.command_output("fixture", command["command_id"], **arguments)
+            self.assertEqual(live["text"], "earlier log")
+            self.assertFalse(live["command_finished"])
+            self.assertIsNone(live["observed_size"])
+            self.assertEqual(live["next_offset"], len(b"earlier log"))
         recovered = self.store.command_output("fixture", command["command_id"], **arguments)
         self.assertEqual(recovered["text"], "earlier log")
         self.assertEqual(json.loads(record_path.read_text())["state"], "interrupted")
+
+    @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
+    def test_light_status_and_live_capture_do_not_wait_for_writer_completion(self) -> None:
+        release = self.repository / ".tools/release-writer"
+        script = """python3 - <<'PY'
+from pathlib import Path
+import time
+print('first phase', flush=True)
+while not Path('.tools/release-writer').exists(): time.sleep(.01)
+print('last phase', flush=True)
+PY"""
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            writer = pool.submit(self.store.run_shell, "fixture", script, relative_cwd=".", timeout_seconds=5)
+            try:
+                deadline = time.monotonic() + 3
+                while time.monotonic() < deadline:
+                    status = self.store.status("fixture", include_git=False)
+                    if status["recent_commands"]:
+                        command_id = status["recent_commands"][0]["command_id"]
+                        page = self.store.command_output("fixture", command_id, stream="stdout", offset=0, limit=100)
+                        if "first phase" in page.get("text", ""):
+                            break
+                    time.sleep(.01)
+                else:
+                    self.fail("writer output was not flushed to the live capture")
+                self.assertFalse(writer.done())
+                self.assertFalse(status["git_status_included"])
+                self.assertNotIn("head_commit", status)
+                self.assertFalse(page["command_finished"])
+                self.assertIsNone(page["observed_size"])
+            finally:
+                release.touch()
+            self.assertEqual(writer.result(timeout=5)["exit_code"], 0)
+
+    def test_live_utf8_tail_waits_for_complete_code_point(self) -> None:
+        directory = self.root / "live-pages"
+        directory.mkdir()
+        path = directory / "stdout.bin"
+        path.write_bytes(b"first " + b"\xf0\x9f")
+        record = {"state": "running", "stdout_observed_bytes": 0}
+        page = self.store._output_page_unlocked(directory, record, "stdout", 0, 100)
+        self.assertEqual(page["text"], "first ")
+        offset = page["next_offset"]
+        pending = self.store._output_page_unlocked(directory, record, "stdout", offset, 100)
+        self.assertEqual(pending["text"], "")
+        self.assertEqual(pending["next_offset"], offset)
+        with path.open("ab") as handle:
+            handle.write(b"\x90\x88\n")
+        tail = self.store._output_page_unlocked(directory, record, "stdout", offset, 100)
+        self.assertEqual(tail["text"], "🐈\n")
+        record.update(state="completed", stdout_observed_bytes=path.stat().st_size)
+        end = self.store._output_page_unlocked(directory, record, "stdout", tail["next_offset"], 100)
+        self.assertTrue(end["command_finished"])
+        self.assertIsNone(end["next_offset"])
 
     def test_output_pages_complete_utf8_without_changing_binary_bytes(self) -> None:
         directory = self.root / "page-fixture"

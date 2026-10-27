@@ -268,7 +268,9 @@ def build_mcp_server(
         description=(
             "Inspect the real Git status of one operator-registered reconstruction repo. "
             "This includes five recent command IDs for reconnecting after a lost response, "
-            "plus current dirty, staged, untracked, branch, upstream, and HEAD "
+            "including active commands. Set include_git=false to return command records "
+            "without waiting for a running writer or inspecting Git. The default includes "
+            "current dirty, staged, untracked, branch, upstream, and HEAD "
             "state. A clean or committed worktree is a checkpoint state, not Oracle proof."
         ),
         annotations=_READ_ONLY,
@@ -276,7 +278,10 @@ def build_mcp_server(
     )
     async def factory_get_repository_status(
         repository_id: RepositoryId,
+        include_git: bool = True,
     ) -> dict[str, Any]:
+        if not include_git:
+            return await invoke(lambda: service().repository_status(repository_id, include_git=False))
         return await repository_invoke(repository_id, lambda: service().repository_status(repository_id))
 
     @server.tool(
@@ -341,7 +346,9 @@ def build_mcp_server(
         description=(
             "Read a bounded stdout or stderr page from a durable live-repository command. "
             "Use next_offset until null; UTF-8 pages may add up to three bytes to finish "
-            "a character. Observed and captured sizes make truncation explicit."
+            "a character. Running commands can be read: command_finished=false and "
+            "observed_size=null until they finish. If next_offset is unchanged, wait "
+            "briefly before polling. Captured and final observed sizes expose truncation."
         ),
         annotations=_READ_ONLY,
         structured_output=True,

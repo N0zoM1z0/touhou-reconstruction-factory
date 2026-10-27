@@ -63,6 +63,10 @@ also accepts `segment:offset`. Keep requests bounded and page larger results.
 Native Ghidra also offers `function_context` with the same address arguments:
 function metadata, callers, callees and decompilation run in one process.
 Use it when investigating a function instead of paying startup cost four times.
+Native `decompile` and `function_context` also accept instruction addresses
+inside an existing function. A small Factory script resolves the containing
+function before calling the repository's decompiler; output names its entry.
+This does not create functions or run automatic project analysis.
 The operator may select a different existing project with `--project-name`;
 no implementation fingerprint needs refreshing.
 

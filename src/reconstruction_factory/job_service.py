@@ -87,8 +87,8 @@ class FactoryService:
     def list_repositories(self) -> tuple[dict[str, Any], ...]:
         return tuple(item.public_dict() for item in self.config.repositories)
 
-    def repository_status(self, repository_id: str) -> dict[str, Any]:
-        return self.repository_work.status(repository_id)
+    def repository_status(self, repository_id: str, *, include_git: bool = True) -> dict[str, Any]:
+        return self.repository_work.status(repository_id, include_git=include_git)
 
     def repository_semantic_debt_report(
         self,

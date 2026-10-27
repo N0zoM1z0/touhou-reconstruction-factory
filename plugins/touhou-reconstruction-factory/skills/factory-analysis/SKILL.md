@@ -12,6 +12,8 @@ description: Use repository-selected IDA or Ghidra for autonomous source investi
    does not start the analyzer.
    For native Ghidra function investigation, `function_context` returns
    metadata, callers, callees and decompilation in a single analyzer launch.
+   An instruction address inside a defined function is sufficient for native
+   Ghidra decompilation; the returned header identifies its actual entry.
 3. Confirm the returned repository/target and read the actual verification
    scope. Ghidra exploratory calls report `not-checked`; native IDA checks
    database metadata only. Neither is complete target verification.

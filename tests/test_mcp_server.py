@@ -164,11 +164,11 @@ target_identity_ids = ["target:th03-fixture"]
         entered = threading.Event()
         release = threading.Event()
 
-        def status(repository_id):
-            if repository_id == "th08":
+        def status(repository_id, *, include_git=True):
+            if repository_id == "th08" and include_git:
                 entered.set()
                 release.wait(5)
-            return {"repository_id": repository_id}
+            return {"repository_id": repository_id, "git_status_included": include_git}
 
         limiter = anyio.to_thread.current_default_thread_limiter()
         original_tokens = limiter.total_tokens
@@ -205,6 +205,12 @@ target_identity_ids = ["target:th03-fixture"]
                                 )
                                 self.assertFalse(log.is_error)
                                 self.assertEqual(log.structured_content["text"], "earlier log")
+                                active = await client.call_tool(
+                                    "factory_get_repository_status",
+                                    {"repository_id": "th08", "include_git": False},
+                                )
+                                self.assertFalse(active.is_error)
+                                self.assertFalse(active.structured_content["git_status_included"])
                         finally:
                             release.set()
         finally:

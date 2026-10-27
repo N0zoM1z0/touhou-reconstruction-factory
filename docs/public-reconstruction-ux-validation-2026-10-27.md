@@ -107,3 +107,44 @@ The second round passed 18 analysis, 9 repository-work, 10 MCP-server and
 replay implementation fingerprint remained unchanged. Game reconstruction
 source and acceptance ledgers were preserved; only the TH08 documentation was
 changed. Superseded candidate services were retired after becoming idle.
+
+## Active recovery and interior-address exercise
+
+A third public round reproduced two further workflow obstacles. A disconnected
+long-running shell request could not recover its command ID until the writer
+finished, because ordinary Git status waited behind it. Also, native Ghidra
+function metadata resolved an interior instruction address correctly while
+decompilation returned `no function` for that same address.
+
+- `factory_get_repository_status(include_git=false)` now retrieves recent
+  command records without waiting for Git or the worktree writer. Running
+  stdout/stderr can be paged directly, with an explicit unfinished state and
+  unknown observed total. A public request disconnected after 1.5 seconds;
+  active recovery returned in 0.622 seconds and reconstructed 66 UTF-8 bytes
+  across 15 pages, including four unfinished empty polls and a split emoji.
+  The command executed once. Final counts and text matched exactly.
+- A small shared `FactoryDecompile.java` resolves an existing containing
+  function, then delegates to each repository's own decompiler. It does not
+  create functions or run project analysis. Entry and interior-address output
+  for TH10 matched the earlier complete 18,971-byte result byte for byte.
+  All twelve Ghidra providers with defined functions completed public interior
+  `function_context` queries; returned metadata identified the containing entry,
+  and full decompiler component files were recovered. TH05 remains loader-only.
+- A separate public analysis disconnect retained the full Ghidra result. The
+  next query to the same provider completed in 14.22 seconds while independent
+  discovery took 0.85 seconds. Mixed valid/invalid batches still retained their
+  useful partial text and complete diagnostics.
+- An actual read-only TH05 Ghidra project was opened through public Bash and
+  its analyzer was killed abruptly. The next native MCP query reopened it
+  successfully. A shell timeout also stopped a lock-holding descendant,
+  released the lock and preserved its partial file.
+- VC7.1 and VC9 compiled copied maintained source with spaces in source/output
+  paths. A Unicode/spaced working directory supported ordinary file work and
+  cross-repository source reads. All thirteen default Git status calls stayed
+  compatible, and the public catalog remained at 33 tools with the optional
+  status argument advertised. All three native IDA metadata queries passed.
+
+This round passed 11 repository-work, 10 MCP-server, 18 analysis and 2 headless
+IDA checks, plus `git diff --check`. Reconstruction source and acceptance
+ledgers were unchanged; the endpoint, original replay worker and replay
+implementation fingerprint were retained.

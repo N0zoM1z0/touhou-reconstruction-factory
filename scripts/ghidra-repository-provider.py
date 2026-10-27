@@ -52,6 +52,7 @@ def main() -> int:
     script_directory = root / "scripts/ghidra"
     if not (script_directory / "QueryProgram.java").is_file():
         script_directory = root / ".tools/mcp_for_gptweb-ghidra/ghidra-scripts"
+    script_paths = f"{Path(__file__).resolve().parent / 'ghidra'};{script_directory}"
     query = []
     fragments = []
     if args.operation != "check":
@@ -70,11 +71,11 @@ def main() -> int:
                 path = Path(output).with_name(f"{Path(output).stem}-{operation}.txt")
                 fragments.append((operation, path))
                 if operation == "decompile":
-                    query.extend(["-postScript", "DecompileFunctions.java", str(path), *values])
+                    query.extend(["-postScript", "FactoryDecompile.java", str(path), *values])
                 else:
                     query.extend(["-postScript", "QueryProgram.java", str(path), operation, *values])
         else:
-            query = ["-postScript", "DecompileFunctions.java", output, *values]
+            query = ["-postScript", "FactoryDecompile.java", output, *values]
     scratch = root / ".analysis"
     scratch.mkdir(exist_ok=True)
     with (scratch / "ghidra.lock").open("a+") as gate, (project / "workflow.lock").open("a+") as project_gate:
@@ -84,7 +85,7 @@ def main() -> int:
             ["nice", "-n", "10", "taskset", "-c", str(min(os.sched_getaffinity(0))),
              str(analyzer), str(project), name, "-process", filename,
              "-readOnly", "-noanalysis", "-max-cpu", "1", *query,
-             "-scriptPath", str(script_directory)],
+             "-scriptPath", script_paths],
             cwd=root, env=environment, capture_output=True, text=True, errors="replace",
         )
     sys.stdout.write(result.stdout)
