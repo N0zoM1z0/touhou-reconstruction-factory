@@ -69,6 +69,9 @@ without a new observation:
 - [`all-games-mcp-hot-validation-2026-10-05.md`](all-games-mcp-hot-validation-2026-10-05.md):
   seven-game MCP coverage, TH08/TH105 headless IDA migration and compatible
   TH09/TH10/TH105 exact replay submission to the unchanged worker;
+- [`public-registration-validation-2026-10-27.md`](public-registration-validation-2026-10-27.md):
+  expansion to thirteen main repositories, repaired headless/Python bindings,
+  and public-relay MCP calls with MagicDNS and proxies bypassed;
 - the dated `Recorded ...` sections in [`validation.md`](validation.md) and the
   historical deployment checkpoints in [`gpt-web-plugin.md`](gpt-web-plugin.md).
 

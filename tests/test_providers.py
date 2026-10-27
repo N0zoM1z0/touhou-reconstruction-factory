@@ -85,6 +85,23 @@ class ProviderTests(unittest.TestCase):
                 )
             )
 
+    def test_explicit_msvc_generation_aliases_keep_the_native_family(self) -> None:
+        for provider, generation in (("msvc7", "2002"), ("msvc71", "2003")):
+            value = target(family=f"Microsoft Visual C++ .NET {generation} generation")
+            kit = self.factory.create(ProjectSpec(
+                project_id="test", platform_provider_id="windows-pe-coff",
+                toolchain_provider_id=provider, targets=(value,),
+            ))
+            self.assertTrue(kit.supports(Capability.STANDALONE_COFF_MATCH))
+
+    def test_msvc_generation_alias_does_not_accept_a_different_compiler(self) -> None:
+        for provider in ("msvc7", "msvc71"):
+            with self.assertRaises(CompatibilityError):
+                self.factory.create(ProjectSpec(
+                    project_id="test", platform_provider_id="windows-pe-coff",
+                    toolchain_provider_id=provider, targets=(target(family="VC9 2008"),),
+                ))
+
     def test_cross_platform_toolchain_is_rejected(self) -> None:
         value = target(format="mz", family="Borland")
         with self.assertRaisesRegex(CompatibilityError, "not compatible"):
