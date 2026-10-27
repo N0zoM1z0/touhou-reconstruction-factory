@@ -267,7 +267,8 @@ def build_mcp_server(
     @server.tool(
         description=(
             "Inspect the real Git status of one operator-registered reconstruction repo. "
-            "This includes current dirty, staged, untracked, branch, upstream, and HEAD "
+            "This includes five recent command IDs for reconnecting after a lost response, "
+            "plus current dirty, staged, untracked, branch, upstream, and HEAD "
             "state. A clean or committed worktree is a checkpoint state, not Oracle proof."
         ),
         annotations=_READ_ONLY,
@@ -339,7 +340,8 @@ def build_mcp_server(
     @server.tool(
         description=(
             "Read a bounded stdout or stderr page from a durable live-repository command. "
-            "Use next_offset until null; observed and captured sizes make truncation explicit."
+            "Use next_offset until null; UTF-8 pages may add up to three bytes to finish "
+            "a character. Observed and captured sizes make truncation explicit."
         ),
         annotations=_READ_ONLY,
         structured_output=True,

@@ -119,7 +119,7 @@ class AnalysisGatewayTests(unittest.TestCase):
             )
 
     def test_ida_normalizes_addresses_for_native_and_legacy_calls(self) -> None:
-        for address in (4198400, "4198400", " 0X401000 ", "0x401000"):
+        for address in (4198400, "4198400", " 0X401000 ", "0x401000", "00401000", "0000000000401000"):
             for field in ("address", "start_address", "function_address", "memory_address"):
                 arguments = {field: address}
                 _validate_ida_arguments("get_function_by_address", arguments)
@@ -154,7 +154,8 @@ class AnalysisGatewayTests(unittest.TestCase):
 
     def test_ghidra_accepts_web_address_representations(self) -> None:
         for arguments in ({"address": " 0X1EA5D "}, {"addresses": "0x1EA5D"},
-                          {"addresses": 125533}, {"addresses": ["125533"]}):
+                          {"addresses": 125533}, {"addresses": ["125533"]},
+                          {"address": "0001ea5d"}, {"address": "1EA5D"}):
             forwarded = _validate_ghidra_arguments("function", arguments)
             self.assertEqual(int(forwarded["addresses"][0], 16), 0x1EA5D)
         segmented = _validate_ghidra_arguments(
@@ -258,6 +259,12 @@ class GhidraOutputTests(unittest.TestCase):
         result, path = _run_native_ghidra_command(provider, self.root, "decompile", {"addresses": ["0x1"]})
         self.assertEqual(result, text)
         self.assertEqual(path.read_text(), text)
+        context, context_path = _run_native_ghidra_command(
+            provider, self.root, "function_context", {"addresses": ["0x1"]}
+        )
+        self.assertEqual(context, text)
+        context_path.unlink()
+        context_path.parent.rmdir()
         with self.assertRaises(subprocess.CalledProcessError) as raised:
             _run_native_ghidra_command(provider, self.root, "decompile", {"addresses": ["0xdead"]})
         self.assertIn("Partial output retained at .analysis/", raised.exception.stderr)
@@ -265,6 +272,32 @@ class GhidraOutputTests(unittest.TestCase):
         _, check_path = _run_native_ghidra_command(provider, self.root, "check", {})
         self.assertIsNone(check_path)
         self.assertEqual(len(list((self.root / ".analysis/factory-native-ghidra").iterdir())), 2)
+
+    def test_timeout_stops_analyzer_children_and_keeps_partial_output(self) -> None:
+        import fcntl
+
+        script = self.root / "slow-provider.py"
+        child = (
+            "import fcntl,time\nfrom pathlib import Path\n"
+            "gate=Path('analyzer.lock').open('a+')\n"
+            "fcntl.flock(gate,fcntl.LOCK_EX)\n"
+            "Path('analyzer-ready').touch()\ntime.sleep(60)\n"
+        )
+        script.write_text(
+            "import subprocess,sys,time\nfrom pathlib import Path\n"
+            f"subprocess.Popen([sys.executable,'-c',{child!r}])\n"
+            "while not Path('analyzer-ready').exists(): time.sleep(.01)\n"
+            "Path(sys.argv[2]).write_text('partial decompilation')\ntime.sleep(60)\n"
+        )
+        provider = SimpleNamespace(command=Path(sys.executable), arguments=(str(script),), timeout_seconds=1)
+        with self.assertRaises(subprocess.TimeoutExpired) as raised:
+            _run_native_ghidra_command(provider, self.root, "decompile", {"addresses": ["0x1"]})
+        self.assertIn("Partial output retained at .analysis/", raised.exception.stderr)
+        path = next((self.root / ".analysis/factory-native-ghidra").glob("*/result.txt"))
+        self.assertEqual(path.read_text(), "partial decompilation")
+        with (self.root / "analyzer.lock").open("a+") as gate:
+            # An orphan analyzer would keep this lock and block the next query.
+            fcntl.flock(gate, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 
 if __name__ == "__main__":

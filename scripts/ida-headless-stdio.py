@@ -2,8 +2,8 @@
 """Serve one operator-bound IDAlib database over stdio without opening a GUI.
 
 Run with the installed IDA Python. Each game needs distinct input/database
-paths. Factory independently attests the canonical PE and mapped database on
-every session; this helper has no acceptance authority.
+paths. Factory checks the selected database's metadata against the target
+manifest; this helper has no acceptance authority.
 """
 
 from __future__ import annotations
@@ -132,6 +132,9 @@ def main() -> int:
                     ida_auto.auto_wait()
                     ida_hexrays.init_hexrays_plugin()
                     plugin = importlib.import_module("ida_pro_mcp.mcp-plugin")
+                    # Upstream read tools probe the active Qt window before
+                    # decompiling/disassembling. IDAlib has no UI or PySide6.
+                    plugin.is_window_active = lambda: False
                     types = load_protocol_types(plugin)
                     server = FastMCP("factory-headless-ida", log_level="ERROR")
                     def save():

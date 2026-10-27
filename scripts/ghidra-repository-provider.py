@@ -18,10 +18,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--mz-artifact")
+    parser.add_argument("--project-name", help="select an existing project instead of the repository default")
     # Accepted for compatibility with existing private launchers.
     parser.add_argument("--marker", help=argparse.SUPPRESS)
     parser.add_argument("--interpreter", help=argparse.SUPPRESS)
-    parser.add_argument("operation", choices=("check", "query", "decompile"))
+    parser.add_argument("operation", choices=("check", "query", "decompile", "function_context"))
     parser.add_argument("arguments", nargs="*")
     args = parser.parse_args()
     root = args.repository.resolve()
@@ -44,12 +45,15 @@ def main() -> int:
         ghidra_home, analyzer = module.find_analyzer()
         project, name, filename = module.PROJECT_DIR, module.PROJECT_NAME, target["filename"]
         environment = module.environment(ghidra_home)
+    if args.project_name:
+        name = args.project_name
     environment.update({"DISPLAY": "", "WAYLAND_DISPLAY": ""})
     environment.setdefault("GHIDRA_HEADLESS_MAXMEM", "768M")
     script_directory = root / "scripts/ghidra"
     if not (script_directory / "QueryProgram.java").is_file():
         script_directory = root / ".tools/mcp_for_gptweb-ghidra/ghidra-scripts"
     query = []
+    fragments = []
     if args.operation != "check":
         output, *values = args.arguments
         if args.operation == "query":
@@ -61,6 +65,14 @@ def main() -> int:
             else:
                 values = module.query_script_args(operation, values)
             query = ["-postScript", "QueryProgram.java", output, operation, *values]
+        elif args.operation == "function_context":
+            for operation in ("function", "callers", "callees", "decompile"):
+                path = Path(output).with_name(f"{Path(output).stem}-{operation}.txt")
+                fragments.append((operation, path))
+                if operation == "decompile":
+                    query.extend(["-postScript", "DecompileFunctions.java", str(path), *values])
+                else:
+                    query.extend(["-postScript", "QueryProgram.java", str(path), operation, *values])
         else:
             query = ["-postScript", "DecompileFunctions.java", output, *values]
     scratch = root / ".analysis"
@@ -77,7 +89,15 @@ def main() -> int:
         )
     sys.stdout.write(result.stdout)
     sys.stderr.write(result.stderr)
-    if "ERROR REPORT SCRIPT ERROR" in result.stdout + result.stderr:
+    if fragments:
+        with Path(output).open("w", encoding="utf-8") as merged:
+            for operation, path in fragments:
+                merged.write(f"=== {operation} ===\n")
+                merged.write(path.read_text(encoding="utf-8") if path.exists() else "[no output produced]\n")
+                merged.write("\n")
+    if "ERROR REPORT SCRIPT ERROR" in result.stdout + result.stderr or any(
+        not path.exists() for _, path in fragments
+    ):
         return 1
     return result.returncode
 

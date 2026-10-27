@@ -59,9 +59,12 @@ contains script digest, timing and terminal state, exit/timeout state, captured
 and observed output sizes, output truncation, before/after Git summaries, HEAD
 relation, and any newly reachable commits. The initial response includes the
 first output page; `factory_get_repository_command_output` resumes either stream
-after disconnect. Output beyond the configured capture budget is explicitly
+after disconnect. If the response containing the command ID was lost, query
+`factory_get_repository_status`: `recent_commands` lists the five most recently
+recorded commands with IDs, timing and last recorded states. Output beyond the configured capture budget is explicitly
 reported as truncated and never presented as complete. Truncation does not stop
-the command.
+the command. UTF-8 pages may include up to three extra bytes to finish their
+last character; follow `next_offset`. Invalid or binary bytes remain base64.
 
 The Git summary includes HEAD, branch, upstream/ahead/behind state, staged,
 unstaged, untracked, and conflicted counts, plus a digest of complete porcelain
@@ -78,7 +81,8 @@ Bubblewrap constructs a networkless process namespace with:
 - explicitly configured game-bound state roots writable;
 - an empty temporary home unless a game compatibility profile overrides it;
 - a fixed local Git author and disabled credential prompting;
-- no Factory evidence store, job database, or other registered repository.
+- no Factory evidence store or job database; other registered repositories are
+  mounted read-only for cross-game source reference.
 
 This is a composition boundary, not a source-only sandbox. If the selected game
 intentionally keeps a target, compiler, `.tools` bundle, or diagnostic database

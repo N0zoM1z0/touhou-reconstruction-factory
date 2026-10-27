@@ -10,6 +10,8 @@ description: Use repository-selected IDA or Ghidra for autonomous source investi
 2. Discover operation arguments with `factory_list_analysis_operations`, then
    call `factory_analysis_call` for a useful bounded query. Ghidra discovery
    does not start the analyzer.
+   For native Ghidra function investigation, `function_context` returns
+   metadata, callers, callees and decompilation in a single analyzer launch.
 3. Confirm the returned repository/target and read the actual verification
    scope. Ghidra exploratory calls report `not-checked`; native IDA checks
    database metadata only. Neither is complete target verification.

@@ -43,9 +43,16 @@ installations can be shared while projects and writable state remain per game.
 The Ghidra operations are `check`, `function`, `decompile`, `disassemble`,
 `callers`, `callees`, `xrefs_to`, `xrefs_from`, `list_functions`, and
 `search_strings`. Discovery describes their actual fields. Address arguments
-accept trimmed hexadecimal/decimal strings and unsigned integers; native MZ
+accept trimmed hexadecimal/decimal strings and unsigned integers. Hex strings
+can use `0x`, A-F digits, or zero-padded 8/16-digit display addresses; other
+numeric strings are decimal. Native MZ
 also accepts `segment:offset`. Keep requests bounded and page larger results.
 `check` only opens the selected project; it is not a complete verification.
+Native Ghidra also offers `function_context` with the same address arguments:
+function metadata, callers, callees and decompilation run in one process.
+Use it when investigating a function instead of paying startup cost four times.
+The operator may select a different existing project with `--project-name`;
+no implementation fingerprint needs refreshing.
 
 Native Ghidra returns an 8,000-character text preview by default. Pass
 `max_output_chars` in the operation arguments to request up to 65,536 characters.
@@ -61,6 +68,8 @@ Do not rerun Ghidra just to read the next page. `factory_output_truncated` refer
 to the inline preview; the retained file is complete. Failed queries that wrote
 partial output report its retained path in the error. These ignored analysis
 files may be retired when no longer needed, like other game-local diagnostics.
+Timeouts stop the wrapper and its analyzer subprocesses together, releasing the
+project lock. Any already-written partial files are retained and reported.
 
 This takes the useful parts of REA's
 [recoverable result delivery](https://github.com/morluto/rea/blob/92213a91557a8ea378757a97ac0a1a34b94332ef/src/server/ToolResultDelivery.ts)

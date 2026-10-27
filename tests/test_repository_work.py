@@ -230,6 +230,9 @@ exit 7
             limit=1024,
         )
         self.assertIn("checkpoint-created", recovered["text"])
+        recent = self.store.status("fixture")["recent_commands"]
+        self.assertEqual(recent[0]["command_id"], command["command_id"])
+        self.assertEqual(recent[0]["exit_code"], command["exit_code"])
 
     @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
     def test_timeout_and_output_truncation_do_not_roll_back_live_work(self) -> None:
@@ -252,6 +255,29 @@ exit 7
         self.assertEqual(noisy["exit_code"], 0)
         self.assertTrue(noisy["output_truncated"])
         self.assertTrue((self.repository / "after-output.txt").is_file())
+
+    def test_output_pages_complete_utf8_without_changing_binary_bytes(self) -> None:
+        directory = self.root / "page-fixture"
+        directory.mkdir()
+        path = directory / "stdout.bin"
+        text = "東方🐈" * 7
+        path.write_bytes(text.encode("utf-8"))
+        record = {"stdout_observed_bytes": path.stat().st_size}
+        for limit in (1, 2, 7, 9):
+            offset, pages = 0, []
+            while offset is not None:
+                page = self.store._output_page_unlocked(directory, record, "stdout", offset, limit)
+                self.assertEqual(page["encoding"], "utf-8")
+                self.assertLessEqual(page["bytes_returned"], limit + 3)
+                pages.append(page["text"])
+                offset = page["next_offset"]
+            self.assertEqual("".join(pages), text)
+        for binary in (b"a\xffb", b"a\xe6", b"a\xe6Z", b"\x80abc"):
+            path.write_bytes(binary)
+            record["stdout_observed_bytes"] = len(binary)
+            page = self.store._output_page_unlocked(directory, record, "stdout", 0, len(binary))
+            self.assertEqual(page["encoding"], "base64")
+            self.assertEqual(page["bytes_returned"], len(binary))
 
     def test_relative_cwd_cannot_leave_the_registered_repository(self) -> None:
         with self.assertRaisesRegex(RepositoryWorkError, "repository-relative"):

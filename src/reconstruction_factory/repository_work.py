@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 import fcntl
 import hashlib
+import heapq
 import json
 import os
 from pathlib import Path
@@ -53,7 +54,18 @@ class RepositoryWorkStore:
         with self._repository_lock(repository_id), self._factory_repository_lock(
             registration, exclusive=False
         ):
-            return _repository_status(registration)
+            status = _repository_status(registration)
+            records = heapq.nlargest(
+                5, (self.commands / repository_id).glob("*/record.json"),
+                key=lambda path: path.stat().st_mtime_ns,
+            )
+            status["recent_commands"] = [
+                {key: record.get(key) for key in (
+                    "command_id", "state", "started_at", "finished_at", "exit_code", "timed_out",
+                )}
+                for record in (json.loads(path.read_text(encoding="utf-8")) for path in records)
+            ]
+            return status
 
     def semantic_debt_report(
         self,
@@ -339,6 +351,26 @@ class RepositoryWorkStore:
         with path.open("rb") if path.exists() else open(os.devnull, "rb") as handle:
             handle.seek(offset)
             payload = handle.read(limit)
+            # Complete a trailing UTF-8 code point so normal text logs stay text
+            # even with tiny byte pages. Invalid/binary data remains lossless.
+            try:
+                payload.decode("utf-8")
+            except UnicodeDecodeError as error:
+                if error.reason == "unexpected end of data":
+                    candidate = payload
+                    for _ in range(3):
+                        extra = handle.read(1)
+                        if not extra:
+                            break
+                        candidate += extra
+                        try:
+                            candidate.decode("utf-8")
+                        except UnicodeDecodeError as continuation_error:
+                            if continuation_error.reason != "unexpected end of data":
+                                break
+                        else:
+                            payload = candidate
+                            break
         result: dict[str, Any] = {
             "stream": stream,
             "captured_size": size,

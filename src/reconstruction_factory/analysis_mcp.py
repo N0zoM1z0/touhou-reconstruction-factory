@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import subprocess
 import tempfile
 import tomllib
@@ -105,6 +106,10 @@ _GHIDRA_OPERATIONS = {
     "list_functions": "Page functions with an optional name filter.",
     "search_strings": "Search strings with a bounded query and result limit.",
 }
+_NATIVE_GHIDRA_OPERATIONS = {
+    **_GHIDRA_OPERATIONS,
+    "function_context": "Return function metadata, callers, callees and decompilation in one Ghidra launch.",
+}
 _ADDRESS = re.compile(r"^0x[0-9a-fA-F]{1,16}$")
 _SEGMENTED_ADDRESS = re.compile(r"^[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}$")
 
@@ -155,7 +160,9 @@ class AnalysisGateway:
                     ),
                     "mutates_analysis_database": False,
                 }
-                for name, description in _GHIDRA_OPERATIONS.items()
+                for name, description in (
+                    _NATIVE_GHIDRA_OPERATIONS if target is not None else _GHIDRA_OPERATIONS
+                ).items()
                 if filter.lower() in f"{name} {description}".lower()
             )
             return {
@@ -195,7 +202,7 @@ class AnalysisGateway:
         async with _analysis_slot(provider.id, provider.repository_id, provider.timeout_seconds):
             target = await self._target(provider)
             if provider.backend == "attested-ghidra-command-v1":
-                if operation not in _GHIDRA_OPERATIONS:
+                if operation not in _NATIVE_GHIDRA_OPERATIONS:
                     raise AnalysisError("unsupported Ghidra read-only operation")
                 query_arguments = dict(arguments)
                 preview_chars = query_arguments.pop("max_output_chars", _GHIDRA_PREVIEW_CHARS)
@@ -506,7 +513,8 @@ class AnalysisGateway:
                 )
             )
         except subprocess.TimeoutExpired as error:
-            raise AnalysisError("native Ghidra provider timed out") from error
+            detail = _redact(str(error.stderr or ""), self.config)
+            raise AnalysisError("native Ghidra provider timed out" + (f": {detail}" if detail else "")) from error
         except subprocess.CalledProcessError as error:
             detail = _redact(
                 (error.stdout or "")[-3000:] + "\n" + (error.stderr or "")[-1000:], self.config
@@ -579,9 +587,9 @@ def _run_native_ghidra_command(
         output_path = temporary / "result.txt"
         if operation == "check":
             command.append("check")
-        elif operation == "decompile":
+        elif operation in {"decompile", "function_context"}:
             command.extend(
-                ["decompile", str(output_path), *arguments["addresses"]]
+                [operation, str(output_path), *arguments["addresses"]]
             )
         else:
             query_arguments: list[str]
@@ -611,15 +619,30 @@ def _run_native_ghidra_command(
             else:
                 raise AnalysisError("unsupported native Ghidra operation")
             command.extend(["query", str(output_path), operation, *query_arguments])
-        completed = subprocess.run(
+        with subprocess.Popen(
             command,
             cwd=repository,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             errors="replace",
-            timeout=provider.timeout_seconds,
-            check=False,
-        )
+            start_new_session=True,
+        ) as process:
+            try:
+                stdout, stderr = process.communicate(timeout=provider.timeout_seconds)
+            except subprocess.TimeoutExpired as error:
+                # The wrapper launches Java. Killing only the wrapper leaves
+                # an orphan analyzer holding the project lock after timeout.
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.communicate()
+                if any(temporary.iterdir()):
+                    retained = True
+                    error.stderr = f"Partial output retained at {temporary.relative_to(repository)}"
+                raise
+            completed = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
         if completed.returncode != 0:
             detail = completed.stderr or ""
             if output_path.is_file():
@@ -684,7 +707,7 @@ def _bounded_text_output(
         "next_line": returned.count("\n") + 1 if truncated else None,
         "preview_ends_mid_line": truncated and not returned.endswith("\n"),
     }
-    if operation == "decompile" and truncated:
+    if operation in {"decompile", "function_context"} and truncated:
         headers = []
         for line_number, line in enumerate(lines, 1):
             match = re.fullmatch(r"/\* (.+) at ([^ ]+) \*/", line.removesuffix("\r"))
@@ -907,7 +930,7 @@ def _ida_input_schema(schema: Any) -> Any:
                 {"type": "string", "minLength": 1, "maxLength": 64},
                 {"type": "integer", "minimum": 0, "maximum": 0xFFFFFFFFFFFFFFFF},
             ],
-            "description": (value.get("description", "") + " Hex string (0x or 0X), decimal string, or unsigned integer; surrounding whitespace is trimmed.").strip(),
+            "description": (value.get("description", "") + " Hex (0x, A-F, or zero-padded 8/16 digits), decimal string, or unsigned integer; whitespace is trimmed.").strip(),
             **{field: item for field, item in value.items() if field in {"title", "default"}},
         }
     return result
@@ -920,6 +943,11 @@ def _normalize_address(value: Any, *, label: str, allow_segmented: bool = False)
         value = value.strip()
         if value.startswith("0X"):
             value = "0x" + value[2:]
+        elif re.fullmatch(r"[0-9a-fA-F]{1,16}", value) and (
+            re.search(r"[a-fA-F]", value)
+            or (len(value) in (8, 16) and value.startswith("0"))
+        ):
+            value = f"0x{int(value, 16):x}"
         elif value.isascii() and value.isdecimal() and len(value) <= 20:
             number = int(value, 10)
             if number <= 0xFFFFFFFFFFFFFFFF:
@@ -927,7 +955,7 @@ def _normalize_address(value: Any, *, label: str, allow_segmented: bool = False)
         if _ADDRESS.fullmatch(value) or (allow_segmented and _SEGMENTED_ADDRESS.fullmatch(value)):
             return value
     raise AnalysisError(
-        f"{label} is invalid; use address or addresses with a hex string (0x or 0X), "
+        f"{label} is invalid; use address or addresses with a hex string (0x, A-F, or zero-padded 8/16 digits), "
         "decimal string, or unsigned integer up to 64 bits"
         + (", or 16-bit segment:offset strings for MZ targets" if allow_segmented else "")
     )
@@ -949,6 +977,7 @@ def _validate_ghidra_arguments(
     allowed_by_operation = {
         "check": set(),
         "decompile": {"addresses"},
+        "function_context": {"addresses"},
         "function": {"addresses"},
         "disassemble": {"addresses", "instruction_count"},
         "callers": {"addresses"},
@@ -973,6 +1002,7 @@ def _validate_ghidra_arguments(
     addresses = result.get("addresses", [])
     address_operations = {
         "decompile",
+        "function_context",
         "function",
         "disassemble",
         "callers",
@@ -1083,6 +1113,7 @@ def _ghidra_schema(
     required: list[str] = []
     if operation in {
         "decompile",
+        "function_context",
         "function",
         "disassemble",
         "callers",
@@ -1090,10 +1121,10 @@ def _ghidra_schema(
         "xrefs_to",
         "xrefs_from",
     }:
-        formats = r"0[xX][0-9a-fA-F]{1,16}|[0-9]{1,20}"
+        formats = r"0[xX][0-9a-fA-F]{1,16}|[0-9a-fA-F]{1,16}|[0-9]{1,20}"
         if allow_segmented:
             formats += r"|[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}"
-        address = {"anyOf": [
+        address = {"description": "Hex with 0x, A-F, or zero-padded 8/16 digits; other numeric strings are decimal. Integers are unsigned.", "anyOf": [
             {"type": "string", "pattern": r"^\s*(?:" + formats + r")\s*$"},
             {"type": "integer", "minimum": 0, "maximum": 0xFFFFFFFFFFFFFFFF},
         ]}
