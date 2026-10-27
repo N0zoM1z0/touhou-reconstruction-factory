@@ -32,6 +32,8 @@ from .service_config import AnalysisProviderRegistration, ServiceConfig
 
 _MAX_ARGUMENT_BYTES = 65536
 _MAX_OUTPUT_BYTES = 262144
+_GHIDRA_PREVIEW_CHARS = 8000
+_GHIDRA_PREVIEW_MAX = 65536
 _MAX_ACTIVE_ANALYSES_PER_REPOSITORY = 2
 _ACTIVE_PROVIDERS: dict[str, str] = {}
 
@@ -147,7 +149,10 @@ class AnalysisGateway:
                 {
                     "name": name,
                     "description": description,
-                    "input_schema": _ghidra_schema(name, allow_segmented=target is not None and target.format.lower() == "mz"),
+                    "input_schema": _ghidra_schema(
+                        name, allow_segmented=target is not None and target.format.lower() == "mz",
+                        preview=provider.backend == "attested-ghidra-command-v1",
+                    ),
                     "mutates_analysis_database": False,
                 }
                 for name, description in _GHIDRA_OPERATIONS.items()
@@ -192,11 +197,14 @@ class AnalysisGateway:
             if provider.backend == "attested-ghidra-command-v1":
                 if operation not in _GHIDRA_OPERATIONS:
                     raise AnalysisError("unsupported Ghidra read-only operation")
+                query_arguments = dict(arguments)
+                preview_chars = query_arguments.pop("max_output_chars", _GHIDRA_PREVIEW_CHARS)
+                _bounded_integer(preview_chars, "max_output_chars", 1, _GHIDRA_PREVIEW_MAX)
                 forwarded = _validate_ghidra_arguments(
-                    operation, arguments, allow_segmented=target.format.lower() == "mz"
+                    operation, query_arguments, allow_segmented=target.format.lower() == "mz"
                 )
                 attestation, output = await self._native_ghidra_call(
-                    provider, target, operation, forwarded
+                    provider, target, operation, forwarded, max_output_chars=preview_chars
                 )
             elif provider.backend == "attested-ida-stdio-v1":
                 if operation not in _IDA_NATIVE_ALLOWED:
@@ -481,12 +489,14 @@ class AnalysisGateway:
         target: TargetIdentity,
         operation: str,
         arguments: dict[str, Any],
+        *,
+        max_output_chars: int = _GHIDRA_PREVIEW_CHARS,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         if provider.command is None or provider.target_path is None:
             raise AnalysisError("native Ghidra provider is missing private configuration")
         repository = self.config.repository(provider.repository_id).path
         try:
-            stdout, result_text = await anyio.to_thread.run_sync(
+            result_text, output_path = await anyio.to_thread.run_sync(
                 partial(
                     _run_native_ghidra_command,
                     provider,
@@ -509,11 +519,15 @@ class AnalysisGateway:
             raise AnalysisError(
                 f"native Ghidra provider failed to start: {type(error).__name__}"
             ) from error
+        output = _bounded_text_output(result_text, self.config, max_output_chars=max_output_chars,
+                                      operation=operation)
+        if output_path is not None:
+            output["artifact_path"] = str(output_path.relative_to(repository))
         return {
             "status": "not-checked",
             "target_identity_id": target.id,
             "verification": "repository-selected-exploratory-analysis",
-        }, _bounded_text_output(result_text, self.config)
+        }, output
 
     async def _upstream(
         self,
@@ -551,14 +565,15 @@ def _run_native_ghidra_command(
     repository: Path,
     operation: str,
     arguments: dict[str, Any],
-) -> tuple[str, str]:
-    """Run one registered wrapper; it attests and queries in one process."""
+) -> tuple[str, Path | None]:
+    """Run one query and retain its complete text for direct repository reads."""
 
     if provider.command is None:
         raise AnalysisError("native Ghidra provider has no command")
     scratch_root = repository / ".analysis" / "factory-native-ghidra"
     scratch_root.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix="call-", dir=scratch_root))
+    retained = False
     try:
         command = [str(provider.command), *provider.arguments]
         output_path = temporary / "result.txt"
@@ -606,14 +621,19 @@ def _run_native_ghidra_command(
             check=False,
         )
         if completed.returncode != 0:
+            detail = completed.stderr or ""
+            if output_path.is_file():
+                retained = True
+                detail += f"\nPartial output retained at {output_path.relative_to(repository)}"
             raise subprocess.CalledProcessError(
                 completed.returncode,
                 command,
                 output=completed.stdout,
-                stderr=completed.stderr,
+                stderr=detail,
             )
         if operation == "check":
             result_text = "Native Ghidra wrapper completed; no full attestation was run."
+            return result_text, None
         else:
             try:
                 result_text = output_path.read_text(encoding="utf-8")
@@ -621,32 +641,62 @@ def _run_native_ghidra_command(
                 raise AnalysisError(
                     "native Ghidra operation produced no readable output"
                 ) from error
-        return completed.stdout, result_text
+        retained = True
+        return result_text, output_path
     finally:
-        shutil.rmtree(temporary, ignore_errors=True)
+        if not retained:
+            shutil.rmtree(temporary, ignore_errors=True)
 
 
 
 
 
 
-def _bounded_text_output(text: str, config: ServiceConfig) -> dict[str, Any]:
+def _bounded_text_output(
+    text: str, config: ServiceConfig, *, max_output_chars: int = _GHIDRA_PREVIEW_CHARS,
+    operation: str = "",
+) -> dict[str, Any]:
     redacted = _redact(text, config)
     observed_payload = redacted.encode("utf-8")
-    payload = observed_payload[:_MAX_OUTPUT_BYTES]
-    returned = payload.decode("utf-8", "ignore")
+    returned = redacted[:max_output_chars]
+    truncated = len(returned) < len(redacted)
+    # Keep complete lines when possible; long single lines still respect the budget.
+    if truncated and "\n" in returned:
+        returned = returned[:returned.rfind("\n") + 1]
+    payload = returned.encode("utf-8")
+    lines = redacted.split("\n")
+    if lines[-1] == "":
+        lines.pop()
     structured_payload = b"null"
-    return {
+    output = {
         "text": returned,
         "structured": None,
-        "factory_output_truncated": len(observed_payload) > len(payload),
+        "factory_output_truncated": truncated,
         "factory_structured_output_omitted": False,
         "observed_text_bytes": len(observed_payload),
         "returned_bytes": len(payload),
         "returned_sha256": hashlib.sha256(payload).hexdigest(),
         "structured_bytes": len(structured_payload),
         "structured_sha256": hashlib.sha256(structured_payload).hexdigest(),
+        "total_chars": len(redacted),
+        "total_lines": len(lines),
+        "returned_chars": len(returned),
+        "next_line": returned.count("\n") + 1 if truncated else None,
+        "preview_ends_mid_line": truncated and not returned.endswith("\n"),
     }
+    if operation == "decompile" and truncated:
+        headers = []
+        for line_number, line in enumerate(lines, 1):
+            match = re.fullmatch(r"/\* (.+) at ([^ ]+) \*/", line.removesuffix("\r"))
+            if match:
+                name = match[1] if len(match[1]) <= 160 else match[1][:157] + "..."
+                headers.append({"name": name, "address": match[2],
+                                "start_line": line_number})
+        for index, header in enumerate(headers):
+            end = headers[index + 1]["start_line"] - 1 if index + 1 < len(headers) else len(lines)
+            header["end_line"] = end
+        output["functions"] = headers[:16]
+    return output
 
 
 def _bounded_output(
@@ -1020,8 +1070,16 @@ def _bounded_integer(value: Any, name: str, minimum: int, maximum: int) -> None:
         )
 
 
-def _ghidra_schema(operation: str, *, allow_segmented: bool = False) -> dict[str, Any]:
+def _ghidra_schema(
+    operation: str, *, allow_segmented: bool = False, preview: bool = False,
+) -> dict[str, Any]:
     properties: dict[str, Any] = {}
+    if preview:
+        properties["max_output_chars"] = {
+            "type": "integer", "minimum": 1, "maximum": _GHIDRA_PREVIEW_MAX,
+            "default": _GHIDRA_PREVIEW_CHARS,
+            "description": "Text preview budget. Read artifact_path with repository Bash for complete output.",
+        }
     required: list[str] = []
     if operation in {
         "decompile",

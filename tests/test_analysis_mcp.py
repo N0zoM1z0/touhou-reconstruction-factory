@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+from types import SimpleNamespace
 
 try:
     import anyio
@@ -8,6 +13,9 @@ try:
     from reconstruction_factory.analysis_mcp import (
         _arguments,
         _analysis_slot,
+        _bounded_text_output,
+        _ghidra_schema,
+        _run_native_ghidra_command,
         _ACTIVE_PROVIDERS,
         _ida_input_schema,
         _mcp_tool_input_schema,
@@ -44,6 +52,12 @@ class AnalysisGatewayTests(unittest.TestCase):
             with self.subTest(invalid=invalid[:20]):
                 with self.assertRaises(AnalysisError):
                     _arguments(invalid)
+
+    def test_native_ghidra_discovery_exposes_optional_preview_budget(self) -> None:
+        schema = _ghidra_schema("decompile", preview=True)
+        self.assertEqual(schema["properties"]["max_output_chars"]["default"], 8000)
+        self.assertNotIn("max_output_chars", schema["required"])
+        self.assertNotIn("max_output_chars", _ghidra_schema("decompile")["properties"])
 
     def test_analysis_capacity_is_independent_between_repositories(self) -> None:
         async def check():
@@ -191,6 +205,66 @@ class AnalysisGatewayTests(unittest.TestCase):
             _mcp_tool_input_schema(Tool()),
             Tool.input_schema,
         )
+
+
+@unittest.skipIf(_arguments is None, "MCP v2 optional dependency is not installed")
+class GhidraOutputTests(unittest.TestCase):
+    def setUp(self) -> None:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.config = SimpleNamespace(
+            path=self.root / "operator/service.toml", state_directory=self.root / "state",
+            evidence_store=self.root / "evidence", policy_path=self.root / "policy.json",
+            repositories=(), analysis_providers=(),
+        )
+
+    def test_large_batch_keeps_navigation_to_functions_beyond_the_preview(self) -> None:
+        first = "/* First at 00401000 */\n" + "  update();\n" * 1000
+        text = first + "/* Second at 00402000 */\n  return;\n"
+        result = _bounded_text_output(text, self.config, operation="decompile")
+        self.assertLessEqual(len(result["text"]), 8000)
+        self.assertTrue(result["text"].endswith("\n"))
+        self.assertTrue(result["factory_output_truncated"])
+        self.assertNotIn("Second", result["text"])
+        self.assertEqual(result["total_chars"], len(text))
+        self.assertEqual(result["next_line"], result["text"].count("\n") + 1)
+        self.assertEqual(result["functions"][1], {
+            "name": "Second", "address": "00402000", "start_line": 1002, "end_line": 1003,
+        })
+
+    def test_unicode_long_lines_and_complete_small_results_have_honest_offsets(self) -> None:
+        text = "界" * 10 + "\u2028tail"
+        result = _bounded_text_output(text, self.config, max_output_chars=5)
+        self.assertEqual(result["text"], "界" * 5)
+        self.assertEqual(result["returned_bytes"], 15)
+        self.assertEqual(result["total_lines"], 1)
+        self.assertEqual(result["next_line"], 1)
+        self.assertTrue(result["preview_ends_mid_line"])
+        small = _bounded_text_output("one\ntwo\n", self.config)
+        self.assertEqual(small["text"], "one\ntwo\n")
+        self.assertFalse(small["factory_output_truncated"])
+        self.assertIsNone(small["next_line"])
+
+    def test_full_and_partial_query_files_survive_without_retaining_startup_noise(self) -> None:
+        script = self.root / "query.py"
+        text = "λ output\n" * 3000
+        script.write_text(
+            "import sys\nfrom pathlib import Path\nprint('startup noise')\n"
+            f"if sys.argv[1] != 'check': Path(sys.argv[2]).write_text({text!r})\n"
+            "if '0xdead' in sys.argv: raise SystemExit(9)\n"
+        )
+        provider = SimpleNamespace(command=Path(sys.executable), arguments=(str(script),), timeout_seconds=5)
+        result, path = _run_native_ghidra_command(provider, self.root, "decompile", {"addresses": ["0x1"]})
+        self.assertEqual(result, text)
+        self.assertEqual(path.read_text(), text)
+        with self.assertRaises(subprocess.CalledProcessError) as raised:
+            _run_native_ghidra_command(provider, self.root, "decompile", {"addresses": ["0xdead"]})
+        self.assertIn("Partial output retained at .analysis/", raised.exception.stderr)
+        self.assertEqual(len(list((self.root / ".analysis/factory-native-ghidra").glob("*/result.txt"))), 2)
+        _, check_path = _run_native_ghidra_command(provider, self.root, "check", {})
+        self.assertIsNone(check_path)
+        self.assertEqual(len(list((self.root / ".analysis/factory-native-ghidra").iterdir())), 2)
 
 
 if __name__ == "__main__":

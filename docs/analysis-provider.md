@@ -47,6 +47,26 @@ accept trimmed hexadecimal/decimal strings and unsigned integers; native MZ
 also accepts `segment:offset`. Keep requests bounded and page larger results.
 `check` only opens the selected project; it is not a complete verification.
 
+Native Ghidra returns an 8,000-character text preview by default. Pass
+`max_output_chars` in the operation arguments to request up to 65,536 characters.
+This bounds the preview, not the complete MCP frame or a tokenizer's token count;
+MCP clients may receive both text and structured representations.
+
+Every successful query retains its complete output at the returned repository-relative
+`output.artifact_path`. Truncated previews report `next_line`, total lines and
+characters; large decompilation batches also list function names, addresses and
+start/end lines, including functions outside the preview. Read a desired range
+with existing repository Bash, for example `sed -n '200,260p' <artifact_path>`.
+Do not rerun Ghidra just to read the next page. `factory_output_truncated` refers
+to the inline preview; the retained file is complete. Failed queries that wrote
+partial output report its retained path in the error. These ignored analysis
+files may be retired when no longer needed, like other game-local diagnostics.
+
+This takes the useful parts of REA's
+[recoverable result delivery](https://github.com/morluto/rea/blob/92213a91557a8ea378757a97ac0a1a34b94332ef/src/server/ToolResultDelivery.ts)
+and [accounting for repeated MCP representations](https://github.com/morluto/rea/blob/92213a91557a8ea378757a97ac0a1a34b94332ef/src/server/toolResultEncoding.ts),
+using existing files and Bash rather than introducing an evidence/cache service.
+
 All registered repositories are available read-only at `/references/<id>` from
 any selected repository shell. Use Bash freely to connect source, history and
 analysis. Neighboring code is a useful hypothesis, not proof about this target.
