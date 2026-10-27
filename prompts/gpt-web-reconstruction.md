@@ -91,7 +91,8 @@ Start:
 
 Investigate and reconstruct:
 1. Discover the registered IDA or Ghidra provider and its operation schema before
-   calling it. Require target attestation. Names, types, decompilation, xrefs,
+   calling it. Confirm the selected repository/target and reported verification scope.
+   Names, types, decompilation, xrefs,
    disassembly, and boundaries remain provisional source-hypothesis evidence
    with exactness_credit=none.
    If a native provider advertises database_metadata_writable=true, use its
@@ -197,7 +198,7 @@ Final handoff:
 - Starting and ending `.analysis/` bytes, current scratch/manifest state, and
   every retained large artifact or removed current-session artifact
 - Bounded scope completed and excluded
-- Analysis provider, target attestation, evidence, and exactness limitations
+- Analysis provider, reported verification scope, evidence, and exactness limitations
 - Changed files and rationale
 - Created `gpt-web:` checkpoint hashes and subjects
 - Game-local knowledge changes, or why none were durable enough

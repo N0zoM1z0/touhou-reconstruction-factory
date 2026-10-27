@@ -55,6 +55,10 @@ does not make the host game directory a repository input.
 
 ## Accuracy-first bootstrap
 
+Register source and analysis access first. The target/toolchain preparation
+below supports explicit exact work; it is not a prerequisite for code browsing
+or an ordinary analysis call. Do not run full preflights on every invocation.
+
 These steps are ordered to create a useful feedback loop without manufacturing
 progress.
 
@@ -102,13 +106,9 @@ progress.
    part of that activation. Do not restart while another game's Web session or
    durable command is active. After activation, validate the public endpoint
    and start the game campaign with the standalone prompt.
-10. **Allowlist adjacent hypotheses deliberately.** When a new game benefits
-    from nearby reconstructions, add their registered IDs to the new game's
-    private `reference_repository_ids`. The repository runner mounts only those
-    checkouts read-only. Adjacent source and history can accelerate a
-    hypothesis, but never transfer target facts, ownership, ABI, exactness, or
-    completion; a reference that is still undergoing semantic work is more
-    provisional still.
+10. **Reference all registered source directly.** Other games are automatically
+    available read-only at `/references/<id>`. Do not maintain pairwise lists.
+    Cross-game code remains hypothesis material, not target-specific proof.
 11. **Make the campaign long-lived and each Web conversation bounded.** The
     standalone prompt gives a strong phase objective, autonomous tools, fast
     feedback, and frequent checkpoints, but never asks one chat to finish the
@@ -217,11 +217,10 @@ target_identity_ids = ["target:th09-main"]
 The command, arguments, and target path are private binding material. Public
 discovery exposes their digest and capabilities, not the paths.
 
-Before every discovery or call, the native provider reloads the game adapter,
-hashes and parses the private PE, opens one `ida-pro-mcp` stdio session, checks
-active IDA metadata and entry point, and compares six deterministic distributed
-`.text` samples. The actual requested operation then runs in the same session,
-so the strong attestation adds no repeated process startups inside that call.
+The native provider selects the configured headless database and compares its
+metadata to the target manifest. Discovery and queries do not perform full
+executable, entry point, or distributed mapped-byte checks. Analysis remains
+provisional; use explicit comparison commands when exactness is needed.
 
 The native contract exposes all current semantic reads and useful IDA database
 metadata operations (comments, names, prototypes, types, and stack metadata).
@@ -244,37 +243,16 @@ repository_id = "th10"
 target_identity_id = "target:th10-main"
 backend = "attested-ghidra-command-v1"
 command = "/absolute/path/to/factory/.venv/bin/python"
-arguments = ["/absolute/path/to/th10/scripts/ghidra.py"]
+arguments = ["/absolute/path/to/factory/scripts/ghidra-repository-provider.py", "--repository", "/absolute/path/to/th10"]
 target_path = "/absolute/path/to/th10/resources/th10.exe"
-implementation_files = [
-  "/absolute/path/to/th10/config/target.toml",
-  "/absolute/path/to/th10/config/tools.lock.toml",
-  "/absolute/path/to/th10/scripts/ghidra.py",
-  "/absolute/path/to/th10/scripts/ghidra/DecompileFunctions.java",
-  "/absolute/path/to/th10/scripts/ghidra/ExportArchitecture.java",
-  "/absolute/path/to/th10/scripts/ghidra/ExportInventory.java",
-  "/absolute/path/to/th10/scripts/ghidra/QueryProgram.java",
-  "/absolute/path/to/th10/scripts/ghidra/VerifyTarget.java",
-  "/absolute/path/to/th10/scripts/target_identity.py",
-  "/absolute/path/to/th10/scripts/verify-analysis-tools.py",
-  "/absolute/path/to/th10/scripts/verify-target.py",
-]
-implementation_sha256 = "<aggregate lowercase SHA-256>"
 timeout_seconds = 900
 ```
 
-Install and hash-pin Ghidra/JDK once below private Factory-managed storage. A
-new game gets ignored `.tools/ghidra` and `.tools/jdk` selectors plus its own
-ignored `ghidra-project/<GAME>` state. Initial import is an operator bootstrap;
-GPT-web receives only read-only check/decompile/function/disassembly/call/xref/
-listing/string operations. Every query process verifies the target manifest,
-Ghidra/JDK pins, project program, entry function, and distributed mapped bytes
-before returning semantic output. Pin every implementation/config/script file
-that can select or attest those surfaces in a private aggregate digest. A Web
-edit to provider code must fail closed until local review refreshes that digest.
+Reuse installed Ghidra/JDK and the repository's existing project and query
+scripts. Full installation scans and implementation hashes are not required for
+ordinary calls. The Factory helper opens the selected project directly.
 
-Render the complete sorted file list, per-file hashes, and aggregate binding
-instead of calculating the registration by hand:
+Render a minimal registration:
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/render-native-ghidra-registration.py \
@@ -284,7 +262,7 @@ PYTHONPATH=src .venv/bin/python scripts/render-native-ghidra-registration.py \
   --target-path /absolute/path/to/th10/resources/th10.exe
 ```
 
-Review the emitted paths and hashes, then copy the block into private service
+Review the emitted paths, then copy the block into private service
 configuration. Never commit that operator configuration to a game repository.
 
 ## TH09 reference bootstrap

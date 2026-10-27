@@ -81,21 +81,16 @@ Mandatory recovery gate:
    checkpoint recoverable work first. Preserve and exclude unrelated or unknown
    work. Never reset, overwrite, delete, or stage it merely to obtain a clean
    tree.
-4. Through `factory_repository_run_shell`, run the target, ledger, status, and
-   public-CI preflights named in AGENTS.md. Do not run the host-only
-   `scripts/check-ida-mcp.py` in that shell. Perform the mandatory IDA preflight
-   through `factory_list_analysis_operations(th09-ida)` followed by
-   `factory_analysis_call(th09-ida, get_metadata, {})`; require a passed
-   attestation for `target:th09-main` and
-   `attestation.provider_transport=factory-native-stdio`.
-   Stop on a target or provider mismatch. A failed or timed-out command may
-   leave files; always inspect status afterward and page durable output instead
-   of guessing.
+4. Select `th09-ida` and discover operation schemas.
+   Start with a useful bounded query. Do not run complete environment, ledger,
+   compiler or replay preflights merely to begin exploration. Run comparisons
+   relevant to the source actually changed; inspect status and durable output
+   after failed or timed-out commands.
 
 Native IDA use:
 1. Discover `th09-ida` operations instead of inventing tool names or schemas.
-   Require `attestation.status=passed`, target `target:th09-main`, and
-   `attestation.provider_transport=factory-native-stdio` on every useful result.
+   Confirm target `target:th09-main` and the reported metadata-only
+   verification scope. Analysis grants no exactness credit.
    Read each returned input schema before calling it: `{}` is valid only for
    operations whose schema has no required fields. Never probe address-, range-,
    or name-dependent operations with empty arguments.
@@ -117,9 +112,9 @@ Native IDA use:
    IDA database. Read back important edits. Mirror durable conclusions into
    source, ledgers, or concise game-local knowledge. Never request target-byte
    patching.
-4. If attestation fails, do not substitute another game's provider or proceed
-   from remembered output. Report the mismatch as unavailable and stop
-   target-dependent work.
+4. If a query fails, inspect its error and correct the selected repository,
+   project or arguments. Continue useful source work; do not invent results or
+   substitute another game's output as target-specific evidence.
 
 Autonomous exact loop:
 1. Maintain a mixed frontier rather than a smallest-function strategy. Inspect

@@ -80,14 +80,13 @@ reported a disconnect:
    work, reproducible ephemeral output, or unknown. Understand and finish the
    recoverable work first. Preserve and exclude unrelated or unknown work. Never
    reset, overwrite, delete, or stage it just to make the tree clean.
-4. Run `python3 scripts/preflight.py`, `python3 scripts/status.py`, and
-   `python3 scripts/boundary_review/validate_function_boundary_ledger.py`.
-   Always inspect status again after an interrupted, failed, or timed-out command.
+4. Run checks relevant to the current bounded change, without complete startup
+   preflights. Inspect status after an interrupted, failed, or timed-out command.
 
-Attest analysis before using it:
+Use analysis directly:
 1. Call factory_list_analysis_operations(th04-ghidra), read the returned schemas,
-   then call factory_analysis_call(th04-ghidra, get_metadata, {}). Require passed
-   attestation for repository th04 and target target:th04-main.
+   then make a useful bounded query for repository th04 and target target:th04-main.
+   Full target/database verification is not a prerequisite for exploration.
 2. Use only discovered argument schemas. Keep address evidence qualified by the
    artifact plus segment identity and segment:offset. A linear image or emulator
    address alone is incomplete without its load-segment interpretation.
@@ -96,11 +95,6 @@ Attest analysis before using it:
    atomic analysis operations where useful, but compose broad repository Bash,
    raw decoding, maps, ledgers, and scripts for questions the tool list did not
    predict.
-4. The repository-native read-only cross-check is
-   `python3 scripts/ghidra.py th04-main check`. It must agree on the target MZ
-   file, header/load mapping, entry CS:IP, relocation sequence, load-module
-   digest, and sampled bytes. Passing it attests the database identity, not its
-   inferred semantics or boundaries.
 
 Respect the historical platform. This is 16-bit DOS MZ/OMF code for PC-98, not
 PE/COFF and not flat 32-bit x86. Preserve Turbo C++ 4.0J/TCC 4.02, TASM32 5.0,

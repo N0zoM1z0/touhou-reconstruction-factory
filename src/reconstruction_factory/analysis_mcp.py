@@ -12,9 +12,9 @@ import os
 from pathlib import Path
 import re
 import shutil
-import struct
 import subprocess
 import tempfile
+import tomllib
 import time
 from typing import Any
 from urllib.parse import urlsplit
@@ -23,12 +23,7 @@ import anyio
 from mcp import Client, ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from .inspection_adapters import inspect_repository
 from .errors import AnalysisError, ReplayError
-from .mz_analysis import (
-    inspect_mz_target as _inspect_private_mz_target,
-    validate_mz_attestation as _validate_native_mz_attestation,
-)
 from .ontology import TargetIdentity, to_primitive
 from .oracle_receipts import canonical_sha256
 from .replay_identity import repository_lock
@@ -145,12 +140,15 @@ class AnalysisGateway:
         if not isinstance(filter, str) or len(filter.encode("utf-8")) > 128:
             raise AnalysisError("analysis operation filter exceeds 128 UTF-8 bytes")
         provider = self.config.analysis_provider(provider_id)
-        if provider.backend == "attested-ghidra-proxy-v1":
+        if provider.backend in {"attested-ghidra-proxy-v1", "attested-ghidra-command-v1"}:
+            target = (await self._target(provider)
+                      if provider.backend == "attested-ghidra-command-v1" else None)
             operations = tuple(
                 {
                     "name": name,
                     "description": description,
-                    "input_schema": _ghidra_schema(name),
+                    "input_schema": _ghidra_schema(name, allow_segmented=target is not None and target.format.lower() == "mz"),
+                    "mutates_analysis_database": False,
                 }
                 for name, description in _GHIDRA_OPERATIONS.items()
                 if filter.lower() in f"{name} {description}".lower()
@@ -158,26 +156,12 @@ class AnalysisGateway:
             return {
                 "analysis_provider": provider.public_dict(),
                 "attestation_state": "not-probed",
+                **({"target": to_primitive(target)} if target is not None else {}),
                 **_page(operations, limit, offset),
             }
         async with _analysis_slot(provider.id, provider.repository_id, provider.timeout_seconds):
             target = await self._target(provider)
-            if provider.backend == "attested-ghidra-command-v1":
-                attestation, _ = await self._native_ghidra_call(
-                    provider, target, "check", {}
-                )
-                query = filter.lower()
-                tools = tuple(
-                    {
-                        "name": name,
-                        "description": description,
-                        "input_schema": _ghidra_schema(name, allow_segmented=target.format.lower() == "mz"),
-                        "mutates_analysis_database": False,
-                    }
-                    for name, description in _GHIDRA_OPERATIONS.items()
-                    if query in f"{name} {description}".lower()
-                )
-            elif provider.backend == "attested-ida-stdio-v1":
+            if provider.backend == "attested-ida-stdio-v1":
                 async with self._native_ida_session(provider) as session:
                     attestation, _ = await self._attest_native_ida(
                         provider, target, session
@@ -291,25 +275,35 @@ class AnalysisGateway:
         def load() -> TargetIdentity:
             try:
                 with repository_lock(registration.path, exclusive=False):
-                    snapshot = inspect_repository(registration.path)
+                    single = registration.path / "config/target.toml"
+                    if single.is_file():
+                        manifest = tomllib.loads(single.read_text())
+                        data = manifest["target"]
+                        game = Path(data["filename"]).stem
+                        product = f"{game}-main"
+                        return TargetIdentity(
+                            id=f"target:{product}", project_id=registration.id,
+                            product_id=product, game=game, version=data.get("version", "unknown"),
+                            region=data.get("region", "unknown"), format="pe",
+                            size=data["size"], sha256=data["sha256"], md5=data.get("md5"),
+                            canonicality="manifest-declared", metadata=manifest.get("pe", {}),
+                        )
+                    manifest = tomllib.loads((registration.path / "config/targets.toml").read_text())
+                    data = next(item for item in manifest["artifacts"]
+                                if f"target:{item['id']}" == provider.target_identity_id)
+                    return TargetIdentity(
+                        id=provider.target_identity_id, project_id=registration.id,
+                        product_id=data["id"], game=data["game"], version="unknown",
+                        region="unknown", format=data["format"], size=data["size"],
+                        sha256=data["sha256"], md5=data.get("md5"),
+                        canonicality="manifest-declared",
+                    )
             except ReplayError as error:
                 raise AnalysisError(
                     f"repository {provider.repository_id} cannot currently be read for "
                     f"provider {provider.id}; a repository writer or replay may be active. "
                     "Retry after that operation finishes; no other repository is blocked"
                 ) from error
-            if snapshot.adapter_id != registration.adapter_id:
-                raise AnalysisError("analysis repository adapter binding changed")
-            targets = [
-                item
-                for item in snapshot.targets
-                if item.id == provider.target_identity_id
-            ]
-            if len(targets) != 1:
-                raise AnalysisError(
-                    "analysis target does not resolve to exactly one adapter identity"
-                )
-            return targets[0]
 
         return await anyio.to_thread.run_sync(load)
 
@@ -475,62 +469,10 @@ class AnalysisGateway:
         target: TargetIdentity,
         session: ClientSession,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
-        if provider.target_path is None:
-            raise AnalysisError("native IDA provider has no private target path")
-        disk = await anyio.to_thread.run_sync(
-            _inspect_private_pe_target, provider.target_path, target
-        )
         metadata = await self._native_ida_call(session, "get_metadata", {})
-        metadata_value = metadata["structured"]
-        attestation = _validate_ida_metadata(metadata_value, target)
-        if not isinstance(metadata_value, dict):
-            raise AnalysisError("native IDA metadata is not structured")
-        try:
-            observed_base = _number(metadata_value.get("base"))
-            observed_image_size = _number(metadata_value.get("size"))
-        except (TypeError, ValueError) as error:
-            raise AnalysisError("native IDA metadata has invalid PE layout") from error
-        if (
-            observed_base != disk["image_base"]
-            or observed_image_size != disk["size_of_image"]
-        ):
-            raise AnalysisError("active IDA image layout does not match the private target")
-
-        entry_output = await self._native_ida_call(session, "get_entry_points", {})
-        entry_values = _tool_result(entry_output["structured"])
-        if not isinstance(entry_values, list) or not any(
-            isinstance(item, dict)
-            and _safe_number(item.get("address")) == disk["entry_point"]
-            for item in entry_values
-        ):
-            raise AnalysisError("active IDA entry point does not match the private target")
-
-        observed_samples = []
-        for sample in disk["samples"]:
-            output = await self._native_ida_call(
-                session,
-                "read_memory_bytes",
-                {"memory_address": sample["address"], "size": len(sample["bytes"])},
-            )
-            observed = _parse_ida_bytes(_tool_result(output["structured"]))
-            if observed != sample["bytes"]:
-                raise AnalysisError(
-                    f"active IDA mapped bytes differ at {sample['address']}"
-                )
-            observed_samples.append(
-                {"address": sample["address"], "size": len(observed)}
-            )
-        attestation.update(
-            {
-                "provider_transport": "factory-native-stdio",
-                "private_target_file_attested": True,
-                "observed_image_base": f"0x{observed_base:x}",
-                "observed_image_size": observed_image_size,
-                "observed_entry_point": f"0x{disk['entry_point']:x}",
-                "mapped_byte_samples": observed_samples,
-                "mapped_byte_sample_count": len(observed_samples),
-            }
-        )
+        attestation = _validate_ida_metadata(metadata["structured"], target)
+        attestation.update({"provider_transport": "factory-native-stdio",
+                            "verification": "database-metadata-only"})
         return attestation, metadata
 
     async def _native_ghidra_call(
@@ -542,18 +484,6 @@ class AnalysisGateway:
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         if provider.command is None or provider.target_path is None:
             raise AnalysisError("native Ghidra provider is missing private configuration")
-        implementation_sha256 = await anyio.to_thread.run_sync(
-            _native_ghidra_implementation_sha256, provider
-        )
-        if implementation_sha256 != provider.implementation_sha256:
-            raise AnalysisError(
-                "native Ghidra implementation differs from its operator binding; "
-                "review the changed provider files and refresh private configuration"
-            )
-        disk = await anyio.to_thread.run_sync(
-            _inspect_private_mz_target if target.format == "mz" else _inspect_private_pe_target,
-            provider.target_path, target
-        )
         repository = self.config.repository(provider.repository_id).path
         try:
             stdout, result_text = await anyio.to_thread.run_sync(
@@ -569,7 +499,7 @@ class AnalysisGateway:
             raise AnalysisError("native Ghidra provider timed out") from error
         except subprocess.CalledProcessError as error:
             detail = _redact(
-                (error.stderr or error.stdout or "")[:4096], self.config
+                (error.stdout or "")[-3000:] + "\n" + (error.stderr or "")[-1000:], self.config
             )
             raise AnalysisError(
                 "native Ghidra provider rejected the request"
@@ -579,11 +509,11 @@ class AnalysisGateway:
             raise AnalysisError(
                 f"native Ghidra provider failed to start: {type(error).__name__}"
             ) from error
-        attestation = (_validate_native_mz_attestation(stdout, disk, target)
-                       if target.format == "mz" else
-                       _validate_native_ghidra_attestation(stdout, disk, target))
-        attestation["provider_implementation_sha256"] = implementation_sha256
-        return attestation, _bounded_text_output(result_text, self.config)
+        return {
+            "status": "not-checked",
+            "target_identity_id": target.id,
+            "verification": "repository-selected-exploratory-analysis",
+        }, _bounded_text_output(result_text, self.config)
 
     async def _upstream(
         self,
@@ -683,7 +613,7 @@ def _run_native_ghidra_command(
                 stderr=completed.stderr,
             )
         if operation == "check":
-            result_text = "Native Ghidra target, project, and toolchain attestation passed."
+            result_text = "Native Ghidra wrapper completed; no full attestation was run."
         else:
             try:
                 result_text = output_path.read_text(encoding="utf-8")
@@ -696,74 +626,8 @@ def _run_native_ghidra_command(
         shutil.rmtree(temporary, ignore_errors=True)
 
 
-def _native_ghidra_implementation_sha256(
-    provider: AnalysisProviderRegistration,
-) -> str:
-    try:
-        hashes = [
-            hashlib.sha256(path.read_bytes()).hexdigest()
-            for path in provider.implementation_files
-        ]
-    except OSError as error:
-        raise AnalysisError(
-            f"cannot read native Ghidra implementation: {type(error).__name__}"
-        ) from error
-    return canonical_sha256(hashes)
 
 
-_GHIDRA_ATTESTATION = re.compile(
-    r"FACTORY_GHIDRA_ATTESTATION_V1:"
-    r"(?P<sha256>[0-9a-fA-F]{64}):(?P<md5>[0-9a-fA-F]{32}):"
-    r"(?P<size>[0-9]+):(?P<image_base>[0-9a-fA-F]{8}):"
-    r"(?P<image_size>[0-9]+):(?P<entry_point>[0-9a-fA-F]{8}):"
-    r"(?P<sample_count>[0-9]+)"
-)
-
-
-def _validate_native_ghidra_attestation(
-    stdout: str, disk: dict[str, Any], target: TargetIdentity
-) -> dict[str, Any]:
-    matches = list(_GHIDRA_ATTESTATION.finditer(stdout))
-    if not matches:
-        raise AnalysisError("native Ghidra did not emit its target attestation marker")
-    values = matches[-1].groupdict()
-    observed = {
-        "sha256": values["sha256"].lower(),
-        "md5": values["md5"].lower(),
-        "size": int(values["size"]),
-        "image_base": int(values["image_base"], 16),
-        "image_size": int(values["image_size"]),
-        "entry_point": int(values["entry_point"], 16),
-        "sample_count": int(values["sample_count"]),
-    }
-    expected = {
-        "sha256": disk["sha256"],
-        "md5": disk["md5"],
-        "size": disk["size"],
-        "image_base": disk["image_base"],
-        "image_size": disk["size_of_image"],
-        "entry_point": disk["entry_point"],
-        "sample_count": len(disk["samples"]),
-    }
-    if observed != expected:
-        raise AnalysisError("native Ghidra attestation differs from the private target")
-    return {
-        "status": "passed",
-        "target_identity_id": target.id,
-        "provider_transport": "factory-native-command",
-        "private_target_file_attested": True,
-        "observed_sha256": observed["sha256"],
-        "observed_md5": observed["md5"],
-        "observed_size": observed["size"],
-        "observed_image_base": f"0x{observed['image_base']:x}",
-        "observed_image_size": observed["image_size"],
-        "observed_entry_point": f"0x{observed['entry_point']:x}",
-        "mapped_byte_samples": [
-            {"address": sample["address"], "size": len(sample["bytes"])}
-            for sample in disk["samples"]
-        ],
-        "mapped_byte_sample_count": observed["sample_count"],
-    }
 
 
 def _bounded_text_output(text: str, config: ServiceConfig) -> dict[str, Any]:
@@ -839,109 +703,6 @@ def _bounded_output(
     }
 
 
-def _inspect_private_pe_target(path: Path, target: TargetIdentity) -> dict[str, Any]:
-    """Hash one private PE and derive deterministic mapped-byte probes."""
-
-    try:
-        data = path.read_bytes()
-    except OSError as error:
-        raise AnalysisError(
-            f"cannot read registered private target: {type(error).__name__}"
-        ) from error
-    sha256 = hashlib.sha256(data).hexdigest()
-    md5 = hashlib.md5(data, usedforsecurity=False).hexdigest()
-    if len(data) != target.size or sha256 != target.sha256:
-        raise AnalysisError(
-            "registered private target file does not match the adapter target identity"
-        )
-    if target.md5 is not None and md5 != target.md5:
-        raise AnalysisError(
-            "registered private target MD5 does not match the adapter target identity"
-        )
-    if target.format.lower() != "pe" or len(data) < 0x100 or data[:2] != b"MZ":
-        raise AnalysisError("native PE analysis target must be a valid PE image")
-    try:
-        pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
-        if data[pe_offset : pe_offset + 4] != b"PE\0\0":
-            raise ValueError("PE signature is absent")
-        section_count = struct.unpack_from("<H", data, pe_offset + 6)[0]
-        optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
-        optional_offset = pe_offset + 24
-        if struct.unpack_from("<H", data, optional_offset)[0] != 0x10B:
-            raise ValueError("only PE32 is supported by the v1 attestor")
-        entry_rva = struct.unpack_from("<I", data, optional_offset + 16)[0]
-        image_base = struct.unpack_from("<I", data, optional_offset + 28)[0]
-        size_of_image = struct.unpack_from("<I", data, optional_offset + 56)[0]
-        section_offset = optional_offset + optional_size
-        sections = []
-        for index in range(section_count):
-            offset = section_offset + index * 40
-            name = data[offset : offset + 8].split(b"\0", 1)[0].decode(
-                "ascii", "strict"
-            )
-            virtual_size, rva, raw_size, raw_offset = struct.unpack_from(
-                "<IIII", data, offset + 8
-            )
-            if raw_offset + raw_size > len(data):
-                raise ValueError("section raw extent exceeds file")
-            sections.append(
-                {
-                    "name": name,
-                    "virtual_size": virtual_size,
-                    "rva": rva,
-                    "raw_size": raw_size,
-                    "raw_offset": raw_offset,
-                }
-            )
-    except (UnicodeDecodeError, ValueError, struct.error) as error:
-        raise AnalysisError(f"registered private target PE is malformed: {error}") from error
-    text = next((item for item in sections if item["name"] == ".text"), None)
-    if text is None or text["raw_size"] < 16 or text["virtual_size"] < 16:
-        raise AnalysisError("registered private PE has no probeable .text section")
-    text_start = image_base + text["rva"]
-    text_end = text_start + text["virtual_size"] - 1
-    entry_point = image_base + entry_rva
-    for label, observed in (
-        ("image_base", image_base),
-        ("entry_point", entry_point),
-        ("text_start", text_start),
-        ("text_end", text_end),
-    ):
-        declared = target.metadata.get(label)
-        if declared is not None and declared != "" and _safe_number(declared) != observed:
-            raise AnalysisError(
-                f"adapter target {label} disagrees with the private PE"
-            )
-
-    raw_end = text_start + min(text["virtual_size"], text["raw_size"])
-    span = raw_end - text_start
-    addresses = {
-        text_start,
-        text_start + span // 4,
-        text_start + span // 2,
-        text_start + (3 * span) // 4,
-        raw_end - 16,
-    }
-    if text_start <= entry_point and entry_point + 16 <= raw_end:
-        addresses.add(entry_point)
-    samples = []
-    for address in sorted(addresses):
-        raw = text["raw_offset"] + address - text_start
-        samples.append(
-            {
-                "address": f"0x{address:x}",
-                "bytes": data[raw : raw + 16],
-            }
-        )
-    return {
-        "sha256": sha256,
-        "md5": md5,
-        "size": len(data),
-        "image_base": image_base,
-        "size_of_image": size_of_image,
-        "entry_point": entry_point,
-        "samples": samples,
-    }
 
 
 def _tool_result(value: Any) -> Any:
@@ -950,22 +711,8 @@ def _tool_result(value: Any) -> Any:
     return value
 
 
-def _parse_ida_bytes(value: Any) -> bytes:
-    if not isinstance(value, str):
-        raise AnalysisError("native IDA memory result is not a hexadecimal byte string")
-    tokens = value.split()
-    if not 1 <= len(tokens) <= 256:
-        raise AnalysisError("native IDA memory result has an invalid byte count")
-    if any(re.fullmatch(r"0x[0-9a-fA-F]{1,2}", token) is None for token in tokens):
-        raise AnalysisError("native IDA memory result contains an invalid byte")
-    return bytes(int(token, 16) for token in tokens)
 
 
-def _safe_number(value: Any) -> int | None:
-    try:
-        return _number(value)
-    except (TypeError, ValueError):
-        return None
 
 
 def _contained_exception(

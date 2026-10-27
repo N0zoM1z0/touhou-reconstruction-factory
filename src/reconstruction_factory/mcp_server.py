@@ -365,7 +365,7 @@ def build_mcp_server(
     @server.tool(
         description=(
             "List operator-registered semantic-analysis providers, optionally for one "
-            "repository. Availability is not claimed until a target-attested operation "
+            "repository. Availability is not claimed until an actual operation "
             "succeeds. Endpoints and host paths are omitted."
         ),
         annotations=_READ_ONLY,
@@ -384,8 +384,8 @@ def build_mcp_server(
         description=(
             "Page the factory-approved atomic operations for an analysis provider. "
             "Native IDA includes semantic reads and non-byte database-metadata edits, "
-            "but no target-byte patching. Discovery re-attests the active target; "
-            "Ghidra schemas are static and report not-probed until invoked."
+            "but no target-byte patching. Ghidra discovery returns static schemas "
+            "without launching a database or performing full checks."
         ),
         annotations=_READ_ONLY,
         structured_output=True,

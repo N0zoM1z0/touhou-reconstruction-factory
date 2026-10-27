@@ -173,7 +173,7 @@ work_state_roots = ["{work_state.as_posix()}"]
         self.assertNotIn(str(work_state), json.dumps(public))
         self.assertEqual(original.replay_sha256, changed.replay_sha256)
 
-    def test_adjacent_repository_references_are_explicit_and_replay_independent(
+    def test_registered_repositories_share_references_without_manual_lists(
         self,
     ) -> None:
         (self.root / "reference").mkdir()
@@ -204,12 +204,13 @@ target_identity_ids = ["target:th095"]
             changed.repository("th08").public_dict()["reference_repository_ids"],
             ["th095"],
         )
-        self.assertNotEqual(original.sha256, changed.sha256)
+        self.assertEqual(original.repository("th08").reference_repository_ids, ("th095",))
+        self.assertEqual(original.repository("th095").reference_repository_ids, ("th08",))
+        self.assertEqual(original.sha256, changed.sha256)
         self.assertEqual(original.replay_sha256, changed.replay_sha256)
 
         unknown = referenced.replace('["th095"]', '["missing"]', 1)
-        with self.assertRaisesRegex(ServiceConfigError, "registered repositories"):
-            load_service_config(self.write_config(unknown))
+        self.assertEqual(load_service_config(self.write_config(unknown)).sha256, original.sha256)
 
     def test_analysis_provider_is_loopback_target_bound_and_replay_independent(
         self,

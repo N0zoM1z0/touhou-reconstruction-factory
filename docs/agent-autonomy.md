@@ -12,12 +12,30 @@ The default GPT-web reconstruction surface is therefore:
   and ignored state;
 - broad composable Bash inside that repository;
 - local Git commits as durable review checkpoints;
-- target-attested IDA or Ghidra operations as high-value atomic tools;
+- repository-selected IDA or Ghidra operations as high-value atomic tools;
 - repository-native build, Wine, compiler, object-comparison, and Oracle scripts;
 - replay receipts and the acceptance registry as a separate truth boundary.
 
 Disposable source-only workspaces remain useful for explicitly isolated or
 throwaway experiments. They are not the default reconstruction environment.
+
+## Keep exploration light
+
+Every registered repository can read every other registered repository at
+`/references/<id>`. New registrations join automatically; individual reference
+allowlists are unnecessary. Only the selected repository is writable.
+
+Ordinary Bash and analysis do not require complete environment scans,
+implementation hash refreshes, complete ledger validation or full replay.
+Ghidra discovery is static and useful queries run directly. Report what was
+actually checked; keep explicit exactness verification separate and run only
+the comparisons needed by the current work.
+
+On 2026-10-27, a scoped public-relay smoke read actual source for all 156
+directed pairs among thirteen registered repositories, confirmed read-only
+reference access, and completed a useful query through all sixteen analysis
+providers. It ran no whole-game build or replay. Detailed outputs remain in
+ignored operator state; this observation is not a continuing health claim.
 
 ## The bitter lesson from the earlier repositories
 
@@ -90,7 +108,7 @@ These are intentionally different boundaries.
 
 | State | Meaning | Exactness credit |
 |---|---|---:|
-| IDA/Ghidra result | Target-attested semantic hypothesis | None |
+| IDA/Ghidra result | Repository-selected semantic hypothesis | None |
 | Bash/build result | Engineering feedback observed in the live repository | None by itself |
 | `gpt-web:` commit | Durable, reviewable source checkpoint | None by itself |
 | Completed replay job | Execution reached a terminal state | None by itself |
@@ -151,8 +169,7 @@ Tool ownership has three layers:
 | Mutable game state | Wine prefix, Ghidra/IDA database or project, build outputs, caches | game-local ignored state or a game-bound Factory state directory |
 
 One Ghidra installation can serve multiple games. Each request must still select
-a game/repository, target identity, and analysis project, and the result must be
-attested against that target. Sharing the executable must not merge analysis
+a game/repository, target identity, and analysis project, and report the selected context. Sharing the executable must not merge analysis
 state or target identity.
 
 Wine itself is a shared host runtime. A Wine prefix is stateful and remains
@@ -167,23 +184,12 @@ shared store is an optimization: move one proven immutable component at a time,
 retain content hashes and game wrappers, then replay the affected fixtures. It
 must not be a prerequisite for useful reconstruction work.
 
-The current TH04 and TH095 Ghidra bridges run as separate target-bound service
-instances even though they select the same Ghidra/JDK versions and their Ghidra
-`bom.json` files have the same SHA-256. That
-is a bridge limitation, not the desired ownership model. The migration target
-is one content-addressed immutable Ghidra/JDK installation selected by a Factory
-analysis broker, with a separate project, target attestation, serialization
-scope, and mutable state root for each game. Reusing an executable never reuses
-or weakens target identity.
-
-TH09 proves the corresponding IDA migration shape. The shared Factory MCP
-launches `ida-pro-mcp` directly over stdio, while the private provider
-registration supplies the target-specific repository and executable identity.
-There is no `mcp_for_gptweb` checkout or per-game HTTP service. The native
-provider offers composable IDA reads and database metadata edits, but it
-re-attests the private PE and active mapped bytes on every request and never
-offers target-byte patching. Thus autonomy over useful analysis state does not
-weaken the target boundary.
+TH04 and TH095 can reuse their existing projects and query scripts directly
+through the shared Factory launcher. A separate per-game HTTP service is not
+required. The native Ghidra launcher reads the selected project without full
+installation or target preflights. Native IDA similarly uses the selected
+headless database and a metadata comparison, with no repeated mapped-byte scan.
+Useful metadata edits remain available; analysis is always provisional.
 
 ## Migration principle
 

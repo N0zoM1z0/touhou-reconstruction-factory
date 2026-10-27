@@ -145,10 +145,9 @@ def check_repository(url: str, address: str, repository: dict, shell: bool, anal
                         "analysis_provider_id": provider["id"], "operation": "list_functions",
                         "arguments_json": json.dumps(arguments),
                     })
-                    if (result["attestation"]["status"] not in {"passed", "passed-by-registered-bridge"}
-                            or result["target"]["id"] != provider["target_identity_id"]
+                    if (result["target"]["id"] != provider["target_identity_id"]
                             or result["exactness_credit"] != "none"):
-                        raise RuntimeError("analysis target attestation or authority mismatch")
+                        raise RuntimeError("analysis repository selection or authority mismatch")
                 run("analysis:" + provider["id"], query)
         run("analysis-discovery", providers_probe)
     return {"repository_id": game, "checks": checks, "calls": client.calls}

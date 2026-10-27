@@ -35,7 +35,7 @@ flowchart LR
     W --> D["One shared Factory MCP<br/>registered repo selection<br/>atomic evidence tools + composable Bash"]:::control
     K --> D
     D --> C["Selected live game repository<br/>dirty + untracked + ignored state<br/>ledgers · original target identity"]:::repo
-    C --> E["Target-attested analysis<br/>shared IDA/Ghidra executable<br/>game + target + project bound"]:::evidence
+    C --> E["Repository analysis<br/>shared IDA/Ghidra executable<br/>game + target + project selected"]:::evidence
     E --> S["Autonomous source work<br/>natural C/C++ · Bash · Wine<br/>compiler · objdiff · repo scripts"]:::work
     C --> S
     F[("Shared immutable tools<br/>Ghidra · JDK · objdiff<br/>compiler packages · system Wine")]:::memory --> S
@@ -57,7 +57,7 @@ flowchart LR
     P98["PC-98 era family<br/>TH01–TH05<br/>registration: TH03 / TH04 / TH05"]:::platform --> C
     PE["Windows PE era family<br/>TH06+<br/>TH06 / TH07 / TH075 / TH08 / TH09<br/>TH095 / TH10 / TH105 / TH11 / TH20"]:::platform --> C
 
-    B["Registered atomic analysis<br/>native IDA / native Ghidra<br/>legacy bridge during migration"]:::evidence -->|"independent target attestation"| E
+    B["Registered atomic analysis<br/>native IDA / native Ghidra<br/>legacy bridge during migration"]:::evidence -->|"selected game project"| E
     S -.-> O["Optional disposable workspace<br/>explicitly isolated experiment<br/>committed source only"]:::platform
 
     classDef human fill:#fff1c2,stroke:#b7791f,color:#3b2f0b,stroke-width:2px;
@@ -195,10 +195,10 @@ Factory-native IDA instance; TH10 is the first Factory-native Ghidra instance.
 The single shared MCP owns analyzer selection, binds each active database or
 project to one registered target, and exposes composable semantic operations
 without another per-game MCP service or URL. Ghidra/JDK binaries are shared and
-hash-pinned while project state remains per-game. Legacy loopback bridges remain
+selected through existing repository paths while project state remains per-game. Legacy loopback bridges remain
 temporary compatibility providers for earlier games. Every analysis result is
 bounded, redacted, and worth zero exactness credit. See the
-[`attested analysis provider`](docs/analysis-provider.md) and the
+[`repository analysis provider`](docs/analysis-provider.md) and the
 [`new-game bootstrap`](docs/new-game-bootstrap.md).
 
 Historical compilers follow the same shared-payload/game-bound-state rule. The

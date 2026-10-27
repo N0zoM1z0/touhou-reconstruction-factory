@@ -23,7 +23,7 @@ authority:
 | Source edit or ignored build output | Yes, in the live worktree | None |
 | Shell exit code | In the command record | None |
 | Local Git commit | Yes, as a review checkpoint | None |
-| Target-attested analysis result | In its analysis envelope | None |
+| Exploratory analysis result | In its analysis envelope | None |
 | Factory replay receipt | Yes | Only its declared scope |
 | Policy-accepted current receipt | Yes | Accepted scope only |
 
@@ -83,7 +83,7 @@ Bubblewrap constructs a networkless process namespace with:
 This is a composition boundary, not a source-only sandbox. If the selected game
 intentionally keeps a target, compiler, `.tools` bundle, or diagnostic database
 inside its registered tree, GPT-web may use it. The evidence boundary remains
-the target-attested analysis and accepted-receipt interfaces.
+explicit target comparison and accepted-receipt interfaces.
 
 ## Tool and state configuration
 
@@ -109,7 +109,6 @@ id = "th09"
 path = "/srv/reconstruction/th09"
 adapter_id = "windows-pe-ledgers-v1"
 target_identity_ids = ["target:th09-main"]
-reference_repository_ids = ["th08", "th095"]
 work_environment = { WINEPREFIX = "/srv/touhou-factory/state/th09/wine" }
 work_state_roots = ["/srv/touhou-factory/state/th09/wine"]
 ```
@@ -120,20 +119,16 @@ identity. `work_state_roots` are mutable and bound to one repository. Environmen
 values and host paths are redacted from discovery responses; only names and
 counts are public.
 
-`reference_repository_ids` is a per-game allowlist of other registered live
-repositories. Their current trees and Git history are mounted read-only at
-their canonical paths and at `/references/<repository_id>` inside the selected
-repository's shell. Repository discovery returns `reference_repository_mounts`
-with these stable paths and `read_only: true`; callers need no host path.
-For example, a TH03 registration allowing TH04 can run
-`cat /references/th04/src/shared/math/vector.cpp`. Both paths refer to the same
-read-only tree, including when shell working directories change. This makes
-adjacent-game source available for composable searches without granting writes
-or silently exposing every game to every session. References are hypotheses,
-not evidence: prefer committed reference content, record its HEAD and dirty
-status, then confirm all accepted facts against the selected game's own target,
-analyzer, compiler, and Oracles. A reference under active semantic
-reconstruction is explicitly provisional.
+Every other registered repository is automatically mounted read-only at its
+canonical path and `/references/<repository_id>`. Discovery returns all current
+`reference_repository_ids` and `reference_repository_mounts`; adding a game
+requires no pairwise reference lists. Historical lists in private configuration
+are ignored. Only the selected repository is writable.
+
+For example, any registered game can read
+`/references/th04/src/shared/math/vector.cpp` and inspect TH04's Git history.
+References help form hypotheses; confirm target-specific conclusions through
+the selected game's own source and focused comparison when needed.
 
 Mounting the Factory `contracts/` and `docs/` directories through the same
 read-only mechanism lets standalone GPT-web prompts name exact guidance paths.
@@ -158,7 +153,7 @@ project.
 
 1. Read the game instructions, current Git status, recent history, and relevant
    game-local knowledge.
-2. Use target-attested IDA/Ghidra reads and Bash freely to investigate.
+2. Use repository-selected IDA/Ghidra reads and Bash freely to investigate.
 3. Make a small natural source change and run the strongest available build or
    comparison checks.
 4. Review the complete diff and status. Do not stage unrelated existing work.

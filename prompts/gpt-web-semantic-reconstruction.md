@@ -55,7 +55,7 @@ TH095-local evidence for every accepted interpretation.
 
 Communicate with me in Chinese. Write source, documentation, identifiers, and
 Git commit messages in English. Work directly in the registered live TH095
-repository with autonomous Bash, target-attested Ghidra, Wine/VC7.1, and
+repository with autonomous Bash, repository-selected Ghidra, Wine/VC7.1, and
 repo-native checks. Begin using tools after a compact orientation; do not spend
 the session narrating a plan that can be tested.
 
@@ -176,7 +176,7 @@ Campaign start
 3. Through factory_repository_run_shell, read AGENTS.md, the current handoff,
    architecture/workflow documents, semantic record, relevant source and
    ledgers, build/oracle scripts, and recent semantic commits. Run the live
-   target, tracking, and target-attested Ghidra preflight required by the repo.
+   target, tracking, and repository-selected Ghidra preflight required by the repo.
 4. Inventory `.analysis/` total/top-level size without trusting old contents.
    Use temporary one-shot output or one manifested
    `.analysis/gpt-web/<campaign-id>/` scratch root. Treat 256 MiB as a soft
@@ -204,7 +204,7 @@ Repeated bounded batch
    dosdevices/z: may otherwise traverse the host filesystem.
 2. For every proposed meaning, inspect relevant target-local offsets, widths,
    signedness, reads/writes, callers/callees, strings, relocations, state
-   transitions, lifetime, and storage owner. Target-attested IDA/Ghidra output
+   transitions, lifetime, and storage owner. Exploratory IDA/Ghidra output
    is provisional and has zero exactness credit.
 3. Classify meaning as observed, corroborated, inferred, or unknown. Adjacent
    games, decompiler labels, attractive names, and layout assertions cannot
@@ -258,7 +258,7 @@ active-incomplete.
 
 Continuation handoff: report the execution boundary; campaign objective; start/end
 commit and dirty state; every completed checkpoint; selected and excluded
-scope; target attestation; evidence classes and retained unknowns; checks by
+scope; reported verification scope; evidence classes and retained unknowns; checks by
 feedback level; broad gates run or explicitly deferred; all verification planes;
 accepted facts separately from semantic interpretation; and the exact next
 batch. Include recovery classifications/actions, starting/ending `.analysis/`

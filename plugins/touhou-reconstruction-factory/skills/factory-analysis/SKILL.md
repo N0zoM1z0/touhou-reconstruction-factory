@@ -1,73 +1,25 @@
 ---
 name: factory-analysis
-description: Use target-attested IDA or Ghidra semantic analysis through the Touhou Reconstruction Factory. Query functions, xrefs, strings, globals, and structures; on a native IDA provider, also make useful database metadata edits. Never treat analysis state as exactness evidence.
+description: Use repository-selected IDA or Ghidra for autonomous source investigation, with Bash and read-only references to all registered repositories. Analysis never grants exactness credit.
 ---
 
 # Factory Analysis
 
-Use semantic analysis to form source hypotheses. Every result has zero exactness
-credit until a separate canonical replay receipt is accepted.
-
-## Analyze
-
-1. Call `factory_list_repositories`, then
-   `factory_list_analysis_providers` with the selected repository ID. Use only a
-   returned provider; `availability="not-probed"` is not a success claim.
-2. Call `factory_list_analysis_operations` with a narrow filter. Use the
-   returned operation name and `input_schema`; do not invent an upstream native
-   tool or argument.
-3. Call `factory_analysis_call`. Encode the operation arguments as one JSON
-   object string. Keep addresses, result counts, instruction counts, and search
-   scope narrow.
-4. Require a successful attestation in the response. Confirm the returned
-   target identity, SHA-256/size where present, provider binding, operation, and
-   argument digest before using the content.
-5. Treat names, function boundaries, tails, EH regions, types, xrefs,
-   decompilation, and disassembly as provisional evidence. Preserve
-   `output_completeness`, `factory_output_truncated`,
-   `factory_structured_output_omitted`, and any provider error.
-6. Correlate the result with current source through the live-repository workflow
-   in `factory-reconstruction`. Do not claim that analysis changed source or
-   that repository tests changed the analysis database.
-7. If exactness is requested, switch to `factory-replay` only after the source
-   state is committed and a matching claim is discoverable.
-   If no supported receipt covers the requested extent, report `unknown`.
-
-For a provider advertising `database_metadata_writable=true`, discovered tools
-may rename functions or variables, set comments and types, and manage stack
-metadata. Use those atomic operations when they make the shared analysis state
-more useful. They never edit source or earn exactness credit. Target-byte
-patching is deliberately absent because it would invalidate target attestation.
-Legacy bridge Bash is also outside this surface; use broad Bash inside the
-separately registered game repository.
-
-## TH09 native example
-
-Select `th09-ida`. The shared Factory MCP starts the configured `ida-pro-mcp`
-stdio client itself; there is no TH09-local MCP server or URL. Discovery hashes
-the private `th09.exe`, checks the adapter identity and active IDA metadata,
-validates PE image base and entry point, and compares six distributed mapped
-`.text` samples before returning operations. If IDA has another database open,
-attestation must fail rather than silently analyze that game.
-
-## TH10 native Ghidra example
-
-Select `th10-ghidra`; there is no TH10-local MCP or URL. Discovery first runs a
-real target-attested `check`, then returns ten fixed read-only schemas. Use
-`function`, `decompile`, `disassemble`, callers/callees, xrefs, paged functions,
-or bounded string search exactly as discovered. Require target
-`target:th10-main` and transport `factory-native-command`. The shared immutable
-Ghidra/JDK installation and the game-specific ignored project are separate
-state. The private registration also pins the reviewed wrapper and Java-script
-implementation: if those files change, report the provider unavailable until
-operator review refreshes its binding. A successful query proves target
-binding, not an authored boundary or exact source.
-
-## TH105 example
-
-Select `th105-ida`, discover `get_function_by_address`,
-`decompile_function`, or `get_xrefs_to`, and use an address such as
-`0x00401000` only when it is relevant to the requested work. Confirm that the
-active metadata matches `target:th105-main` before interpreting output. The IDA
-candidate at that address and its decompilation do not prove the known 52-byte
-standalone code-generation claim; only its accepted replay receipt does.
+1. Select a repository/provider from `factory_list_repositories` and
+   `factory_list_analysis_providers`.
+2. Discover operation arguments with `factory_list_analysis_operations`, then
+   call `factory_analysis_call` for a useful bounded query. Ghidra discovery
+   does not start the analyzer.
+3. Confirm the returned repository/target and read the actual verification
+   scope. Ghidra exploratory calls report `not-checked`; native IDA checks
+   database metadata only. Neither is complete target verification.
+4. Treat names, extents, types, xrefs and decompilation as hypotheses with
+   `exactness_credit=none`. Preserve useful errors and truncation information.
+5. Compose repository Bash and searches under `/references/<id>` freely.
+   Every other registered repository is mounted read-only automatically.
+6. Native IDA metadata edits are available when advertised. Read important
+   edits back and record durable conclusions in source or local notes.
+7. Run affected compiler/comparison/Oracle commands when needed. Full
+   environment scans, implementation pin refreshes and complete replay are not
+   prerequisites for exploration. Only explicitly accepted receipts establish
+   exactness.

@@ -86,20 +86,16 @@ Mandatory recovery gate:
    checkpoint recoverable work first. Preserve and exclude unrelated or unknown
    work. Never reset, overwrite, delete, or stage it merely to obtain a clean
    tree.
-4. Through `factory_repository_run_shell`, run the target, ledger, status, and
-   public-CI preflights named in AGENTS.md. Perform the mandatory Ghidra
-   preflight through `factory_list_analysis_operations(th10-ghidra)` followed
-   by `factory_analysis_call(th10-ghidra, check, {})`; require a passed
-   attestation for `target:th10-main` and
-   `attestation.provider_transport=factory-native-command`.
-   Stop on a target or provider mismatch. A failed or timed-out command may
-   leave files; always inspect status afterward and page durable output instead
-   of guessing.
+4. Select `th10-ghidra` and discover operation schemas.
+   Start with a useful bounded query. Do not run complete environment, ledger,
+   compiler or replay preflights merely to begin exploration. Run comparisons
+   relevant to the source actually changed; inspect status and durable output
+   after failed or timed-out commands.
 
 Native Ghidra use:
 1. Discover `th10-ghidra` operations instead of inventing tool names or schemas.
-   Require `attestation.status=passed`, target `target:th10-main`, and
-   `attestation.provider_transport=factory-native-command` on every useful result.
+   Confirm target `target:th10-main`. Exploratory Ghidra results report
+   `attestation.status=not-checked` and grant no exactness credit.
    Read each returned input schema before calling it: `{}` is valid only for
    operations whose schema has no required fields. Never probe address-, range-,
    or name-dependent operations with empty arguments.
@@ -116,9 +112,9 @@ Native Ghidra use:
    source, ledgers, scripts, or concise game-local knowledge; do not expect
    Ghidra renames/comments to persist through this surface. Never request
    target-byte patching.
-4. If attestation fails, do not substitute another game's provider or proceed
-   from remembered output. Report the mismatch as unavailable and stop
-   target-dependent work.
+4. If a query fails, inspect its error and correct the selected repository,
+   project or arguments. Continue useful source work; do not invent results or
+   substitute another game's output as target-specific evidence.
 
 Autonomous exact loop:
 1. Maintain a mixed frontier rather than a smallest-function strategy. Inspect

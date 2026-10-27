@@ -14,7 +14,6 @@ def script(name):
 
 
 public = script("validate-public-mcp")
-provider = script("ghidra-repository-provider")
 
 
 class PublicConnectivityTests(unittest.TestCase):
@@ -45,12 +44,3 @@ class PublicConnectivityTests(unittest.TestCase):
             completed = subprocess.CompletedProcess([], 0, '{}\n' + json.dumps(stats), "")
             with patch.object(public.subprocess, "run", return_value=completed), self.assertRaises(RuntimeError):
                 public.PublicClient("https://example.invalid/private", "1.1.1.1").rpc("tools/list")
-
-    def test_marker_translation_requires_an_actual_unique_success_line(self):
-        marker = "TH11_GHIDRA_ATTESTATION_V1"
-        fields = ":" + "a" * 64 + ":" + "b" * 32 + ":4096:00400000:8192:00401000:6"
-        line = "INFO VerifyTarget.java> " + marker + fields + " (GhidraScript)\n"
-        self.assertEqual(provider.translate_pe_marker(line, marker), "FACTORY_GHIDRA_ATTESTATION_V1" + fields)
-        for invalid in ("Running: " + marker + fields, line + line, line + "ERROR REPORT SCRIPT ERROR", line.replace(marker, "OTHER_MARKER")):
-            with self.assertRaises(ValueError):
-                provider.translate_pe_marker(invalid, marker)

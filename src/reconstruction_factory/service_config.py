@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 import re
 import tomllib
@@ -65,9 +65,8 @@ class AnalysisProviderRegistration:
             )
         if self.backend in _NATIVE_ANALYSIS_BACKENDS:
             self._validate_native_command()
-            if self.backend == "attested-ghidra-command-v1":
-                self._validate_native_ghidra_implementation()
-            elif self.implementation_files or self.implementation_sha256 is not None:
+            if (self.backend != "attested-ghidra-command-v1"
+                    and (self.implementation_files or self.implementation_sha256 is not None)):
                 raise ServiceConfigError(
                     "native IDA backend does not accept Ghidra implementation fields"
                 )
@@ -127,9 +126,9 @@ class AnalysisProviderRegistration:
             raise ServiceConfigError(
                 "native analysis backend does not accept a bridge endpoint or tool"
             )
-        if self.command is None or not self.command.is_absolute() or not self.command.is_file():
+        if self.command is None or not self.command.is_absolute():
             raise ServiceConfigError(
-                "native analysis command must be an existing absolute file"
+                "native analysis command must be an absolute path"
             )
         if not 1 <= len(self.arguments) <= 16 or any(
             not isinstance(value, str) or not value or "\0" in value
@@ -141,33 +140,9 @@ class AnalysisProviderRegistration:
         if (
             self.target_path is None
             or not self.target_path.is_absolute()
-            or not self.target_path.is_file()
         ):
             raise ServiceConfigError(
-                "native analysis target_path must be an existing absolute file"
-            )
-
-    def _validate_native_ghidra_implementation(self) -> None:
-        if (
-            not 1 <= len(self.implementation_files) <= 32
-            or tuple(sorted(self.implementation_files, key=str))
-            != self.implementation_files
-            or len(set(self.implementation_files)) != len(self.implementation_files)
-            or any(
-                not path.is_absolute() or not path.is_file()
-                for path in self.implementation_files
-            )
-        ):
-            raise ServiceConfigError(
-                "native Ghidra implementation_files must contain 1 through 32 "
-                "sorted unique existing absolute files"
-            )
-        if (
-            not isinstance(self.implementation_sha256, str)
-            or re.fullmatch(r"[0-9a-f]{64}", self.implementation_sha256) is None
-        ):
-            raise ServiceConfigError(
-                "native Ghidra implementation_sha256 must be lowercase SHA-256"
+                "native analysis target_path must be an absolute path"
             )
 
     def public_dict(self) -> dict[str, Any]:
@@ -488,12 +463,12 @@ class ServiceConfig:
                 raise ServiceConfigError(
                     "analysis provider target is outside its repository registration"
                 )
-        repository_ids = set(ids)
-        for repository in self.repositories:
-            if set(repository.reference_repository_ids) - repository_ids:
-                raise ServiceConfigError(
-                    "reference_repository_ids must name registered repositories"
-                )
+        # Reference access follows the live registry, without per-game allowlists.
+        object.__setattr__(self, "repositories", tuple(
+            replace(repository, reference_repository_ids=tuple(
+                other_id for other_id in ids if other_id != repository.id
+            )) for repository in self.repositories
+        ))
         if self.state_directory.is_relative_to(
             self.evidence_store
         ) or self.evidence_store.is_relative_to(self.state_directory):
@@ -881,10 +856,8 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                     item["target_identity_ids"],
                     f"repositories[{index}].target_identity_ids",
                 ),
-                reference_repository_ids=_strings(
-                    item.get("reference_repository_ids", []),
-                    f"repositories[{index}].reference_repository_ids",
-                ),
+                # Legacy lists are accepted but no longer restrict source references.
+                reference_repository_ids=(),
                 work_environment=tuple(
                     sorted(
                         (
@@ -928,11 +901,13 @@ def load_service_config(path: str | Path) -> ServiceConfig:
         }
         if backend in _NATIVE_ANALYSIS_BACKENDS:
             native_fields = {"command", "arguments", "target_path"}
+            optional_fields: set[str] = set()
             if backend == "attested-ghidra-command-v1":
-                native_fields |= {"implementation_files", "implementation_sha256"}
-            item = _strict_object(
+                optional_fields |= {"implementation_files", "implementation_sha256"}
+            item = _strict_object_optional(
                 raw,
                 common_fields | native_fields,
+                optional_fields,
                 label,
             )
             raw_arguments = item["arguments"]
@@ -941,34 +916,19 @@ def load_service_config(path: str | Path) -> ServiceConfig:
             endpoint = None
             upstream_tool = None
             command = _resolve_path(
-                base, item["command"], f"{label}.command", must_exist=True
+                base, item["command"], f"{label}.command"
             )
             arguments = tuple(
                 _string(value, f"{label}.arguments[{argument_index}]")
                 for argument_index, value in enumerate(raw_arguments)
             )
             target_path = _resolve_path(
-                base, item["target_path"], f"{label}.target_path", must_exist=True
+                base, item["target_path"], f"{label}.target_path"
             )
             if backend == "attested-ghidra-command-v1":
-                raw_implementation_files = item["implementation_files"]
-                if not isinstance(raw_implementation_files, list):
-                    raise ServiceConfigError(
-                        f"{label}.implementation_files must be an array"
-                    )
-                implementation_files = tuple(
-                    _resolve_path(
-                        base,
-                        value,
-                        f"{label}.implementation_files[{file_index}]",
-                        must_exist=True,
-                    )
-                    for file_index, value in enumerate(raw_implementation_files)
-                )
-                implementation_sha256 = _string(
-                    item["implementation_sha256"],
-                    f"{label}.implementation_sha256",
-                )
+                # Historical implementation pins are ignored by exploratory tools.
+                implementation_files = ()
+                implementation_sha256 = None
             else:
                 implementation_files = ()
                 implementation_sha256 = None
