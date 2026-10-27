@@ -260,6 +260,24 @@ only after an actual Web tool call succeeds.
 
 ### Public connectivity diagnostics without MagicDNS
 
+`scripts/validate-public-mcp.py` automates the pinned public path below.
+Set `FACTORY_MCP_URL` privately, then run:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/validate-public-mcp.py \
+  --shell --analysis --workers 3 \
+  --report .factory/public-validation.json
+```
+
+It resolves through external DNS-over-HTTPS, initializes and discovers tools
+through every public IPv4 answer, then checks every discovered repository's
+status, import, harmless Python shell and durable output, plus every registered
+analysis provider's operations and a real function-list query. Every MCP call
+pins its public destination, bypasses proxies, verifies TLS and checks the
+connected peer IP. Repeat `--expected-repository ID` to require an exact
+inventory; `--public-ip` can select a current independently resolved address.
+The exit status is nonzero if any check fails. Keep the detailed report private.
+
 Check loopback MCP, public Funnel transport, and an actual GPT-web tool call
 separately. Inside the tailnet, MagicDNS can resolve the public hostname to a
 `100.64.0.0/10` address. A successful HTTPS request through that address exercises

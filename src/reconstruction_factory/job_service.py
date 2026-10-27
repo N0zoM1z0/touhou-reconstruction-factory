@@ -16,7 +16,7 @@ from .acceptance import (
     build_acceptance_registry_and_facts,
     build_receipt_acceptance_registry,
 )
-from .adapters import inspect_repository
+from .inspection_adapters import inspect_repository
 from .artifact_store import ArtifactStore
 from .errors import (
     FactoryError,

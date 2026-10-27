@@ -63,7 +63,7 @@ class WindowsPeCoffPlatform(PlatformProvider):
         }
     )
     compatible_toolchain_ids: frozenset[str] = frozenset(
-        {"msvc7", "msvc71", "msvc8-ltcg"}
+        {"msvc7", "msvc71", "msvc8-ltcg", "pe-inventory-only"}
     )
 
     def validate_target(self, target: TargetIdentity) -> tuple[str, ...]:
@@ -126,7 +126,9 @@ class MsvcNonLtcgToolchain(ToolchainProvider):
 
     def validate_target(self, target: TargetIdentity) -> tuple[str, ...]:
         family = str(target.metadata.get("toolchain_family", ""))
-        if family and self.compiler_marker.lower() not in family.lower():
+        aliases = {"msvc7": "2002", "msvc71": "2003"}
+        if (family and self.compiler_marker.lower() not in family.lower()
+                and aliases.get(self.id, self.compiler_marker).lower() not in family.lower()):
             raise CompatibilityError(
                 f"provider {self.id} expected toolchain marker {self.compiler_marker!r}; "
                 f"{target.id} declares {family!r}"
@@ -177,6 +179,23 @@ class Msvc8LtcgToolchain(ToolchainProvider):
         )
 
 
+@dataclass(frozen=True, slots=True)
+class PeInventoryToolchain(ToolchainProvider):
+    """An explicit absence of reviewed compile/replay capabilities."""
+
+    id: str = "pe-inventory-only"
+    display_name: str = "PE inventory only; compiler and replay remain unprovisioned"
+    capabilities: frozenset[Capability] = frozenset({Capability.ADDRESS_LINEAR_VA})
+    compatible_platform_ids: frozenset[str] = frozenset({"windows-pe-coff"})
+
+    def validate_target(self, target: TargetIdentity) -> tuple[str, ...]:
+        _require_format(target, frozenset({"pe"}), self.id)
+        return (f"{target.id}: inventory import grants no compile or replay support",)
+
+    def oracle_contracts(self) -> tuple[str, ...]:
+        return ()
+
+
 def builtin_registry() -> ProviderRegistry:
     registry = ProviderRegistry()
     registry.register_platform(Pc98MzOmfPlatform())
@@ -197,5 +216,6 @@ def builtin_registry() -> ProviderRegistry:
         )
     )
     registry.register_toolchain(Msvc8LtcgToolchain())
+    registry.register_toolchain(PeInventoryToolchain())
     return registry
 

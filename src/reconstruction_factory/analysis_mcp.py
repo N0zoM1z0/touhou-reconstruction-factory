@@ -23,7 +23,7 @@ import anyio
 from mcp import Client, ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from .adapters import inspect_repository
+from .inspection_adapters import inspect_repository
 from .errors import AnalysisError, ReplayError
 from .mz_analysis import (
     inspect_mz_target as _inspect_private_mz_target,

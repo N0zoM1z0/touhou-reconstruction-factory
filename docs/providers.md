@@ -15,7 +15,7 @@ distinction prevents a descriptor from becoming a false completion claim.
 | Platform | Compatible toolchains | Important structural capabilities |
 |---|---|---|
 | `pc98-mz-omf` | `borland16` | MZ/COM, OMF, segmented addressing, relocations/fixups, multi-product |
-| `windows-pe-coff` | `msvc7`, `msvc71`, `msvc8-ltcg` | PE, COFF, linear VA, COMDAT, imports/resources |
+| `windows-pe-coff` | `msvc7`, `msvc71`, `msvc8-ltcg`, `pe-inventory-only` | PE, COFF, linear VA, COMDAT, imports/resources |
 
 | Toolchain | Ownership/codegen model |
 |---|---|
@@ -23,6 +23,13 @@ distinction prevents a descriptor from becoming a false completion claim.
 | `msvc7` | focused standalone COFF is useful; final ownership remains separate |
 | `msvc71` | normal standalone COFF and LTCG may coexist in one target; the declared artifact owner selects a normal-COFF or linked-image Oracle, while final product ownership remains separate |
 | `msvc8-ltcg` | semantic and physical owners may diverge; remote chunks are first-class |
+| `pe-inventory-only` | provisional inventory only; no toolchain compile/match capabilities or codegen Oracle contracts |
+
+The inventory descriptor preserves unknown compiler/profile readiness for
+native contracts that have not been ported to a Factory replay driver. It does
+not establish availability of VC9, v143, or any installed compiler. MSVC7 and
+MSVC7.1 family validation also recognizes their explicit 2002/2003 generation
+labels without rewriting the native manifest.
 
 ## Compatibility rules
 

@@ -19,6 +19,31 @@ The governing rule is accuracy before completeness:
 
 ## Implemented adapters
 
+### Inventory-only control-plane imports
+
+The CLI and MCP inspection/analysis interfaces use `inspection_adapters.py`.
+It adds the following conservative imports before falling back to the existing
+replay adapter registry:
+
+- `th05-pc98-manifest-v1` reads `config/targets.toml` and
+  `config/toolchain.toml`. It exposes TH05's MAIN, OP, MAINE and COM ZUN targets
+  with their declared provenance, without inventing function or acceptance
+  ledgers. TH05 calibration artifacts inside other games do not select it.
+- `windows-pe-inventory-v1` reads `config/target.toml`,
+  `config/functions.csv` and `config/tools.lock.toml` for TH06, TH07, TH11 and
+  TH20. It exposes complete native function rows as provisional boundaries.
+  Native `matching` labels, acceptance files, origins and source presence are
+  not interpreted as Factory claims by this initial import.
+
+These adapters produce no Oracle results or exactness credit. Their limited
+scope is explicit in diagnostics. TH20 retains its operator-selected Steamless
+target hash and native version/provenance fields; registration does not select
+a different executable. The `pe-inventory-only` toolchain descriptor grants no
+compile or replay capability. TH075 uses the existing Windows ledger adapter.
+Inventory additions do not enter the replay execution registry or change its
+implementation fingerprint. New replay drivers require separate review of
+each game's native source and acceptance contract.
+
 ### `th03-pc98-v1`
 
 TH03 uses the shared multi-product PC-98 adapter contract with
