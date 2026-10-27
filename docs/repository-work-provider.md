@@ -39,20 +39,34 @@ only the replay/acceptance path can add a fact to the Truth Kernel.
 - `repository_id`: one registered game ID;
 - `script`: 1 through 65,536 UTF-8 bytes of Bash;
 - `relative_cwd`: an existing directory that resolves inside the worktree;
-- `timeout_seconds`: a positive duration within operator policy.
+- `timeout_seconds`: a positive duration within operator policy;
+- optional `command_id`: `repository-command:` followed by 32 lowercase hex
+  digits, chosen before sending a request that may need recovery.
 
 Commands are serialized per repository and take the same Factory repository
 lock used by replay, acceptance, analysis, and snapshot operations. This
 serialization starts in an asynchronous per-repository MCP queue: pending shell,
-status, semantic-debt and output-page requests do not occupy execution threads
+status and semantic-debt requests do not occupy execution threads
 while another request owns that worktree. A backlog for one game therefore does
 not exhaust the shared thread pool or stall another game's work or discovery.
 File locks continue to coordinate separate MCP instances and workers. This
 coordinates all Factory-owned access, while ordinary local terminals and other
 programs remain outside that advisory lock. Commands run non-transactionally. Edits and
 artifacts survive a nonzero exit or timeout. This is necessary for normal
-compiler diagnostics and investigation, but it means a retry must begin with
-`factory_get_repository_status` and an inspection of the prior output.
+compiler diagnostics and investigation. Inspect prior output and the live
+worktree before deliberately executing the work again.
+
+With a caller-chosen `command_id`, retry identical arguments after a lost
+response, including a disconnect while queued. The original execution either
+runs or returns its retained result; it is never repeated for that ID. The
+response sets `reused_existing_command=true` when returning a retained result,
+with its original timestamps and Git snapshots. This retrieves an execution,
+not a fresh build against subsequent source edits. Use a new ID for new work.
+Changing the script, cwd argument, or timeout under an existing ID reports a
+conflict. A timed-out command is recovered as timed out, without repeating its
+partial writes. An interrupted execution requires output/worktree inspection
+and an explicit new ID before executing again. IDs and records are scoped to
+one repository. Ordinary calls can continue to omit the ID.
 
 Every command receives an opaque `repository-command:<id>`. Its durable record
 contains script digest, timing and terminal state, exit/timeout state, captured

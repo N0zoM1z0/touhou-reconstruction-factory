@@ -320,7 +320,11 @@ def build_mcp_server(
             "repo-local Wine/toolchains, and create local Git commits. It has no network, "
             "so remote Git push is unavailable. Filesystem changes persist on nonzero exit "
             "or timeout. The result records before/after Git state, created commits, and "
-            "initial output pages. A successful command or commit has zero exactness credit "
+            "initial output pages. Optionally choose command_id as repository-command: "
+            "followed by 32 lowercase hex digits before sending. After a lost response, "
+            "retry that ID with identical arguments to retrieve the original result without "
+            "executing again. Use a fresh ID for new execution, including after source edits. "
+            "A successful command or commit has zero exactness credit "
             "until a canonical replay receipt is accepted."
         ),
         annotations=_REPOSITORY_SHELL,
@@ -331,6 +335,7 @@ def build_mcp_server(
         script: ShellScript,
         relative_cwd: RelativePath = ".",
         timeout_seconds: CommandTimeout = 120,
+        command_id: RepositoryCommandId | None = None,
     ) -> dict[str, Any]:
         return await repository_invoke(
             repository_id,
@@ -339,6 +344,7 @@ def build_mcp_server(
                 script,
                 relative_cwd=relative_cwd,
                 timeout_seconds=timeout_seconds,
+                command_id=command_id,
             )
         )
 

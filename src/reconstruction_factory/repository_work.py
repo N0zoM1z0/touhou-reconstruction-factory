@@ -120,6 +120,7 @@ class RepositoryWorkStore:
         *,
         relative_cwd: str,
         timeout_seconds: int,
+        command_id: str | None = None,
     ) -> dict[str, Any]:
         self._require_enabled()
         script_bytes = script.encode("utf-8")
@@ -138,23 +139,48 @@ class RepositoryWorkStore:
             )
         registration = self.config.repository(repository_id)
         repository = registration.path
-        cwd = _safe_cwd(repository, relative_cwd)
-        normalized_cwd = cwd.relative_to(repository).as_posix()
-        if normalized_cwd == ".":
-            normalized_cwd = "."
+        directory = self._command_directory(repository_id, command_id) if command_id is not None else None
+        script_sha256 = hashlib.sha256(script_bytes).hexdigest()
 
         with self._repository_lock(repository_id), self._factory_repository_lock(
             registration, exclusive=True
         ):
+            if directory is not None and directory.exists():
+                record = _read_record(directory / "record.json")
+                if (
+                    record.get("repository_id") != repository_id
+                    or record.get("command_id") != command_id
+                    or record.get("script_sha256") != script_sha256
+                    or record.get("request_relative_cwd", record.get("relative_cwd")) != relative_cwd
+                    or record.get("timeout_seconds") != timeout_seconds
+                ):
+                    raise RepositoryWorkError(
+                        "command_id already belongs to a different request; "
+                        "use the original arguments to recover it, or a new ID for new work"
+                    )
+                if record["state"] == "running":
+                    record["state"] = "interrupted"
+                    record["finished_at"] = _format_time(_now())
+                    _write_json(directory / "record.json", record)
+                if record["state"] not in {"completed", "timed-out"}:
+                    raise RepositoryWorkError(
+                        f"repository command {command_id} was interrupted; inspect its "
+                        "saved output and live worktree before using a new command_id"
+                    )
+                return self._command_result(directory, record, reused=True)
+
+            cwd = _safe_cwd(repository, relative_cwd)
+            normalized_cwd = cwd.relative_to(repository).as_posix()
             before = _repository_status(registration)
-            command_id = f"repository-command:{uuid.uuid4().hex}"
+            command_id = command_id or f"repository-command:{uuid.uuid4().hex}"
             directory = self._command_directory(repository_id, command_id)
             directory.mkdir(parents=True, mode=0o700)
             record: dict[str, Any] = {
                 "schema_version": REPOSITORY_COMMAND_SCHEMA_VERSION,
                 "command_id": command_id,
                 "repository_id": repository_id,
-                "script_sha256": hashlib.sha256(script_bytes).hexdigest(),
+                "script_sha256": script_sha256,
+                "request_relative_cwd": relative_cwd,
                 "relative_cwd": normalized_cwd,
                 "timeout_seconds": timeout_seconds,
                 "started_at": _format_time(_now()),
@@ -202,14 +228,18 @@ class RepositoryWorkStore:
             record["state"] = "timed-out" if record["timed_out"] else "completed"
             record["finished_at"] = _format_time(_now())
             _write_json(directory / "record.json", record)
-            result = _public_command(record)
-            result["stdout"] = self._output_page_unlocked(
-                directory, record, "stdout", 0, _OUTPUT_PAGE_BYTES
+            return self._command_result(directory, record, reused=False)
+
+    def _command_result(
+        self, directory: Path, record: dict[str, Any], *, reused: bool
+    ) -> dict[str, Any]:
+        result = _public_command(record)
+        result["reused_existing_command"] = reused
+        for stream in ("stdout", "stderr"):
+            result[stream] = self._output_page_unlocked(
+                directory, record, stream, 0, _OUTPUT_PAGE_BYTES
             )
-            result["stderr"] = self._output_page_unlocked(
-                directory, record, "stderr", 0, _OUTPUT_PAGE_BYTES
-            )
-            return result
+        return result
 
     def command_output(
         self,

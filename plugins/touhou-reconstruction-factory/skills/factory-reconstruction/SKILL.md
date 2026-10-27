@@ -28,19 +28,23 @@ closure/runtime feedback, semantic reconstruction, then portable products.
 2. Call `factory_describe`, `factory_list_repositories`, and
    `factory_get_repository_status`. Work only in the returned game ID. Report the
    actual branch, `HEAD`, dirty/staged/untracked counts, and upstream relation.
-3. Before new edits, treat every non-clean state as a mandatory recovery gate,
-   whether or not a disconnect is known. Inspect porcelain-v2 status, complete
-   staged and unstaged diffs, every relevant untracked path, the latest handoff,
-   recent relevant history, tests, and artifact manifests. Classify each path as
-   recoverable current work, unrelated pre-existing work, generated ephemeral
-   output, or unknown origin/intent. Finish and checkpoint recoverable work
-   first; preserve/exclude unrelated work; never reset, delete, overwrite, or
-   stage unknown work. If overlap cannot be isolated, report a concrete blocker.
-   Re-run the gate after any timeout, interruption, or unexpected status change.
+3. Inspect actual Git status and the diffs or untracked files relevant to the
+   chosen work. Preserve unrelated or unknown work and investigate overlapping
+   files before editing them. Dirty work is normal; it does not require a
+   complete repository audit or a checkpoint before continuing. After an
+   interruption, recover the prior command and inspect its output and affected
+   files before deliberately executing the work again.
 4. Read the repository's current instructions, architecture, build scripts,
    ledgers, and recent relevant Git history with
    `factory_repository_run_shell`. Existing dirty and untracked work is part of
    the live context: understand and preserve it; do not pretend it is absent.
+   For a command that may need reconnecting, optionally choose `command_id` as
+   `repository-command:` plus 32 lowercase hex digits before sending it. Retry
+   that ID with identical arguments to recover the original result without
+   repeating edits or builds, even if the first request disconnected while
+   queued. `reused_existing_command=true` identifies the retained result and
+   its original Git snapshots. Use a fresh ID for new execution after changes;
+   inspect interrupted work before starting it again.
 5. Bound one useful work packet. State the candidate functions, addresses,
    extents, files, evidence, and unknowns. Do not invent a percentage when the
    denominator is not independently known.

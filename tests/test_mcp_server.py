@@ -391,28 +391,34 @@ target_identity_ids = ["target:th03-fixture"]
 
     @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
     async def test_live_repository_shell_creates_a_reviewable_git_checkpoint(self) -> None:
+        arguments = {
+            "repository_id": "th08",
+            "script": (
+                "printf 'web checkpoint\\n' > checkpoint.txt\n"
+                "git add checkpoint.txt\n"
+                "git commit -m 'gpt-web: checkpoint through MCP'\n"
+            ),
+            "relative_cwd": ".",
+            "timeout_seconds": 5,
+            "command_id": "repository-command:" + "a" * 32,
+        }
         async with Client(build_mcp_server(self.config)) as client:
             before = await client.call_tool(
                 "factory_get_repository_status", {"repository_id": "th08"}
             )
             command = await client.call_tool(
                 "factory_repository_run_shell",
-                {
-                    "repository_id": "th08",
-                    "script": (
-                        "printf 'web checkpoint\\n' > checkpoint.txt\n"
-                        "git add checkpoint.txt\n"
-                        "git commit -m 'gpt-web: checkpoint through MCP'\n"
-                    ),
-                    "relative_cwd": ".",
-                    "timeout_seconds": 5,
-                },
+                arguments,
             )
+            recovered = await client.call_tool("factory_repository_run_shell", arguments)
             after = await client.call_tool(
                 "factory_get_repository_status", {"repository_id": "th08"}
             )
         self.assertFalse(before.is_error)
         self.assertFalse(command.is_error)
+        self.assertFalse(recovered.is_error)
+        self.assertTrue(recovered.structured_content["reused_existing_command"])
+        self.assertEqual(recovered.structured_content["created_commits"], command.structured_content["created_commits"])
         self.assertFalse(after.is_error)
         result = command.structured_content
         self.assertEqual(result["head_relation"], "advanced")

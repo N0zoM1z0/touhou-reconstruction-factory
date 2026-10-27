@@ -114,12 +114,14 @@ class FactoryService:
         *,
         relative_cwd: str,
         timeout_seconds: int,
+        command_id: str | None = None,
     ) -> dict[str, Any]:
         return self.repository_work.run_shell(
             repository_id,
             script,
             relative_cwd=relative_cwd,
             timeout_seconds=timeout_seconds,
+            command_id=command_id,
         )
 
     def repository_command_output(

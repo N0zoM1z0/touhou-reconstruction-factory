@@ -148,3 +148,54 @@ This round passed 11 repository-work, 10 MCP-server, 18 analysis and 2 headless
 IDA checks, plus `git diff --check`. Reconstruction source and acceptance
 ledgers were unchanged; the endpoint, original replay worker and replay
 implementation fingerprint were retained.
+
+## Publication and failure-recovery exercise
+
+The operator then authorized pushing all registered game repositories. All
+thirteen current upstream branches were pushed and checked with fresh remote
+branch queries. TH08 and TH095 retained their existing topic branches. TH04's
+dirty files and TH095's untracked files were preserved. TH10's divergent remote
+commit was an earlier form of the local laser-manager amendment; a merge
+retained both histories and the complete existing local tree without changing
+its contents. TH08 Web and mods remain outside the registration set.
+
+The next public exercise reproduced a queued-disconnect problem: a request
+continued after its client disconnected, and an ordinary retry executed its
+side effect twice. The shell tool now optionally accepts a caller-chosen
+`command_id`. Identical retries retrieve that execution's retained result;
+different arguments under the same ID report a conflict. New executions still
+receive automatic IDs by default. The ID identifies an execution and never
+binds subsequent work to a source revision or provider implementation hash.
+
+- Queued disconnect, active VC9 compilation disconnect, and a deliberately
+  truncated HTTP response were recovered across the two pinned public relays.
+  Each keyed command executed once. The complete 72,001-byte response capture
+  was reconstructed in 18 output pages after losing its initial response.
+- Timeout recovery retained the timeout and partial writes without rerunning
+  them. A nested lock-holding process was killed and the next command acquired
+  its lock. Closed output streams and an early-exiting parent also terminated
+  correctly.
+- A controlled, isolated execution process was killed with SIGKILL while its
+  output and partial file were visible. Its record was recovered through the
+  public MCP as interrupted, its observed total remained unknown, and a retry
+  did not execute it again. The next public command acquired its released lock.
+  This did not kill the serving MCP or the original replay worker.
+- Seven invalid tool calls and malformed HTTP JSON were rejected; subsequent
+  requests succeeded. A real VC9 syntax error produced compiler diagnostics,
+  and rebuilding corrected, isolated source succeeded. Ghidra context queries
+  remained usable after invalid analysis arguments.
+- Replacing an idle serving backend preserved the public endpoint. All thirteen
+  games recovered their earlier command results with original timestamps and
+  output, and fresh ordinary calls remained compatible. Three native IDA
+  metadata calls, a Ghidra context query, cross-repository source reads, and
+  current Git status calls passed after replacement.
+
+The plugin instructions now ask for inspection of relevant dirty work rather
+than a complete repository audit before every edit. Fourteen repository-work
+and ten MCP-server checks passed. This round retained 103 completed public
+JSON-RPC responses, plus the separate malformed-HTTP rejection and intentional
+transport disconnects. Full release validation and whole-game build
+campaigns were not run. Public responses used explicit public-IP resolution,
+disabled proxies, verified TLS, and checked the connected peer. Private routes,
+operator configuration, raw probe captures, and failure-injection helpers remain
+in ignored operator state.

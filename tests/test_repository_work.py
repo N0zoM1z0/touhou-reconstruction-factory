@@ -238,6 +238,64 @@ exit 7
         self.assertEqual(recent[0]["exit_code"], command["exit_code"])
 
     @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
+    def test_reconnect_id_serializes_retries_and_survives_store_reload(self) -> None:
+        arguments = dict(relative_cwd=".", timeout_seconds=5,
+                         command_id="repository-command:" + "1" * 32)
+        script = "printf x >> executions.txt; sleep .1; printf 'original result'; exit 7"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(self.store.run_shell, "fixture", script, **arguments)
+            second = pool.submit(RepositoryWorkStore(self.config).run_shell, "fixture", script, **arguments)
+            results = [first.result(timeout=5), second.result(timeout=5)]
+        self.assertEqual((self.repository / "executions.txt").read_text(), "x")
+        self.assertEqual(sorted(r["reused_existing_command"] for r in results), [False, True])
+        self.assertTrue(all(r["exit_code"] == 7 for r in results))
+        (self.repository / "README.md").write_text("subsequent source edit\n")
+        recovered = RepositoryWorkStore(self.config).run_shell("fixture", script, **arguments)
+        self.assertTrue(recovered["reused_existing_command"])
+        self.assertEqual(recovered["stdout"]["text"], "original result")
+        self.assertEqual(recovered["started_at"], results[0]["started_at"])
+        self.assertEqual(recovered["after"], results[0]["after"])
+        for changed in ({"script": script + "; true"}, {"relative_cwd": "src"}, {"timeout_seconds": 4}):
+            request = dict(arguments, script=script)
+            request.update(changed)
+            with self.subTest(changed=changed), self.assertRaisesRegex(RepositoryWorkError, "different request"):
+                self.store.run_shell("fixture", **request)
+        self.assertEqual((self.repository / "executions.txt").read_text(), "x")
+
+    @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
+    def test_reconnect_does_not_repeat_timed_out_or_interrupted_work(self) -> None:
+        arguments = dict(relative_cwd=".", timeout_seconds=1,
+                         command_id="repository-command:" + "2" * 32)
+        script = "printf x >> executions.txt; printf 'partial'; sleep 2"
+        first = self.store.run_shell("fixture", script, **arguments)
+        recovered = self.store.run_shell("fixture", script, **arguments)
+        self.assertTrue(recovered["timed_out"])
+        self.assertTrue(recovered["reused_existing_command"])
+        self.assertEqual(first["finished_at"], recovered["finished_at"])
+        path = self.store._command_directory("fixture", arguments["command_id"]) / "record.json"
+        record = json.loads(path.read_text())
+        record["state"] = "running"
+        path.write_text(json.dumps(record))
+        with self.assertRaisesRegex(RepositoryWorkError, "was interrupted"):
+            self.store.run_shell("fixture", script, **arguments)
+        page = self.store.command_output("fixture", arguments["command_id"], stream="stdout", offset=0, limit=100)
+        self.assertEqual(page["command_state"], "interrupted")
+        self.assertIsNone(page["observed_size"])
+        self.assertEqual(page["text"], "partial")
+        self.assertEqual((self.repository / "executions.txt").read_text(), "x")
+
+    @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
+    def test_reconnect_result_remains_available_after_command_removes_its_cwd(self) -> None:
+        (self.repository / "transient").mkdir()
+        arguments = dict(relative_cwd="transient", timeout_seconds=5,
+                         command_id="repository-command:" + "3" * 32)
+        script = "cd ..; rmdir transient; printf 'removed cwd'"
+        self.store.run_shell("fixture", script, **arguments)
+        result = self.store.run_shell("fixture", script, **arguments)
+        self.assertTrue(result["reused_existing_command"])
+        self.assertEqual(result["stdout"]["text"], "removed cwd")
+
+    @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
     def test_timeout_and_output_truncation_do_not_roll_back_live_work(self) -> None:
         timed_out = self.store.run_shell(
             "fixture",
