@@ -67,3 +67,43 @@ IDA tests and 10 MCP-server tests, plus `git diff --check`. No whole-game build,
 full exact replay campaign, release-wide validation, implementation hash refresh,
 or new acceptance claim was used as a prerequisite for ordinary exploration.
 The TH06 recovery required two links of existing objects, not a full rebuild.
+
+## Additional reconstruction exercise
+
+A second public round exercised concurrent work, oversized output, native DOS
+compilation and a real large IDA function. It reused the endpoint and bypassed
+MagicDNS/proxies with both freshly resolved public relay addresses.
+
+| Additional finding | Repair and observed regression |
+| --- | --- |
+| Reading an earlier completed log waited behind a new eight-second writer | Completed capture reads bypass the worktree queue/lock. Public latency fell from 7.80 to 0.75 seconds, while the writer was still active. Reads of active captures fail promptly with retry guidance; orphan-record recovery remains available. |
+| TH105 function `0x00620920` returned 489,975 text bytes, but only 262,144 were delivered and the rest could not be recovered | Native IDA now defaults to the existing 8,000-character preview model and retains complete oversized text and JSON. The measured response frame fell from 542,127 to 23,119 bytes. Public Bash recovered all 7,185 lines, verified the old prefix unchanged, and checked that full JSON and text agreed. |
+| A mixed valid/invalid Ghidra batch returned a long stack tail which omitted the useful error | Return a short error summary, retain full `provider.log`, and preserve partial query files. Public readback recovered the valid address's output and complete diagnostics; the next query to that provider succeeded. |
+| A normal 4-KiB IDA memory read was rejected by the old 256-byte cap | Allow up to 65,536 bytes and advertise the limit. A public 64-KiB read was recovered from its retained result and compared byte-for-byte with the corresponding canonical TH09 PE range. A second-relay 4-KiB read also passed. |
+| TH08 agent instructions still blocked all IDA work on a GUI database switch | Game-local documentation now distinguishes the headless `th08-ida` provider from the legacy GUI bridge. Public decompilation, metadata previews and compilation passed; documentation checkpoint `049a4a26` remains local. |
+
+Additional public compiler checks produced valid objects from maintained source
+in TH03, TH04, TH075, TH08 and TH105. TH03's isolated stage needed its normal
+`compat/rec98` adapters and ReC98 header tree; adding those dependencies resolved
+ordinary compiler diagnostics without changing source. TH05 replayed only the
+existing 30-byte `main-player-angle` unit, with two isolated positive producers
+and a compiled negative mutation. It passed and reused the existing toolchain
+attestation; no acceptance ledger or Factory accepted fact was updated.
+
+Long UTF-8 stdout and stderr were recovered over multiple pages without byte
+loss. A separate 12,500,017-byte diagnostic stream exceeded the 8,388,608-byte
+capture cap: truncation was explicit, the final captured page had correct byte
+offsets, and the complete repository-local log remained readable. These checks
+did not start a whole-game build or complete replay campaign.
+
+One earlier public read request timed out before HTTP response headers. No
+matching command execution record existed. The cause remains unknown; it was
+not reproduced in twelve subsequent alternating relay checks, all of which
+returned verified TLS/HTTP 200 responses in approximately 0.82–1.03 seconds.
+This is not a claim that public transport cannot fail.
+
+The second round passed 18 analysis, 9 repository-work, 10 MCP-server and
+2 headless-IDA checks, plus `git diff --check`. The original replay worker and
+replay implementation fingerprint remained unchanged. Game reconstruction
+source and acceptance ledgers were preserved; only the TH08 documentation was
+changed. Superseded candidate services were retired after becoming idle.

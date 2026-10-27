@@ -22,6 +22,18 @@ point and distributed-memory checks before every query. Its verification scope
 is `database-metadata-only`. Metadata edits such as names, comments and types
 remain available on providers that advertise them.
 
+Native IDA also accepts `max_output_chars` in operation arguments, with an
+8,000-character default and 65,536-character maximum. Small results retain their
+structured representation. Oversized results retain complete text at
+`output.artifact_path` and complete JSON at `output.structured_artifact_path`;
+the inline structured representation is omitted when it would defeat the
+preview budget. Read these files with repository Bash instead of rerunning a
+large decompilation. These are the complete upstream returns, not additional
+exactness or upstream-completeness claims.
+`read_memory_bytes` accepts up to 65,536 bytes per call; its former 256-byte
+restriction is unnecessary with retained output. Large hex dumps stay in the
+same bounded preview/file flow.
+
 Analysis target descriptions come from the small target manifest, without
 loading or validating complete function, origin, source or acceptance ledgers.
 An incomplete reconstruction ledger must not prevent the agent from using
@@ -68,6 +80,8 @@ Do not rerun Ghidra just to read the next page. `factory_output_truncated` refer
 to the inline preview; the retained file is complete. Failed queries that wrote
 partial output report its retained path in the error. These ignored analysis
 files may be retired when no longer needed, like other game-local diagnostics.
+Ghidra failures return a short error summary and retain the complete process
+diagnostics at a reported `provider.log` path alongside any partial query text.
 Timeouts stop the wrapper and its analyzer subprocesses together, releasing the
 project lock. Any already-written partial files are retained and reported.
 

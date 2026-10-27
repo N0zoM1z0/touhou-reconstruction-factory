@@ -65,6 +65,11 @@ recorded commands with IDs, timing and last recorded states. Output beyond the c
 reported as truncated and never presented as complete. Truncation does not stop
 the command. UTF-8 pages may include up to three extra bytes to finish their
 last character; follow `next_offset`. Invalid or binary bytes remain base64.
+Completed captures are immutable Factory files: reading them does not wait for
+a new compiler or other work in that repository. A capture still being written
+returns prompt retry feedback rather than occupying a worker thread waiting
+for the worktree lock. An orphaned running record can still be recovered once
+its writer has released the lock.
 
 The Git summary includes HEAD, branch, upstream/ahead/behind state, staged,
 unstaged, untracked, and conflicted counts, plus a digest of complete porcelain

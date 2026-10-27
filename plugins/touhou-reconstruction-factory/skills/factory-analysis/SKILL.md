@@ -19,6 +19,9 @@ description: Use repository-selected IDA or Ghidra for autonomous source investi
    increase the preview. Read `output.artifact_path` with repository Bash for
    the complete result, using `next_line` or function start/end lines to select
    a range. Reading another page does not require another Ghidra call.
+   Native IDA uses the same text preview budget. Oversized IDA returns also
+   provide `structured_artifact_path` for the complete JSON representation.
+   Ghidra errors provide a complete diagnostics log and preserve partial text.
 4. Treat names, extents, types, xrefs and decompilation as hypotheses with
    `exactness_credit=none`. Preserve useful errors and truncation information.
 5. Compose repository Bash and searches under `/references/<id>` freely.

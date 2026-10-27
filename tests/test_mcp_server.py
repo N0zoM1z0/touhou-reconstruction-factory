@@ -175,7 +175,10 @@ target_identity_ids = ["target:th03-fixture"]
         limiter.total_tokens = 2
         try:
             with patch("reconstruction_factory.mcp_server.FactoryService.from_path",
-                       return_value=SimpleNamespace(repository_status=status)):
+                       return_value=SimpleNamespace(
+                           repository_status=status,
+                           repository_command_output=lambda *args, **kwargs: {"text": "earlier log"},
+                       )):
                 async with Client(build_mcp_server(self.config)) as client:
                     async def queued():
                         result = await client.call_tool(
@@ -196,6 +199,12 @@ target_identity_ids = ["target:th03-fixture"]
                                 )
                                 self.assertFalse(result.is_error)
                                 self.assertEqual(result.structured_content["repository_id"], "th03")
+                                log = await client.call_tool(
+                                    "factory_get_repository_command_output",
+                                    {"repository_id": "th08", "command_id": "repository-command:" + "a" * 32},
+                                )
+                                self.assertFalse(log.is_error)
+                                self.assertEqual(log.structured_content["text"], "earlier log")
                         finally:
                             release.set()
         finally:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -14,6 +15,7 @@ try:
         _arguments,
         _analysis_slot,
         _bounded_text_output,
+        _native_ida_output,
         _ghidra_schema,
         _run_native_ghidra_command,
         _ACTIVE_PROVIDERS,
@@ -113,9 +115,10 @@ class AnalysisGatewayTests(unittest.TestCase):
             _validate_ida_arguments("decompile_function", {"options": {"script": "id"}})
         with self.assertRaisesRegex(AnalysisError, "1 through 200"):
             _validate_ida_arguments("list_functions", {"offset": 0, "count": 0})
-        with self.assertRaisesRegex(AnalysisError, "1 through 256"):
+        _validate_ida_arguments("read_memory_bytes", {"memory_address": "0x401000", "size": 4096})
+        with self.assertRaisesRegex(AnalysisError, "1 through 65536"):
             _validate_ida_arguments(
-                "read_memory_bytes", {"memory_address": "0x401000", "size": 257}
+                "read_memory_bytes", {"memory_address": "0x401000", "size": 65537}
             )
 
     def test_ida_normalizes_addresses_for_native_and_legacy_calls(self) -> None:
@@ -138,6 +141,9 @@ class AnalysisGatewayTests(unittest.TestCase):
         self.assertEqual(advertised["properties"]["address"]["anyOf"][1]["type"], "integer")
         self.assertEqual(advertised["properties"]["size"], schema["properties"]["size"])
         self.assertEqual(advertised["required"], schema["required"])
+        native = _ida_input_schema(schema, preview=True)
+        self.assertEqual(native["properties"]["max_output_chars"]["default"], 8000)
+        self.assertNotIn("max_output_chars", advertised["properties"])
 
     def test_ghidra_operations_are_exact_and_bounded(self) -> None:
         forwarded = _validate_ghidra_arguments(
@@ -220,6 +226,24 @@ class GhidraOutputTests(unittest.TestCase):
             repositories=(), analysis_providers=(),
         )
 
+    def test_large_ida_text_and_structured_results_remain_recoverable(self) -> None:
+        text = "/* recovered line */ 東方\n" * 20000
+        structured = {"result": text, "next_offset": None}
+        output = _native_ida_output(text, structured, self.config, self.root, 8000)
+        self.assertLessEqual(len(output["text"]), 8000)
+        self.assertTrue(output["factory_output_truncated"])
+        self.assertTrue(output["factory_structured_output_omitted"])
+        self.assertIsNone(output["structured"])
+        self.assertEqual((self.root / output["artifact_path"]).read_text(), text)
+        self.assertEqual(json.loads((self.root / output["structured_artifact_path"]).read_text()), structured)
+        # Also retain a structured-only result larger than its short text summary.
+        structured_only = _native_ida_output("summary", structured, self.config, self.root, 100)
+        self.assertFalse(structured_only["factory_output_truncated"])
+        self.assertTrue(structured_only["factory_structured_output_omitted"])
+        small = _native_ida_output("small", {"result": 1}, self.config, self.root, 100)
+        self.assertEqual(small["structured"], {"result": 1})
+        self.assertNotIn("artifact_path", small)
+
     def test_large_batch_keeps_navigation_to_functions_beyond_the_preview(self) -> None:
         first = "/* First at 00401000 */\n" + "  update();\n" * 1000
         text = first + "/* Second at 00402000 */\n  return;\n"
@@ -253,7 +277,10 @@ class GhidraOutputTests(unittest.TestCase):
         script.write_text(
             "import sys\nfrom pathlib import Path\nprint('startup noise')\n"
             f"if sys.argv[1] != 'check': Path(sys.argv[2]).write_text({text!r})\n"
-            "if '0xdead' in sys.argv: raise SystemExit(9)\n"
+            "if '0xdead' in sys.argv:\n"
+            " print('ERROR address outside the selected program')\n"
+            " print('\\n'.join('\\tat frame '+str(i) for i in range(200)))\n"
+            " raise SystemExit(9)\n"
         )
         provider = SimpleNamespace(command=Path(sys.executable), arguments=(str(script),), timeout_seconds=5)
         result, path = _run_native_ghidra_command(provider, self.root, "decompile", {"addresses": ["0x1"]})
@@ -268,6 +295,10 @@ class GhidraOutputTests(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError) as raised:
             _run_native_ghidra_command(provider, self.root, "decompile", {"addresses": ["0xdead"]})
         self.assertIn("Partial output retained at .analysis/", raised.exception.stderr)
+        self.assertIn("ERROR address outside the selected program", raised.exception.stderr)
+        self.assertNotIn("frame 199", raised.exception.stderr)
+        log = next((self.root / ".analysis/factory-native-ghidra").glob("*/provider.log"))
+        self.assertIn("frame 199", log.read_text())
         self.assertEqual(len(list((self.root / ".analysis/factory-native-ghidra").glob("*/result.txt"))), 2)
         _, check_path = _run_native_ghidra_command(provider, self.root, "check", {})
         self.assertIsNone(check_path)

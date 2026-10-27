@@ -35,6 +35,7 @@ _MAX_ARGUMENT_BYTES = 65536
 _MAX_OUTPUT_BYTES = 262144
 _GHIDRA_PREVIEW_CHARS = 8000
 _GHIDRA_PREVIEW_MAX = 65536
+_MAX_IDA_MEMORY_BYTES = 65536
 _MAX_ACTIVE_ANALYSES_PER_REPOSITORY = 2
 _ACTIVE_PROVIDERS: dict[str, str] = {}
 
@@ -218,15 +219,21 @@ class AnalysisGateway:
                     raise AnalysisError(
                         "IDA operation is not in the factory native allowlist"
                     )
-                _validate_ida_arguments(operation, arguments)
+                ida_arguments = dict(arguments)
+                preview_chars = ida_arguments.pop("max_output_chars", _GHIDRA_PREVIEW_CHARS)
+                _bounded_integer(preview_chars, "max_output_chars", 1, _GHIDRA_PREVIEW_MAX)
+                _validate_ida_arguments(operation, ida_arguments)
+                repository = self.config.repository(provider.repository_id).path
                 async with self._native_ida_session(provider) as session:
                     attestation, metadata = await self._attest_native_ida(
                         provider, target, session
                     )
                     output = (
-                        metadata
+                        _native_ida_output(metadata["text"], metadata["structured"], self.config,
+                                           repository, preview_chars)
                         if operation == "get_metadata"
-                        else await self._native_ida_call(session, operation, arguments)
+                        else await self._native_ida_call(session, operation, ida_arguments,
+                                                        repository=repository, max_output_chars=preview_chars)
                     )
             elif provider.backend == "attested-ida-proxy-v1":
                 if operation not in _IDA_READ_ALLOWED:
@@ -405,7 +412,7 @@ class AnalysisGateway:
                 {
                     "name": name,
                     "description": description,
-                    "input_schema": _ida_input_schema(_mcp_tool_input_schema(tool)),
+                    "input_schema": _ida_input_schema(_mcp_tool_input_schema(tool), preview=True),
                     "mutates_analysis_database": name
                     in _IDA_METADATA_WRITE_ALLOWED,
                 }
@@ -456,7 +463,8 @@ class AnalysisGateway:
             diagnostics.close()
 
     async def _native_ida_call(
-        self, session: ClientSession, tool: str, arguments: dict[str, Any]
+        self, session: ClientSession, tool: str, arguments: dict[str, Any], *,
+        repository: Path | None = None, max_output_chars: int = _GHIDRA_PREVIEW_CHARS,
     ) -> dict[str, Any]:
         try:
             result = await session.call_tool(tool, arguments)
@@ -476,6 +484,8 @@ class AnalysisGateway:
             ),
             config=self.config,
             rejection="native IDA provider rejected the request",
+            repository=repository,
+            max_output_chars=max_output_chars,
         )
 
     async def _attest_native_ida(
@@ -516,9 +526,7 @@ class AnalysisGateway:
             detail = _redact(str(error.stderr or ""), self.config)
             raise AnalysisError("native Ghidra provider timed out" + (f": {detail}" if detail else "")) from error
         except subprocess.CalledProcessError as error:
-            detail = _redact(
-                (error.stdout or "")[-3000:] + "\n" + (error.stderr or "")[-1000:], self.config
-            )
+            detail = _redact((error.stderr or "")[:2048], self.config)
             raise AnalysisError(
                 "native Ghidra provider rejected the request"
                 + (f": {detail}" if detail else "")
@@ -644,14 +652,21 @@ def _run_native_ghidra_command(
                 raise
             completed = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
         if completed.returncode != 0:
-            detail = completed.stderr or ""
+            diagnostic = temporary / "provider.log"
+            diagnostic.write_text(completed.stdout + "\n" + completed.stderr, encoding="utf-8")
+            retained = True
+            errors = list(dict.fromkeys(
+                line.strip() for line in diagnostic.read_text(encoding="utf-8").splitlines()
+                if line.lstrip().startswith(("ERROR", "Caused by:"))
+            ))
+            detail = ("\n".join(errors[:4]) or completed.stderr.strip()
+                      or f"Provider exited with status {completed.returncode}")[:1000]
+            detail += f"\nDiagnostics retained at {diagnostic.relative_to(repository)}"
             if output_path.is_file():
-                retained = True
                 detail += f"\nPartial output retained at {output_path.relative_to(repository)}"
             raise subprocess.CalledProcessError(
                 completed.returncode,
                 command,
-                output=completed.stdout,
                 stderr=detail,
             )
         if operation == "check":
@@ -729,6 +744,8 @@ def _bounded_output(
     is_error: bool,
     config: ServiceConfig,
     rejection: str,
+    repository: Path | None = None,
+    max_output_chars: int = _GHIDRA_PREVIEW_CHARS,
 ) -> dict[str, Any]:
     """Normalize one upstream MCP result into the Factory's bounded envelope."""
 
@@ -742,6 +759,8 @@ def _bounded_output(
     if is_error:
         detail = _redact(text, config).encode("utf-8")[:4096]
         raise AnalysisError(rejection + ": " + detail.decode("utf-8", "ignore"))
+    if repository is not None:
+        return _native_ida_output(text, structured, config, repository, max_output_chars)
     redacted = _redact(text, config)
     observed_payload = redacted.encode("utf-8")
     payload = observed_payload[:_MAX_OUTPUT_BYTES]
@@ -774,6 +793,34 @@ def _bounded_output(
         "structured_bytes": len(structured_payload),
         "structured_sha256": hashlib.sha256(structured_payload).hexdigest(),
     }
+
+
+def _native_ida_output(
+    text: str, structured: Any, config: ServiceConfig, repository: Path, max_output_chars: int,
+) -> dict[str, Any]:
+    """Retain complete oversized IDA results before reducing the inline context."""
+    text = _redact(text, config)
+    structured = _redact_value(structured, config)
+    try:
+        structured_text = json.dumps(structured, ensure_ascii=False, allow_nan=False,
+                                     separators=(",", ":"), sort_keys=True)
+    except (TypeError, ValueError) as error:
+        raise AnalysisError("analysis provider returned non-JSON structured output") from error
+    payload = structured_text.encode("utf-8")
+    output = _bounded_text_output(text, config, max_output_chars=max_output_chars)
+    omitted = output["factory_output_truncated"] or len(structured_text) > max_output_chars
+    output.update(structured=None if omitted else structured,
+                  factory_structured_output_omitted=omitted,
+                  structured_bytes=len(payload), structured_sha256=hashlib.sha256(payload).hexdigest())
+    if output["factory_output_truncated"] or omitted:
+        root = repository / ".analysis/factory-native-ida"
+        root.mkdir(parents=True, exist_ok=True)
+        directory = Path(tempfile.mkdtemp(prefix="call-", dir=root))
+        (directory / "result.txt").write_text(text, encoding="utf-8")
+        (directory / "result.json").write_bytes(payload)
+        output["artifact_path"] = str((directory / "result.txt").relative_to(repository))
+        output["structured_artifact_path"] = str((directory / "result.json").relative_to(repository))
+    return output
 
 
 
@@ -901,7 +948,7 @@ def _validate_ida_arguments(operation: str, arguments: dict[str, Any]) -> None:
         elif key == "size":
             if operation == "convert_number" and value is None:
                 continue
-            _bounded_integer(value, key, 1, 256)
+            _bounded_integer(value, key, 1, _MAX_IDA_MEMORY_BYTES if operation == "read_memory_bytes" else 256)
     if operation == "read_memory_bytes":
         if set(arguments) != {"memory_address", "size"}:
             raise AnalysisError(
@@ -917,11 +964,19 @@ def _mcp_tool_input_schema(tool: Any) -> Any:
     return getattr(tool, "inputSchema", None)
 
 
-def _ida_input_schema(schema: Any) -> Any:
+def _ida_input_schema(schema: Any, *, preview: bool = False) -> Any:
     """Advertise Factory address normalization without changing upstream tools."""
     if not isinstance(schema, dict):
         return schema
     result = json.loads(json.dumps(schema))
+    if preview:
+        result.setdefault("properties", {})["max_output_chars"] = {
+            "type": "integer", "minimum": 1, "maximum": _GHIDRA_PREVIEW_MAX,
+            "default": _GHIDRA_PREVIEW_CHARS,
+            "description": "Text preview budget. Oversized text/JSON is retained for repository Bash reads.",
+        }
+        if "memory_address" in result["properties"] and "size" in result["properties"]:
+            result["properties"]["size"].update(minimum=1, maximum=_MAX_IDA_MEMORY_BYTES)
     for key, value in result.get("properties", {}).items():
         if key not in {"address", "start_address", "function_address", "memory_address"}:
             continue

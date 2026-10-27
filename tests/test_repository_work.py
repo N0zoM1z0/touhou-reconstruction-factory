@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+import json
 import shutil
 import subprocess
 import tempfile
@@ -255,6 +257,27 @@ exit 7
         self.assertEqual(noisy["exit_code"], 0)
         self.assertTrue(noisy["output_truncated"])
         self.assertTrue((self.repository / "after-output.txt").is_file())
+
+    @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
+    def test_completed_capture_reads_bypass_a_new_writer_and_running_reads_fail_promptly(self) -> None:
+        command = self.store.run_shell("fixture", "printf 'earlier log'", relative_cwd=".", timeout_seconds=5)
+        arguments = dict(stream="stdout", offset=0, limit=1024)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            with self.store._repository_lock("fixture"):
+                read = pool.submit(self.store.command_output, "fixture", command["command_id"], **arguments)
+                result = read.result(timeout=1)
+        self.assertEqual(result["text"], "earlier log")
+        directory = self.store._command_directory("fixture", command["command_id"])
+        record_path = directory / "record.json"
+        record = json.loads(record_path.read_text())
+        record["state"] = "running"
+        record_path.write_text(json.dumps(record))
+        with self.store._repository_lock("fixture"):
+            with self.assertRaisesRegex(RepositoryWorkError, "still running"):
+                self.store.command_output("fixture", command["command_id"], **arguments)
+        recovered = self.store.command_output("fixture", command["command_id"], **arguments)
+        self.assertEqual(recovered["text"], "earlier log")
+        self.assertEqual(json.loads(record_path.read_text())["state"], "interrupted")
 
     def test_output_pages_complete_utf8_without_changing_binary_bytes(self) -> None:
         directory = self.root / "page-fixture"

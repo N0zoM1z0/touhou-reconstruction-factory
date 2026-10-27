@@ -219,13 +219,16 @@ class RepositoryWorkStore:
         _page_bounds(limit, offset)
         if stream not in {"stdout", "stderr"}:
             raise RepositoryWorkError("stream must be stdout or stderr")
-        with self._repository_lock(repository_id):
-            directory = self._command_directory(repository_id, command_id)
+        directory = self._command_directory(repository_id, command_id)
+        record = _read_record(directory / "record.json")
+        if record.get("repository_id") != repository_id:
+            raise RepositoryWorkError("repository command does not belong to this repository")
+        # Completed captures are immutable Factory files. Reading them needs no
+        # worktree lock and must not wait for an unrelated compiler in this repo.
+        if record["state"] != "running":
+            return self._output_page_unlocked(directory, record, stream, offset, limit)
+        with self._repository_lock(repository_id, blocking=False):
             record = _read_record(directory / "record.json")
-            if record.get("repository_id") != repository_id:
-                raise RepositoryWorkError(
-                    "repository command does not belong to this repository"
-                )
             if record["state"] == "running":
                 record["state"] = "interrupted"
                 record["finished_at"] = _format_time(_now())
@@ -416,10 +419,10 @@ class RepositoryWorkStore:
                 )
 
     @contextmanager
-    def _repository_lock(self, repository_id: str) -> Iterator[None]:
+    def _repository_lock(self, repository_id: str, *, blocking: bool = True) -> Iterator[None]:
         _require_repository_id(repository_id)
         self._ensure_layout()
-        with _file_lock(self.locks / f"{repository_id}.lock"):
+        with _file_lock(self.locks / f"{repository_id}.lock", blocking=blocking):
             yield
 
     @contextmanager
@@ -783,10 +786,15 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
 
 
 @contextmanager
-def _file_lock(path: Path) -> Iterator[None]:
+def _file_lock(path: Path, *, blocking: bool = True) -> Iterator[None]:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     with path.open("a+b") as handle:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
+        except BlockingIOError as error:
+            raise RepositoryWorkError(
+                "command is still running; retry its output after it finishes. Completed command logs remain readable"
+            ) from error
         try:
             yield
         finally:

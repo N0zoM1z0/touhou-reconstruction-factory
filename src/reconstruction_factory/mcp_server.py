@@ -353,8 +353,7 @@ def build_mcp_server(
         offset: Offset = 0,
         limit: ByteLimit = 16384,
     ) -> dict[str, Any]:
-        return await repository_invoke(
-            repository_id,
+        return await invoke(
             lambda: service().repository_command_output(
                 repository_id,
                 command_id,
