@@ -195,3 +195,34 @@ The exact GPT-web input contract and stopping rules are in
 and [`gpt-web-reconstruction.md`](../prompts/gpt-web-reconstruction.md). The
 durable operational record is normalized by
 [`repository-command.schema.json`](../schemas/v1/repository-command.schema.json).
+
+## Operator push helper
+
+From the Factory checkout, publish the current branch of each registered game:
+
+```bash
+source ~/clash.sh
+proxy_on
+./scripts/push-registered-repos.py
+```
+
+The script inherits exported proxy, Git authentication, and SSH environment
+settings. It does not source a proxy configuration or change proxy settings.
+HTTPS Git remotes use the caller's proxy environment; SSH remotes use the
+caller's SSH configuration. Python 3.11+ and Git are sufficient.
+
+By default it reads the service configuration from this checkout's running
+Factory MCP process. Override this with `--config <service.toml>` or
+`FACTORY_SERVICE_CONFIG`, including when the service is stopped or multiple
+different configurations are running. Registered paths may be absolute or
+relative to that TOML file; the repository list is never hardcoded.
+
+Use `./scripts/push-registered-repos.py --dry-run` to contact the remotes and
+check pushes without changing remote refs. The current branch uses its push
+remote, then `remote.pushDefault`, then its upstream remote, falling back to
+`origin`. An upstream on that remote keeps its configured destination branch;
+otherwise the destination has the local branch name. Only that branch is pushed.
+Uncommitted work is preserved. Divergence and other Git errors leave that repo
+for manual resolution while the script continues with the rest, lists failed
+repository IDs, and exits nonzero. It does not commit, merge, rebase, or force
+push. The Factory checkout itself is included only if explicitly registered.
