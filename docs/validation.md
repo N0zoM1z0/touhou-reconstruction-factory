@@ -95,6 +95,33 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --replay-idempotency-key <existing-identical-key>
 ```
 
+## Recorded Funnel recovery: 2026-10-28
+
+Web reconstruction conversations for TH105, TH075 and TH20 reported
+`UNAVAILABLE: Connection failed`. Loopback MCP discovery returned immediately,
+the serving process had not restarted, and recent game command records were
+completed. Independent public DNS queries returned the expected two global
+relay addresses, but direct TLS probes to both addresses timed out before an
+HTTP response. This reproduced the transport pattern recorded on 2026-10-06;
+the game-local historical lock and adapter errors did not explain it.
+
+At the operator's explicit request, the shared `tailscaled.service` was
+restarted at 10:15:42, Asia/Singapore. The daemon published
+`Hostinfo.IngressEnabled changed to true` at 10:15:45 and entered Running at
+10:15:49. Every Funnel mapping was preserved exactly. The Factory MCP and
+original replay worker retained their process IDs; no game work was reset.
+
+Both public relay addresses then passed initialization, discovery of 33 tools,
+the thirteen-repository inventory, and current Git status calls for each of the
+three affected games. These requests bypassed proxies and MagicDNS, preserved
+TLS verification, and checked the connected public peer. Public read-only Bash
+commands in all three worktrees also read a registered cross-game reference.
+Native TH105 IDA metadata and TH075/TH20 Ghidra project checks succeeded. This
+establishes transport and tool recovery after restarting the shared daemon;
+the internal trigger for the ingress failure remains unknown. Raw diagnostics
+and private service details remain in ignored operator state. This was a
+targeted incident recovery, not a full release or reconstruction validation.
+
 ## Recorded Funnel and GPT-web recovery: 2026-10-06
 
 A TH10 Web conversation reported `UNAVAILABLE: Connection failed`, including in
