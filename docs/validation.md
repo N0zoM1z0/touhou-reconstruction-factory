@@ -95,6 +95,30 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --replay-idempotency-key <existing-identical-key>
 ```
 
+## Recorded Funnel recovery: 2026-10-31
+
+At approximately 01:40, Asia/Singapore, loopback discovery returned all 33
+tools while initialization through both pinned public relays timed out before
+an HTTP response. An explicit Google public DNS query returned the same relay
+addresses, and the configured Funnel proxy target matched the serving Factory.
+
+The shared Tailscale daemon was restarted at approximately 01:41 under the
+operator's recovery request. All Funnel mappings and the then-running Factory
+MCP and replay worker process IDs were preserved. Initial public probes still
+timed out before ingress became usable. Both relays then passed initialization,
+tool discovery and the thirteen-repository inventory. Two status requests in
+the first verification round timed out; subsequent retries succeeded, and
+their loopback controls returned in approximately one second. Final public
+catalog checks took 0.76 and 0.80 seconds with verified TLS and the intended
+public peers, bypassing proxies and MagicDNS.
+
+All thirteen registered repositories passed nonblocking public status queries.
+Read-only public Bash probes in TH105, TH075 and TH20 succeeded. The internal
+failure trigger remains unknown; this records recovery after the shared-daemon
+restart, not a complete release validation or a reconstruction progress claim.
+Private configuration, routes, request captures and daemon diagnostics remain
+in ignored operator state.
+
 ## Recorded Funnel recovery: 2026-10-28
 
 Web reconstruction conversations for TH105, TH075 and TH20 reported
