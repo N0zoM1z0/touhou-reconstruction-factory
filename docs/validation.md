@@ -95,6 +95,27 @@ PYTHONPATH=src .venv/bin/python scripts/validate-live-mcp.py \
   --replay-idempotency-key <existing-identical-key>
 ```
 
+## Recorded Funnel recovery: 2026-11-04
+
+At approximately 14:01 UTC, loopback Factory discovery returned 33 tools,
+while initialization through both pinned public relay addresses timed out
+before an HTTP response. An independent public DNS query returned those same
+addresses, and the Funnel mapping matched the active backend. The current
+operator configuration was selected from the serving process arguments;
+the previous incident's configuration path was no longer current.
+
+The shared Tailscale daemon was restarted at approximately 14:02 UTC under the
+operator's recovery request. Every Funnel mapping and the running Factory MCP
+and replay worker process IDs were preserved. Both public relays then passed
+initialization, tool discovery and the thirteen-repository inventory. All
+thirteen nonblocking repository status queries and read-only Bash probes in
+TH105, TH075 and TH20 succeeded. These 22 completed public responses bypassed
+proxies and MagicDNS and verified TLS and the connected public peer.
+
+This repeats the earlier transport failure and recovery pattern. The internal
+trigger remains unknown. Private configuration, routes and raw diagnostics
+remain in ignored operator state.
+
 ## Recorded Funnel recovery: 2026-10-31
 
 At approximately 01:40, Asia/Singapore, loopback discovery returned all 33
