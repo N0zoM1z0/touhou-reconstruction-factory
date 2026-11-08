@@ -192,6 +192,23 @@ observation is stronger than a documentation warning: validate new
 configuration against new code under a separate path, commit it, and switch the
 process and watched configuration as one maintenance operation.
 
+## Existing Ghidra projects without the Touhou Python frontend
+
+For a repository with `config/target.toml`, `.tools/ghidra`, `.tools/jdk` and
+an existing `ghidra-project/<executable-stem>` project, add
+`--standalone-project` to the native Ghidra registration renderer. The resulting
+provider opens that project read-only with no auto-analysis and uses shared
+`FactoryQueryProgram.java` and `FactoryDecompileFunctions.java` helpers. It does
+not require the game's Python frontend to implement the Touhou helper API.
+The game retains its own target verifier and exact build/oracle scripts.
+
+The standalone selector coordinates with `.analysis/ghidra/headless.lock` and
+`ghidra-project/workflow.lock`. Decompilation accepts an instruction address in
+an existing function. Native analysis retains the same bounded previews and
+complete private output files as other Factory Ghidra providers. Explicit setup
+verification should establish that the existing project matches the canonical
+target; ordinary exploratory calls do not repeat whole-project preflights.
+
 ## Native IDA registration
 
 `attested-ida-stdio-v1` replaces the old per-game MCP layer:

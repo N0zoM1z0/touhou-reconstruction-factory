@@ -12,13 +12,17 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tomllib
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", type=Path, required=True)
-    parser.add_argument("--mz-artifact")
+    layout = parser.add_mutually_exclusive_group()
+    layout.add_argument("--mz-artifact")
     parser.add_argument("--project-name", help="select an existing project instead of the repository default")
+    layout.add_argument("--standalone-project", action="store_true",
+                        help="use config/target.toml, .tools/ghidra, .tools/jdk and ghidra-project directly")
     # Accepted for compatibility with existing private launchers.
     parser.add_argument("--marker", help=argparse.SUPPRESS)
     parser.add_argument("--interpreter", help=argparse.SUPPRESS)
@@ -27,9 +31,19 @@ def main() -> int:
     args = parser.parse_args()
     root = args.repository.resolve()
     sys.path.insert(0, str(root / "scripts"))
-    spec = importlib.util.spec_from_file_location("repository_ghidra", root / "scripts/ghidra.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    if args.standalone_project:
+        with (root / "config/target.toml").open("rb") as handle:
+            target = tomllib.load(handle)["target"]
+        filename = target["filename"]
+        project, name = root / "ghidra-project", Path(filename).stem
+        ghidra_home = (root / ".tools/ghidra").resolve(strict=True)
+        analyzer = ghidra_home / "support/analyzeHeadless"
+        environment = dict(os.environ, JAVA_HOME=str((root / ".tools/jdk").resolve(strict=True)),
+                           GHIDRA_HOME=str(ghidra_home))
+    else:
+        spec = importlib.util.spec_from_file_location("repository_ghidra", root / "scripts/ghidra.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
     if args.mz_artifact:
         from lib.analysis import load_analysis_config, repository_path
         from lib.targets import find_artifact, load_target_manifest
@@ -40,7 +54,7 @@ def main() -> int:
         filename = Path(artifact["private_path"]).name
         analyzer = repository_path(root, config["ghidra"]["stable_path"]) / "support/analyzeHeadless"
         environment = module.environment(config)
-    else:
+    elif not args.standalone_project:
         _, target, _ = module.load_target()
         ghidra_home, analyzer = module.find_analyzer()
         project, name, filename = module.PROJECT_DIR, module.PROJECT_NAME, target["filename"]
@@ -50,35 +64,39 @@ def main() -> int:
     environment.update({"DISPLAY": "", "WAYLAND_DISPLAY": ""})
     environment.setdefault("GHIDRA_HEADLESS_MAXMEM", "768M")
     script_directory = root / "scripts/ghidra"
-    if not (script_directory / "QueryProgram.java").is_file():
+    if not args.standalone_project and not (script_directory / "QueryProgram.java").is_file():
         script_directory = root / ".tools/mcp_for_gptweb-ghidra/ghidra-scripts"
     script_paths = f"{Path(__file__).resolve().parent / 'ghidra'};{script_directory}"
+    query_script = "FactoryQueryProgram.java" if args.standalone_project else "QueryProgram.java"
+    decompile_script = "FactoryDecompileFunctions.java" if args.standalone_project else "FactoryDecompile.java"
     query = []
     fragments = []
     if args.operation != "check":
         output, *values = args.arguments
         if args.operation == "query":
             operation, *values = values
-            if args.mz_artifact:
+            if args.mz_artifact or args.standalone_project:
                 index = {"list_functions": 2, "search_strings": 1}.get(operation)
                 if index is not None and len(values) > index:
                     values[index] = "text:" + values[index]
             else:
                 values = module.query_script_args(operation, values)
-            query = ["-postScript", "QueryProgram.java", output, operation, *values]
+            query = ["-postScript", query_script, output, operation, *values]
         elif args.operation == "function_context":
             for operation in ("function", "callers", "callees", "decompile"):
                 path = Path(output).with_name(f"{Path(output).stem}-{operation}.txt")
                 fragments.append((operation, path))
                 if operation == "decompile":
-                    query.extend(["-postScript", "FactoryDecompile.java", str(path), *values])
+                    query.extend(["-postScript", decompile_script, str(path), *values])
                 else:
-                    query.extend(["-postScript", "QueryProgram.java", str(path), operation, *values])
+                    query.extend(["-postScript", query_script, str(path), operation, *values])
         else:
-            query = ["-postScript", "FactoryDecompile.java", output, *values]
+            query = ["-postScript", decompile_script, output, *values]
     scratch = root / ".analysis"
     scratch.mkdir(exist_ok=True)
-    with (scratch / "ghidra.lock").open("a+") as gate, (project / "workflow.lock").open("a+") as project_gate:
+    gate_path = scratch / ("ghidra/headless.lock" if args.standalone_project else "ghidra.lock")
+    gate_path.parent.mkdir(parents=True, exist_ok=True)
+    with gate_path.open("a+") as gate, (project / "workflow.lock").open("a+") as project_gate:
         fcntl.flock(gate, fcntl.LOCK_EX)
         fcntl.flock(project_gate, fcntl.LOCK_EX)
         result = subprocess.run(

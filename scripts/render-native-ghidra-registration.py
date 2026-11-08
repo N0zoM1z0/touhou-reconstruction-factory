@@ -30,6 +30,7 @@ def parser() -> argparse.ArgumentParser:
         help="absolute Python command used to launch scripts/ghidra.py",
     )
     result.add_argument("--timeout-seconds", type=int, default=900)
+    result.add_argument("--standalone-project", action="store_true")
     return result
 
 
@@ -53,7 +54,10 @@ def main() -> int:
     print(f"target_identity_id = {quoted(arguments.target_identity_id)}")
     print('backend = "attested-ghidra-command-v1"')
     print(f"command = {quoted(command)}")
-    print(f"arguments = [{quoted(ROOT / 'scripts/ghidra-repository-provider.py')}, \"--repository\", {quoted(repository)}]")
+    provider_args = [str(ROOT / "scripts/ghidra-repository-provider.py"), "--repository", str(repository)]
+    if arguments.standalone_project:
+        provider_args.append("--standalone-project")
+    print("arguments = [" + ", ".join(quoted(value) for value in provider_args) + "]")
     print(f"target_path = {quoted(target)}")
     print(f"timeout_seconds = {arguments.timeout_seconds}")
     return 0

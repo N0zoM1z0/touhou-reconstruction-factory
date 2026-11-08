@@ -30,8 +30,11 @@ replay adapter registry:
   with their declared provenance, without inventing function or acceptance
   ledgers. TH05 calibration artifacts inside other games do not select it.
 - `windows-pe-inventory-v1` reads `config/target.toml`,
-  `config/functions.csv` and `config/tools.lock.toml` for TH06, TH07, TH11 and
-  TH20. It exposes complete native function rows as provisional boundaries.
+  `config/functions.csv` and `config/tools.lock.toml` for TH06, TH07, TH11,
+  TH20 and EFZ. It exposes complete native function rows as provisional boundaries.
+  Uppercase executable names such as `EFZ.exe` retain lowercase Factory IDs.
+  Missing release or region fields remain `unknown`; native candidate-version
+  prose is preserved as metadata rather than promoted to a known release.
   Native `matching` labels, acceptance files, origins and source presence are
   not interpreted as Factory claims by this initial import.
 

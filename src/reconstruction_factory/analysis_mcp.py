@@ -301,7 +301,7 @@ class AnalysisGateway:
                     if single.is_file():
                         manifest = tomllib.loads(single.read_text())
                         data = manifest["target"]
-                        game = Path(data["filename"]).stem
+                        game = Path(data["filename"]).stem.lower()
                         product = f"{game}-main"
                         return TargetIdentity(
                             id=f"target:{product}", project_id=registration.id,

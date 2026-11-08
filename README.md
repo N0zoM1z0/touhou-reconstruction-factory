@@ -1,7 +1,7 @@
 # Touhou Reconstruction Factory
 
-This repository is the control plane for evidence-first Touhou reconstruction
-projects. It defines a language-neutral truth kernel, composes compatible
+This repository is the control plane for evidence-first Touhou and compatible
+game reconstruction projects. It defines a language-neutral truth kernel, composes compatible
 platform and toolchain providers, imports existing repositories without
 modifying them, and preserves historical oracle failures as regression
 contracts.
@@ -18,8 +18,8 @@ repository archaeology remain available as a dated, non-normative
 [`working paper`](docs/factory-analysis.md).
 
 The tracked release version is defined in [`pyproject.toml`](pyproject.toml); at
-this checkpoint the Factory supports thirteen main game repositories, including
-conservative inventory imports for newer native ledger forms. TH09 is
+this checkpoint the Factory supports fourteen game repositories, including
+Eternal Fighter Zero and conservative inventory imports for native ledger forms. TH09 is
 the Factory-native IDA reference and TH10 is the Factory-native Ghidra
 reference; earlier analysis bridges remain migration compatibility. This is
 structural release information, not a claim about live service health, provider
@@ -55,7 +55,7 @@ flowchart LR
     P -.-> K
 
     P98["PC-98 era family<br/>TH01–TH05<br/>registration: TH03 / TH04 / TH05"]:::platform --> C
-    PE["Windows PE era family<br/>TH06+<br/>TH06 / TH07 / TH075 / TH08 / TH09<br/>TH095 / TH10 / TH105 / TH11 / TH20"]:::platform --> C
+    PE["Windows PE era family<br/>TH06+ / EFZ<br/>TH06 / TH07 / TH075 / TH08 / TH09<br/>TH095 / TH10 / TH105 / TH11 / TH20 / EFZ"]:::platform --> C
 
     B["Registered atomic analysis<br/>native IDA / native Ghidra<br/>legacy bridge during migration"]:::evidence -->|"selected game project"| E
     S -.-> O["Optional disposable workspace<br/>explicitly isolated experiment<br/>committed source only"]:::platform

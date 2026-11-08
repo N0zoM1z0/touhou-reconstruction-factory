@@ -53,6 +53,23 @@ entry_point = "0x00401000"
                 with self.assertRaises(AdapterError):
                     inspect_repository(root)
 
+    def test_efz_preserves_uncertain_native_release_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_pe(root, "EFZ")
+            manifest = root / "config/target.toml"
+            manifest.write_text(manifest.read_text().replace('version = "1.00a"\n', '')
+                                .replace('region = "japanese"\n', '')
+                                .replace('[pe]', 'version_status = "4.02 candidate"\n[pe]'))
+            snapshot = inspect_repository(root)
+            self.assertEqual(snapshot.targets[0].id, "target:efz-main")
+            self.assertEqual(snapshot.targets[0].version, "unknown")
+            self.assertEqual(snapshot.targets[0].region, "unknown")
+            self.assertEqual(snapshot.targets[0].metadata["native_target"]["version_status"], "4.02 candidate")
+            self.assertFalse(snapshot.oracle_results)
+            self.assertEqual({claim.type for claim in snapshot.claims}, {ClaimType.BOUNDARY_EXTENT})
+            kit_for_snapshot(snapshot)
+
     def test_inventory_fingerprint_changes_with_native_extent(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

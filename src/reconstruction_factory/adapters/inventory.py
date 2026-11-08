@@ -20,7 +20,7 @@ class PeInventoryRepositoryAdapter(RepositoryAdapter):
     """Import PE inventory without guessing incompatible acceptance semantics."""
 
     id = "windows-pe-inventory-v1"
-    games = {"th06", "th07", "th11", "th20"}
+    games = {"th06", "th07", "th11", "th20", "efz"}
     _required = ("config/target.toml", "config/functions.csv", "config/tools.lock.toml")
 
     def detect(self, root: Path) -> bool:
@@ -28,7 +28,7 @@ class PeInventoryRepositoryAdapter(RepositoryAdapter):
         if not all(reader.exists(path) for path in self._required):
             return False
         target = reader.toml("config/target.toml").get("target", {})
-        return Path(str(target.get("filename", ""))).stem in self.games
+        return Path(str(target.get("filename", ""))).stem.lower() in self.games
 
     def inspect(self, root: Path) -> RepositorySnapshot:
         root = require_repository_root(root)
@@ -37,11 +37,12 @@ class PeInventoryRepositoryAdapter(RepositoryAdapter):
             raise AdapterError("unsupported PE inventory repository")
         manifest = reader.toml("config/target.toml")
         data, pe = manifest["target"], manifest["pe"]
-        game = Path(data["filename"]).stem
+        game = Path(data["filename"]).stem.lower()
         project = Project(id=game, name=data.get("title", game))
         target = TargetIdentity(
             id=f"target:{game}-main", project_id=game, product_id=f"{game}-main",
-            game=game, version=data["version"], region=data["region"], format="pe",
+            game=game, version=data.get("version", "unknown"),
+            region=data.get("region", "unknown"), format="pe",
             size=data["size"], sha256=data["sha256"], md5=data.get("md5"),
             canonicality="manifest-declared", metadata={
                 **pe, "native_target": dict(data),

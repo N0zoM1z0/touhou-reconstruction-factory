@@ -12,6 +12,7 @@ try:
     import anyio
 
     from reconstruction_factory.analysis_mcp import (
+        AnalysisGateway,
         _arguments,
         _analysis_slot,
         _bounded_text_output,
@@ -54,6 +55,21 @@ class AnalysisGatewayTests(unittest.TestCase):
             with self.subTest(invalid=invalid[:20]):
                 with self.assertRaises(AnalysisError):
                     _arguments(invalid)
+
+    def test_uppercase_executable_keeps_lowercase_registered_target_id(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            (root / "config").mkdir()
+            (root / "config/target.toml").write_text(
+                '[target]\nfilename="EFZ.exe"\nsize=4096\nsha256="' + "1" * 64 + '"\n[pe]\n'
+            )
+            gateway = AnalysisGateway(SimpleNamespace(
+                repository=lambda rid: SimpleNamespace(id=rid, path=root)
+            ))
+            target = anyio.run(gateway._target, SimpleNamespace(repository_id="efz"))
+            self.assertEqual(target.id, "target:efz-main")
+            self.assertEqual(target.version, "unknown")
 
     def test_native_ghidra_discovery_exposes_optional_preview_budget(self) -> None:
         schema = _ghidra_schema("decompile", preview=True)
