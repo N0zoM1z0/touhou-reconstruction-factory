@@ -75,6 +75,9 @@ without a new observation:
 - [`public-reconstruction-ux-validation-2026-10-27.md`](public-reconstruction-ux-validation-2026-10-27.md):
   reconstruction-style public queries, cross-game source reads, isolated compiler
   loops, bounded context delivery, and disconnect/timeout recovery repairs;
+- [`efz-public-bootstrap-2026-11-08.md`](efz-public-bootstrap-2026-11-08.md):
+  EFZ registration, standalone native Ghidra, public compiler and recovery
+  exercises, and activation of the fourteen-game backend;
 - the dated `Recorded ...` sections in [`validation.md`](validation.md) and the
   historical deployment checkpoints in [`gpt-web-plugin.md`](gpt-web-plugin.md).
 
