@@ -34,3 +34,9 @@ description: Use repository-selected IDA or Ghidra for autonomous source investi
    environment scans, implementation pin refreshes and complete replay are not
    prerequisites for exploration. Only explicitly accepted receipts establish
    exactness.
+
+Shared tools: follow the Factory `docs/shared-runtimes.md` and the selected
+repository's `docs/SHARED_TOOLS.md`. Use its `scripts/shared_runtime.py` or
+maintained compiler/Ghidra scripts; do not copy installations or reuse another
+game's Wine prefix, Java cache or analyzer project. Local scripts work without
+Factory MCP.

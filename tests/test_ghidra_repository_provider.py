@@ -2,7 +2,6 @@
 
 from pathlib import Path
 import json
-import os
 import subprocess
 import sys
 import tempfile
@@ -40,8 +39,19 @@ for i,arg in enumerate(sys.argv):
             self.assertIn("-readOnly", observed["argv"])
             self.assertIn("-noanalysis", observed["argv"])
             self.assertEqual(observed["java"], str(root / ".tools/jdk"))
+            # A provisioned worktree dispatches through the same local runtime
+            # rather than launching a second private analyzer installation.
+            runtime = root / ".tools/factory-runtime.py"
+            runtime.write_text('''import json,os,sys
+from pathlib import Path
+Path('runtime-dispatch.json').write_text(json.dumps(sys.argv[1:]))
+assert sys.argv[1:5] == ['--repository', str(Path.cwd()), 'ghidra', '--']
+analyzer = Path.cwd() / '.tools/ghidra/support/analyzeHeadless'
+os.execv(str(analyzer), [str(analyzer), *sys.argv[5:]])
+''')
             subprocess.run(command + ["function_context", str(output), "0x405a21"],
                            capture_output=True, text=True, check=True)
+            self.assertTrue((root / "runtime-dispatch.json").is_file())
             text = output.read_text()
             for operation in ("function", "callers", "callees", "decompile"):
                 self.assertIn(f"=== {operation} ===", text)

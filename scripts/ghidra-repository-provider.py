@@ -62,6 +62,10 @@ def main() -> int:
     if args.project_name:
         name = args.project_name
     environment.update({"DISPLAY": "", "WAYLAND_DISPLAY": ""})
+    launcher = [str(analyzer)]
+    if (root / ".tools/factory-runtime.py").is_file():
+        launcher = [sys.executable, str(root / ".tools/factory-runtime.py"),
+                    "--repository", str(root), "ghidra", "--"]
     environment.setdefault("GHIDRA_HEADLESS_MAXMEM", "768M")
     script_directory = root / "scripts/ghidra"
     if not args.standalone_project and not (script_directory / "QueryProgram.java").is_file():
@@ -101,7 +105,7 @@ def main() -> int:
         fcntl.flock(project_gate, fcntl.LOCK_EX)
         result = subprocess.run(
             ["nice", "-n", "10", "taskset", "-c", str(min(os.sched_getaffinity(0))),
-             str(analyzer), str(project), name, "-process", filename,
+             *launcher, str(project), name, "-process", filename,
              "-readOnly", "-noanalysis", "-max-cpu", "1", *query,
              "-scriptPath", script_paths],
             cwd=root, env=environment, capture_output=True, text=True, errors="replace",

@@ -59,3 +59,9 @@ Finish with a compact result containing:
 - receipt verdict and acceptance decision;
 - current registry/fact confirmation;
 - explicit limitations or `unknown` fields.
+
+Shared tools: follow the Factory `docs/shared-runtimes.md` and the selected
+repository's `docs/SHARED_TOOLS.md`. Use its `scripts/shared_runtime.py` or
+maintained compiler/Ghidra scripts; do not copy installations or reuse another
+game's Wine prefix, Java cache or analyzer project. Local scripts work without
+Factory MCP.

@@ -1,5 +1,10 @@
 # Repository analysis
 
+Use the [shared runtime procedure](shared-runtimes.md) for Ghidra/JDK/Wine.
+Game scripts and native Factory providers use the same Factory-owned launcher;
+keep Wine prefixes, Java settings/cache and analyzer projects game-bound.
+Attach existing locked versions instead of installing a copy in every game.
+
 Factory provides a selected repository's IDA or Ghidra alongside composable
 Bash. Analysis is exploratory: every result has
 `authority=provisional-semantic-analysis` and `exactness_credit=none`.

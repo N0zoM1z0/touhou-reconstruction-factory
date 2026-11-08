@@ -26,3 +26,9 @@ longer campaign. Do not add a Web-authored phase-close condition.
 The moving 99.5% pressure target in exact prompts encourages work across hard
 and easy authored surfaces. It is not whole-image coverage, an acceptance
 policy, or a stop condition.
+
+Shared tools: follow the Factory `docs/shared-runtimes.md` and the selected
+repository's `docs/SHARED_TOOLS.md`. Use its `scripts/shared_runtime.py` or
+maintained compiler/Ghidra scripts; do not copy installations or reuse another
+game's Wine prefix, Java cache or analyzer project. Local scripts work without
+Factory MCP.

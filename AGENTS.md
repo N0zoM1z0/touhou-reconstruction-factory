@@ -41,6 +41,11 @@ These instructions apply to the entire Factory repository.
 - Shared tool installations do not imply shared mutable state. Targets, Wine
   prefixes, analyzer databases/projects, ledgers, and evidence remain
   game-bound.
+- Follow [`docs/shared-runtimes.md`](docs/shared-runtimes.md) for Ghidra, JDK,
+  and Wine. Reuse Factory installations through the repository's
+  `scripts/shared_runtime.py`; keep prefixes and Ghidra settings/cache local.
+  Do not copy installations or borrow another game's prefix/project. Preserve
+  locked tool versions when attaching a repository.
 - Game-local knowledge may be edited in a game repository. Cross-game Factory
   knowledge is promoted only by later reviewed Factory work, never by a Web
   campaign tool.

@@ -25,6 +25,7 @@ service when the task depends on live state.
 | Shared terms and Truth Kernel | [`ontology.md`](ontology.md) |
 | Independent verification planes | [`verification-planes.md`](verification-planes.md) |
 | Platform and toolchain capabilities | [`providers.md`](providers.md) |
+| Shared Ghidra/JDK/Wine and isolated game state | [`shared-runtimes.md`](shared-runtimes.md) |
 | Existing-repository imports | [`adapters.md`](adapters.md) |
 | Replay evidence envelope | [`oracle-receipts.md`](oracle-receipts.md) |
 | Receipt admission and accepted facts | [`acceptance-registry.md`](acceptance-registry.md) |
@@ -75,6 +76,9 @@ without a new observation:
 - [`public-reconstruction-ux-validation-2026-10-27.md`](public-reconstruction-ux-validation-2026-10-27.md):
   reconstruction-style public queries, cross-game source reads, isolated compiler
   loops, bounded context delivery, and disconnect/timeout recovery repairs;
+- [`shared-runtimes-validation-2026-11-08.md`](shared-runtimes-validation-2026-11-08.md):
+  Factory 0.9.0 shared runtime consolidation, local use without MCP, isolated
+  game state, fourteen-repository public checks and recovery exercises;
 - [`efz-public-bootstrap-2026-11-08.md`](efz-public-bootstrap-2026-11-08.md):
   EFZ registration, standalone native Ghidra, public compiler and recovery
   exercises, and activation of the fourteen-game backend;

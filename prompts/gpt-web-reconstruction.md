@@ -21,6 +21,14 @@ is orientation for the agent, not authority to reset current work.
 ## Complete standalone prompt
 
 ```text
+Shared runtime requirement: read
+`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
+and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
+compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
+work locally without MCP. Keep locked versions and game-owned Wine prefixes,
+Java settings/cache and analyzer projects; do not copy installations or borrow
+another game's mutable state.
+
 Run one autonomous evidence-first Touhou source-reconstruction conversation
 under contract gpt-web-reconstruction-session-v5 plus mandatory companion contract
 worktree-recovery-and-analysis-artifacts-v1. Do not assume any bundled skill was
@@ -220,6 +228,14 @@ A useful initial scope is concrete but may be replanned from live evidence, for
 example:
 
 ```text
+Shared runtime requirement: read
+`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
+and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
+compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
+work locally without MCP. Keep locked versions and game-owned Wine prefixes,
+Java settings/cache and analyzer projects; do not copy installations or borrow
+another game's mutable state.
+
 Start from the selected function cohort and its owner/ABI context. Produce and
 validate coherent natural-source checkpoints, then hand off before another
 packet would make this browser conversation unreliable.

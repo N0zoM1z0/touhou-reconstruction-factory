@@ -170,7 +170,7 @@ def build_mcp_server(
     )
     server = MCPServer(
         "touhou-reconstruction-factory",
-        version="0.8.0",
+        version="0.9.0",
         instructions=(
             "Use registered repository IDs only. Prefer the live repository workflow "
             "for source reconstruction: it exposes the real worktree, broad composable "

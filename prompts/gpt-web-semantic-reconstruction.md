@@ -13,6 +13,14 @@ successfully loaded a bundled skill.
 Select **@Touhou Reconstruction Factory**, then send:
 
 ```text
+Shared runtime requirement: read
+`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
+and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
+compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
+work locally without MCP. Keep locked versions and game-owned Wine prefixes,
+Java settings/cache and analyzer projects; do not copy installations or borrow
+another game's mutable state.
+
 Continue TH095 semantic reconstruction as an autonomous campaign through the
 shared Factory workflow. Use $factory-semantic-reconstruction if it is actually
 available, but do not depend on the skill body being loaded.
@@ -124,6 +132,14 @@ count, time limit, or number of batches.
 ## Standalone campaign without automatic skill selection
 
 ```text
+Shared runtime requirement: read
+`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
+and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
+compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
+work locally without MCP. Keep locked versions and game-owned Wine prefixes,
+Java settings/cache and analyzer projects; do not copy installations or borrow
+another game's mutable state.
+
 Advance an autonomous evidence-first semantic reconstruction campaign under
 gpt-web-semantic-reconstruction-session-v4, based on the general
 gpt-web-reconstruction-session-v5 live-repository contract, with mandatory

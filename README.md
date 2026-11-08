@@ -1,5 +1,9 @@
 # Touhou Reconstruction Factory
 
+Ghidra/JDK installations and the Wine entrypoint are shared by Factory MCP and
+repository-local scripts. Prefixes, projects and caches remain game-owned.
+See [shared runtime setup and use](docs/shared-runtimes.md).
+
 This repository is the control plane for evidence-first Touhou and compatible
 game reconstruction projects. It defines a language-neutral truth kernel, composes compatible
 platform and toolchain providers, imports existing repositories without

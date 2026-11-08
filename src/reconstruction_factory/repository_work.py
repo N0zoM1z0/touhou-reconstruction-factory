@@ -696,7 +696,7 @@ def _sandbox_argv(
             "/run",
             "--setenv",
             "PATH",
-            "/usr/local/bin:/usr/bin:/bin",
+            f"{repository}/.tools/factory-bin:/usr/local/bin:/usr/bin:/bin",
             "--setenv",
             "LANG",
             "C.UTF-8",

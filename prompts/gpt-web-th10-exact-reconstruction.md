@@ -5,6 +5,14 @@ and a public native-provider smoke test passes. The prompt does not assume that
 ChatGPT injected any plugin skill.
 
 ```text
+Shared runtime requirement: read
+`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
+and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
+compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
+work locally without MCP. Keep locked versions and game-owned Wine prefixes,
+Java settings/cache and analyzer projects; do not copy installations or borrow
+another game's mutable state.
+
 Work autonomously on the TH10 exact source-reconstruction phase through the
 shared Touhou Reconstruction Factory. Do not assume any skill body was loaded.
 

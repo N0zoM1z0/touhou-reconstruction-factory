@@ -277,3 +277,9 @@ affected-oracle closure and explicitly deferred broad gates; every verification
 plane; accepted receipt facts separately from semantic interpretation; retained
 unknowns; the exact next batch or coverage route; and an explicit statement that
 GPT-web did not close the semantic phase.
+
+Shared tools: follow the Factory `docs/shared-runtimes.md` and the selected
+repository's `docs/SHARED_TOOLS.md`. Use its `scripts/shared_runtime.py` or
+maintained compiler/Ghidra scripts; do not copy installations or reuse another
+game's Wine prefix, Java cache or analyzer project. Local scripts work without
+Factory MCP.

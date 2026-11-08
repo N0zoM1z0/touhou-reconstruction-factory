@@ -62,3 +62,9 @@ After a human or local Codex session reviews and applies the exported diff to
 the canonical game repository, discover a supported claim and use the separate
 factory replay workflow. If no canonical replay proves the requested extent,
 report it as `unknown`.
+
+Shared tools: follow the Factory `docs/shared-runtimes.md` and the selected
+repository's `docs/SHARED_TOOLS.md`. Use its `scripts/shared_runtime.py` or
+maintained compiler/Ghidra scripts; do not copy installations or reuse another
+game's Wine prefix, Java cache or analyzer project. Local scripts work without
+Factory MCP.

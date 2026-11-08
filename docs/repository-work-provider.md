@@ -1,5 +1,10 @@
 # Live Repository Work Provider
 
+Use the [shared runtime procedure](shared-runtimes.md) for Ghidra/JDK/Wine.
+Game scripts and native Factory providers use the same Factory-owned launcher;
+keep Wine prefixes, Java settings/cache and analyzer projects game-bound.
+Attach existing locked versions instead of installing a copy in every game.
+
 ## Purpose
 
 The live repository work provider gives GPT-web the same useful composition

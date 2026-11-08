@@ -5,6 +5,14 @@ through the shared Factory MCP. It is complete enough to paste into GPT-web even
 when no bundled skill body is injected.
 
 ```text
+Shared runtime requirement: read
+`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
+and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
+compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
+work locally without MCP. Keep locked versions and game-owned Wine prefixes,
+Java settings/cache and analyzer projects; do not copy installations or borrow
+another game's mutable state.
+
 Continue TH04 authored-function discovery and natural-source byte-exact
 reconstruction through the shared Touhou Reconstruction Factory. Work seriously,
 move quickly through the cheapest correct feedback loop, and use broad engineering
