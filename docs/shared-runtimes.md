@@ -97,6 +97,16 @@ tokens and configured prefixes. Re-run after moving the Factory checkout to
 refresh links; this binding is a local installation locator, not a frozen
 provider implementation hash. Review only the affected tracked game files.
 
+When cleaning up after consolidation, distinguish physical installations from
+compatibility links and mutable state. Keep `.tools/ghidra*`, `.tools/jdk*`
+selectors that resolve into Factory. A directory with `system.reg`, `drive_c`
+and `dosdevices` is a Wine prefix, not a duplicate Wine installation; preserve
+it. Keep projects and game-local analysis helpers too. Retain a distinct legacy
+distribution with customized extensions once in the Factory store, replacing
+its old installation path with a direct link after checking its contents and
+active users. Compare local and public calls before and after cleanup. This is
+operator maintenance, not a per-call preflight.
+
 For a new game, select its locked versions and dedicated prefix before
 attaching. Do not download a Ghidra/JDK copy into every game or use the operator's
 global Wine prefix. Add Factory `runtime` and `.factory/shared-tools` to private

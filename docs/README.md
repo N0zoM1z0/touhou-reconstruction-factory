@@ -76,6 +76,9 @@ without a new observation:
 - [`public-reconstruction-ux-validation-2026-10-27.md`](public-reconstruction-ux-validation-2026-10-27.md):
   reconstruction-style public queries, cross-game source reads, isolated compiler
   loops, bounded context delivery, and disconnect/timeout recovery repairs;
+- [`shared-runtime-cleanup-2026-11-08.md`](shared-runtime-cleanup-2026-11-08.md):
+  remaining legacy installation relocation, protected game state, and repeated
+  local/public checks before and after cleanup;
 - [`shared-runtimes-validation-2026-11-08.md`](shared-runtimes-validation-2026-11-08.md):
   Factory 0.9.0 shared runtime consolidation, local use without MCP, isolated
   game state, fourteen-repository public checks and recovery exercises;
