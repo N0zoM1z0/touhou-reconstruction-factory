@@ -1,230 +1,90 @@
-# Agent Autonomy and Tool Composition
+# Lightweight agent workflow
 
-## Decision
+The user's highest-priority workflow is exact reconstruction and reusable
+knowledge with minimal mandatory work. This document supersedes older routine
+full-CI, repeated preflight, document-hash, source-pin and reporting requirements.
+Keep target identity, complete strict comparisons and game state isolation.
 
-The Factory exists to make a capable reconstruction agent more accurate,
-efficient, resumable, and reviewable. It must not reduce the agent to a fixed
-workflow containing only operations anticipated by the Factory authors.
+## Normal work
 
-The default GPT-web reconstruction surface is therefore:
+Inspect relevant Git/dirty state and the short handoff. Search the knowledge
+needed for the current uncertainty. Use existing Bash, local scripts and atomic
+IDA/Ghidra tools to write a natural-source candidate. Compile and compare the
+complete affected scope, including owned extents and relocations. Retain useful
+findings and failed attempts, then checkpoint coherent work. Choose the next
+action from evidence; no fixed packet count, phase ceremony or task catalog is
+required. Preserve interrupted work and useful ignored state.
 
-- a registered live game repository, including its current dirty, untracked,
-  and ignored state;
-- broad composable Bash inside that repository;
-- local Git commits as durable review checkpoints;
-- repository-selected IDA or Ghidra operations as high-value atomic tools;
-- repository-native build, Wine, compiler, object-comparison, and Oracle scripts;
-- replay receipts and the acceptance registry as a separate truth boundary.
+Do not create a framework, schema, registry, state machine, generalized checker,
+new test family or documentation process for a local task. Prefer an existing
+command or the smallest focused fix for an observed obstacle. A successful build,
+analysis output or knowledge note does not establish exactness.
 
-Disposable source-only workspaces remain useful for explicitly isolated or
-throwaway experiments. They are not the default reconstruction environment.
+## Validation by impact
 
-## Keep exploration light
+| Change | Relevant validation |
+| --- | --- |
+| Ordinary Markdown, knowledge, handoff | Review the diff; no native build, analyzer, replay or full CI |
+| Source function or unit | Complete strict affected comparison |
+| Shared header, recipe or compiler inputs | Known affected consumers; state unknown dependencies before widening scope |
+| Comparator or build helper | Meaningful positive/negative cases and bounded real samples |
+| Factory transport, isolation or recovery | Corresponding call, concurrency or disconnect checks |
 
-Every registered repository can read every other registered repository at
-`/references/<id>`. New registrations join automatically; individual reference
-allowlists are unnecessary. Only the selected repository is writable.
+Game `scripts/ci.py` checks changed machine-input syntax and diffs. Its explicit
+`--full` option retains the older broad suite. A passing quick check is not an
+exact comparison. Full suites and cold whole-build replay require an explicit
+request or a demonstrated impact that cannot be narrowed; explain that impact
+first. Factory release validation is an explicit maintenance tool, not a gate
+for every note, local checkpoint or function.
 
-Ordinary Bash and analysis do not require complete environment scans,
-implementation hash refreshes, complete ledger validation or full replay.
-Ghidra discovery is static and useful queries run directly. Report what was
-actually checked; keep explicit exactness verification separate and run only
-the comparisons needed by the current work.
+Remove tests that merely freeze prose, prompt phrases, historical progress
+totals or ordinary source spelling. Keep tests that detect an incorrect byte
+comparison, extent/relocation error, wrong target or broken isolation/recovery.
+Do not replace removed bureaucracy with another generic validation framework.
 
-On 2026-10-27, a scoped public-relay smoke read actual source for all 156
-directed pairs among thirteen registered repositories, confirmed read-only
-reference access, and completed a useful query through all sixteen analysis
-providers. It ran no whole-game build or replay. Detailed outputs remain in
-ignored operator state; this observation is not a continuing health claim.
+## Evidence and knowledge
 
-## The bitter lesson from the earlier repositories
+Exact input identity binds executable inputs, relevant recipe/configuration,
+target, toolchain and comparison rules. Git position and ordinary documentation
+are provenance. A document genuinely consumed by a build must be declared as an
+input. New Factory replay snapshots omit ordinary Markdown/notes and compare
+input identity independently of Git metadata. Other executable files remain
+conservatively bound until a driver has a complete narrower dependency closure.
+Old receipts retain their original identity and validation semantics; do not
+rewrite them or refresh their hashes to claim a new pass.
 
-TH04, TH08, TH095, and TH105 accumulated hundreds of useful `gpt-web:` commits.
-The productive pattern was not a complete remote API designed in advance. It
-was a strong model with Bash plus IDA/Ghidra, repository-local scripts, and Git.
-The agent composed unanticipated investigations, repaired intermediate states,
-and checkpointed coherent progress so later sessions could review, bisect,
-continue, or roll back it.
+Write fluent, natural English. State the finding directly, explain the relevant
+evidence and leave a useful next action. Remove filler, circular repetition,
+repeated summaries and unnecessary jargon. Do not attach defensive-claim
+boilerplate to notes or reports. Give a genuine uncertainty or applicability
+limit once when it affects a decision. A concise explanation should remain
+readable without a glossary or a chain of disclaimers.
 
-The first Factory workspace implementation preserved isolation but removed
-important capabilities: current local state, ignored targets and toolchains,
-Wine prefixes, native analysis assets, and Git commits. The first TH105 Web test
-showed the consequence directly: it could produce a plausible source diff and
-find a semantic timer bug, but it could not run the modified source through the
-VC8/Wine Oracle or leave a normal repository checkpoint.
+Plain Markdown is sufficient durable knowledge. Reuse the game's existing
+notes: finding, applicable target/compiler/scope, evidence links, useful failed
+attempts and unresolved questions. No JSON conversion, promotion, schema or
+new test is required per note. The optional legacy JSON format remains readable.
+Other games can immediately search these notes through read-only references;
+that does not turn a local observation into a universal rule or exact fact.
+Only a rule that will enforce acceptance needs separate rule-level validation.
 
-The design correction is not to predict every missing operation and add another
-narrow tool. It is to restore a general composition surface while retaining
-stronger atomic tools where they materially improve evidence quality.
+Keep AGENTS and handoff short enough to orient the next agent. Handoff records
+current work, evidence, blockers and next useful action. Derive counts from
+canonical ledgers instead of maintaining duplicate totals or manual source-SHA
+tables. Keep detailed older research searchable and load relevant sections,
+not entire multi-megabyte journals. Routine operator output may remain ignored;
+a lasting pitfall deserves a concise knowledge entry, not another full report.
 
-## Bitter lesson: a campaign is not one browser conversation
+## Factory boundary
 
-The early hand-written prompts were ugly but productive because they gave Web a
-strong objective, broad autonomy, distrust of stale claims, fast Oracle
-feedback, and frequent Git checkpoints. Later Factory prompts accidentally
-coupled that useful open-ended campaign posture to one conversation: after a
-successful batch or negative search they repeatedly ordered the model to keep
-working in the same chat. Overnight use showed the operational failure. Long
-tool histories and outputs eventually made the browser slow or unusable even
-though the repository was healthy and the work could have continued in a fresh
-conversation.
+One shared MCP provides registered repository access, composable Bash, bounded
+analysis, recoverable logs, local Git checkpoints and cross-game references.
+Reuse Factory Ghidra/JDK/Wine installations locally or through MCP; keep each
+game's Wine prefixes, projects, caches, targets and evidence separate. Optional
+workspaces and milestone/product checks remain available when the task needs
+them. They do not replace the normal reconstruction loop.
 
-The corrected rule separates durations:
-
-- the reconstruction or semantic campaign is long lived;
-- a Git/evidence batch is one reviewable transaction; and
-- a GPT-web conversation is an adaptive bounded delivery interval chosen by the
-  agent from task difficulty, validation latency, browser responsiveness, and
-  remaining reliable context.
-
-The agent should make serious progress, but it is not required to finish the
-campaign or a fixed number of batches in one conversation. It finishes or
-reverts the active experiment, runs applicable checks, commits coherent work,
-and writes a precise continuation handoff before the client becomes fragile.
-The next conversation first audits live Git and dirty state, so a disconnect is
-not required before handoff is appropriate.
-
-An intentionally ambitious moving target can still be useful. The older TH04
-prompt's 99% target helped sustain exploration because authored boundary
-discovery could expand the denominator while exact reconstruction improved the
-numerator. Exact-phase prompts may therefore use 99.5% reviewed authored
-functions and bytes as campaign pressure, provided they name those denominators
-and never reinterpret them as executable, product, or whole-game coverage.
-Crossing the moving target grants Web no completion authority; the operator and
-a later independent audit decide when to stop the campaign.
-
-External chat scheduling is an operator concern. In this installation the
-operator may use a browser userscript to submit subsequent conversations, but
-that implementation is deliberately absent from prompts, skills, contracts,
-and game ontology. The model only needs to know that work may continue in a
-later conversation from repository state. Leaking a particular scheduler or
-queue into the task prompt adds irrelevant mechanism, couples the workflow to a
-personal client, and encourages the model to manage orchestration instead of
-reconstruction.
-
-## Capability boundary versus truth boundary
-
-These are intentionally different boundaries.
-
-| State | Meaning | Exactness credit |
-|---|---|---:|
-| IDA/Ghidra result | Repository-selected semantic hypothesis | None |
-| Bash/build result | Engineering feedback observed in the live repository | None by itself |
-| `gpt-web:` commit | Durable, reviewable source checkpoint | None by itself |
-| Completed replay job | Execution reached a terminal state | None by itself |
-| Passing Oracle receipt | The declared comparison passed for its bound inputs | Receipt scope only |
-| Accepted current receipt | Truth Kernel admitted the result under current policy | Accepted scope only |
-
-The Factory constrains the last two transitions rigorously. It does not use
-those constraints as a reason to prevent source exploration, compilation,
-experimentation, or local checkpoint creation.
-
-## Atomic tools and Bash
-
-Atomic tools and Bash are complements.
-
-Use an atomic tool when it provides a valuable property that ad hoc shell text
-does not: stable discovery, schema validation, target identity attestation,
-durable replay state, bounded pagination, receipt construction, or acceptance
-policy evaluation. Use Bash when the task needs composition, a repository-native
-script, a new diagnostic, multiple Unix tools, or an operation the Factory did
-not predict.
-
-Adding an atomic tool must not silently prohibit the corresponding lower-level
-work. A tool is an accelerator and evidence-strengthening interface, not a claim
-that every legitimate workflow has been enumerated.
-
-## Git checkpoint policy
-
-GPT-web may edit and commit directly in a registered game repository. A good
-checkpoint contains one coherent unit, stages only intended files, follows the
-game's instructions, records checks actually run, and uses an English subject
-beginning with `gpt-web:`.
-
-Commands are deliberately non-transactional. A failed or timed-out command may
-leave partial files, just as a local terminal would. The command record captures
-before/after Git state and output; the agent must inspect the worktree before
-retrying. This behavior preserves useful compilation artifacts and debugging
-state instead of pretending failure rolled them back.
-
-Factory-launched repository commands share the same advisory repository lock as
-Factory replay, acceptance, snapshots, and analysis. This prevents two Factory
-operations from silently racing. A normal local terminal or another program can
-still change the repository because the Factory does not claim exclusive host
-ownership; every bounded operation therefore records or rechecks current source
-and Git identity.
-
-The live provider does not offer network access, so it cannot publish with
-remote `git push`. Local commit creation and remote publication are separate
-operations.
-
-## Shared tools and per-game state
-
-Tool ownership has three layers:
-
-| Layer | Examples | Preferred location |
-|---|---|---|
-| Immutable shared installation | Ghidra distribution, JDK, objdiff, compiler package archives | Factory-managed shared tool root |
-| Game-selected declaration and wrapper | exact version/hash, target, command line, environment, Oracle stages | tracked game repository metadata/scripts |
-| Mutable game state | Wine prefix, Ghidra/IDA database or project, build outputs, caches | game-local ignored state or a game-bound Factory state directory |
-
-One Ghidra installation can serve multiple games. Each request must still select
-a game/repository, target identity, and analysis project, and report the selected context. Sharing the executable must not merge analysis
-state or target identity.
-
-Wine itself is a shared host runtime. A Wine prefix is stateful and remains
-game/toolchain specific because registry contents, installed compiler files,
-absolute paths, and concurrent `wineserver` state can differ. Compiler binaries
-may be shared when their content identity is locked, while each game retains the
-wrapper and environment declaration that selects them.
-
-Existing repositories currently keep substantial assets under ignored `.tools`
-directories. The live provider supports that layout immediately. Migration to a
-shared store is an optimization: move one proven immutable component at a time,
-retain content hashes and game wrappers, then replay the affected fixtures. It
-must not be a prerequisite for useful reconstruction work.
-
-TH04 and TH095 can reuse their existing projects and query scripts directly
-through the shared Factory launcher. A separate per-game HTTP service is not
-required. The native Ghidra launcher reads the selected project without full
-installation or target preflights. Native IDA similarly uses the selected
-headless database and a metadata comparison, with no repeated mapped-byte scan.
-Useful metadata edits remain available; analysis is always provisional.
-
-## Migration principle
-
-The legacy repository layouts are evidence-bearing migration inputs, not the
-Factory's permanent schema. Compatibility code may read their current ledgers,
-ignored `.tools` directories, global Wine prefixes, and provider conventions so
-work can continue now. Core ontology, receipts, acceptance, jobs, repository
-work, and provider identities must not encode those accidents as universal
-concepts.
-
-After the infrastructure is stable, each existing game can be migrated to one
-Factory-authored repository profile. A target profile should declare, in one
-place:
-
-- target identity and provenance;
-- platform and exact toolchain identities;
-- shared immutable tool selections;
-- game-local mutable state roots;
-- analysis project and target binding;
-- canonical build, comparison, and Oracle stages;
-- claim, extent, and receipt interfaces;
-- game-local knowledge input and checkpoint conventions.
-
-Migration is allowed to change repository layout and scripts. It must preserve
-or strengthen the evidence meaning, carry explicit unknowns forward, and prove
-parity with historical fixtures before the old bridge is removed. TH09 and
-TH10 demonstrate starting directly in the target format, while TH04, TH08,
-TH095, and TH105 may temporarily use accurate per-repository compatibility
-profiles.
-
-## Scope
-
-The registered repository ID is the source-work selection boundary. The shared
-Factory MCP serves every game, while adapters and provider registrations bind
-the selected repository to its targets, toolchain family, analysis provider,
-and replay workflow. TH09 and TH10 each required one Factory registration and
-adapter-compatible repository; GPT-web continued to use the same MCP and prompt
-family.
+Maintain common workflow requirements here and game-specific differences in
+the game's AGENTS. Launch prompts stay short and independently usable. An agent
+must not turn missing abstractions, exhaustive tests or publication machinery
+into a blocker for useful reconstruction or knowledge capture.

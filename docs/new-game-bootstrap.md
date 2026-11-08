@@ -1,5 +1,10 @@
 # New-game bootstrap
 
+> Highest-priority current workflow: [lightweight agent work](agent-autonomy.md).
+> Prefer affected exact checks and useful Markdown knowledge. Ordinary notes
+> require no full CI, native replay, schema conversion or document-hash refresh.
+> Older broad workflow/validation requirements are superseded by that policy.
+
 Use the [shared runtime procedure](shared-runtimes.md) for Ghidra/JDK/Wine.
 Game scripts and native Factory providers use the same Factory-owned launcher;
 keep Wine prefixes, Java settings/cache and analyzer projects game-bound.
@@ -60,6 +65,12 @@ does not make the host game directory a repository input.
 
 ## Accuracy-first bootstrap
 
+Put the lightweight workflow and natural-writing requirements at the top of a
+new game's AGENTS.md, with explicit priority over older broad-CI, prose-hash and
+reporting rules. Keep game-specific identity and command details below them.
+Use ordinary Markdown knowledge; the legacy JSON representation is optional.
+Do not create extra workflow machinery as a prerequisite for registration.
+
 Register source and analysis access first. The target/toolchain preparation
 below supports explicit exact work; it is not a prerequisite for code browsing
 or an ordinary analysis call. Do not run full preflights on every invocation.
@@ -89,10 +100,10 @@ progress.
    candidate inventory as provisional boundaries/origins. Start source,
    ownership, and exactness ledgers empty. A discovered function is not
    authored, implemented, or exact.
-5. **Create a whole-build skeleton immediately.** It may explicitly report
-   `open` while compiler profile, source graph, and link policy are unknown. Do
-   not postpone ownership, initialized data, resources, imports, relocations,
-   and product closure until function exactness is complete.
+5. **Keep a usable bounded build/comparison loop.** Start with the scope the
+   reconstruction task needs. Expand the whole-product graph when that task
+   requires it, retaining unknown compiler/link/ownership details explicitly.
+   Do not make a new general build framework a prerequisite for source work.
 6. **Keep the historical platform product before semantic work.** The faithful
    sequence is target/exact reconstruction, corresponding platform build
    closure (Windows i386 here; 16-bit for PC-98), semantic reconstruction using

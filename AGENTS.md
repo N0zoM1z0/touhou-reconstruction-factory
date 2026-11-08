@@ -1,13 +1,60 @@
 # Factory Repository Instructions
 
+## Highest priority: lightweight exact reconstruction and useful knowledge
+
+These are the user's current workflow requirements. They override older
+instructions that mandate broad CI, repeated preflights, document/source-pin
+refreshes, per-checkpoint audits or extra workflow machinery. Preserve the
+actual exactness, target identity, natural-source and state-isolation rules.
+
+- Prioritize exact reconstruction and reusable knowledge. Use the shortest
+  useful loop: inspect relevant state, analyze/edit, compile and compare the
+  affected scope, retain useful learning, and create a coherent checkpoint.
+- Use existing repository scripts and composable Bash. Add only the smallest
+  change needed for an observed problem. Do not introduce a framework, schema,
+  registry, state machine, generalized validator, test family or reporting
+  process merely to make a local reconstruction task look more engineered.
+- Documentation, knowledge and handoff edits require no compiler, analyzer,
+  full CI, cold replay or receipt refresh. Inspect the diff. Check syntax only
+  for machine-readable inputs actually changed.
+- Source changes need the complete affected exact comparison, including its
+  owned extents and relocations. Recheck known consumers of changed shared
+  inputs. Tool changes need relevant positive/negative cases and a bounded
+  real smoke. Run a broad suite only for an explicit request or a demonstrated
+  impact that cannot be narrowed; state that reason first.
+- Do not add tests or live freshness gates for prose hashes, prompt wording,
+  progress totals, handoff source-SHA tables or ordinary source spelling.
+  Bind exact evidence to executable inputs and relevant verification settings.
+  Keep Git metadata as provenance. A document genuinely consumed by a build
+  remains a build input. Never edit historical receipts to manufacture a pass.
+- Plain Markdown is sufficient for knowledge: record the finding, applicable
+  target/compiler/scope, evidence links, useful failed attempts and open
+  questions. No mandatory JSON conversion, promotion workflow or test per note.
+  Search relevant sections; do not read an entire large knowledge journal.
+- Write documentation and knowledge in natural, fluent English. Lead with the
+  concrete finding and connect the evidence and next action clearly. Remove
+  filler, circular restatements, repeated conclusions and unnecessary jargon.
+  Do not add defensive-claim boilerplate. State a real uncertainty or scope
+  limit once when it changes a decision; do not repeat disclaimers about what
+  a note does not prove, certify or authorize. Prefer a small useful note over
+  an exhaustive report that is difficult to read.
+- Keep handoff focused on current work, evidence references, blockers and the
+  next useful action. Generate progress from canonical ledgers; avoid manual
+  duplicate counts, recurring full reports and unrelated documentation chores.
+- Preserve dirty/untracked work, targets, useful evidence, game-specific Wine
+  prefixes and analyzer projects. Exactness still requires a complete strict
+  comparison; knowledge and successful commands alone confer no exact credit.
+
+
 These instructions apply to the entire Factory repository.
 
 ## Start here
 
-1. Read [`README.md`](README.md) for the system boundary and end-to-end flow.
+1. Follow the highest-priority requirements above; read
+   [`docs/agent-autonomy.md`](docs/agent-autonomy.md) for the common workflow.
 2. Read [`docs/README.md`](docs/README.md) before treating any document as
    current authority.
-3. Select the current contract through [`contracts/README.md`](contracts/README.md)
+3. When a launch contract is needed, select it through [`contracts/README.md`](contracts/README.md)
    and the appropriate Web launch input through
    [`prompts/README.md`](prompts/README.md).
 4. Inspect the real Git status and recent history before editing. Preserve and
@@ -73,8 +120,8 @@ These instructions apply to the entire Factory repository.
   version normally requires a new version and an update to the relevant index.
 - Prefer focused checks for documentation-only changes. Do not add tests merely
   to freeze prose. For code, schema, prompt-contract, provider, or release
-  changes, run the checks proportional to that surface and finish with
-  `scripts/validate-release.py` when appropriate.
+  changes, run the checks proportional to that surface and select only checks
+  relevant to the changed behavior. Full release validation is explicit.
 - Make coherent, detailed English commits. Push only when the user has asked to
   publish or preserve the completed checkpoint.
 

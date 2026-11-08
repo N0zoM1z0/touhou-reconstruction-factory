@@ -31,7 +31,7 @@ from .knowledge import KnowledgeStatus, load_knowledge_catalog
 from .ontology import Claim, ClaimType, RepositorySnapshot, to_primitive
 from .oracle_receipts import SourceBinding, oracle_receipt_from_dict
 from .regressions import load_fixture_suite
-from .replay_drivers import ReplayPlan, driver_version, select_driver
+from .replay_drivers import ReplayPlan, driver_version, select_driver, required_source_inputs
 from .replay_identity import capture_source_binding, repository_lock
 from .repository_work import RepositoryWorkStore
 from .replay_runner import (
@@ -315,7 +315,7 @@ class FactoryService:
                 subject,
                 run_id,
             )
-            source = capture_source_binding(registration.path)
+            source = capture_source_binding(registration.path, required_inputs=required_source_inputs(registration.path, plan))
             self._require_policy_submission(snapshot.adapter_id, claim, plan, source)
             spec = ReplayJobSpec(
                 repository_id=registration.id,

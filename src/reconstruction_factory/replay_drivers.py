@@ -24,7 +24,7 @@ from .ontology import (
     Verdict,
 )
 from .oracle_receipts import AttestationLevel, Coldness, canonical_sha256
-from .replay_identity import file_sha256
+from .replay_identity import file_sha256, is_documentation
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +55,24 @@ class ReplayPlan:
     environment_names: tuple[str, ...]
     native_report_path: Path | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+
+
+def required_source_inputs(root: Path, plan: ReplayPlan) -> tuple[str, ...]:
+    """A declared executable input stays bound even when stored as Markdown."""
+    paths = {path.relative_to(root).as_posix() for path in plan.oracle_inputs
+             if is_documentation(path.relative_to(root).as_posix())}
+    unit_name = plan.metadata.get("unit")
+    for manifest in plan.oracle_inputs:
+        if manifest.suffix != ".toml" or not unit_name:
+            continue
+        units = tomllib.loads(manifest.read_text()).get("units", {})
+        unit = units.get(unit_name, {}) if isinstance(units, dict) else {}
+        for key in ("source", "sources", "support_sources", "normal_support_sources", "inputs", "generator_inputs"):
+            values = unit.get(key, [])
+            values = [values] if isinstance(values, str) else values
+            if isinstance(values, list):
+                paths.update(value for value in values if isinstance(value, str) and is_documentation(value))
+    return tuple(sorted(paths))
 
 
 @dataclass(frozen=True, slots=True)
@@ -753,6 +771,20 @@ class Th10FunctionDriver(ReplayDriver):
             ComponentSpec("runtime-xvfb", xvfb, "$XVFB", "runtime"),
             *_runtime_components(),
         )
+        python = Path(sys.executable)
+        python_inputs = ()
+        python_environment = {}
+        if (root / "scripts/repo-python").is_file():
+            python, selected_python, capstone_init = _th10_repo_python_runtime(root)
+            specs += (
+                ComponentSpec("runtime-repository-python", selected_python, "$REPOSITORY_PYTHON", "runtime"),
+                ComponentSpec("runtime-capstone-init", capstone_init, "$CAPSTONE/__init__.py", "runtime"),
+                ComponentSpec("runtime-capstone-x86", capstone_init.parent / "x86.py", "$CAPSTONE/x86.py", "runtime"),
+                ComponentSpec("runtime-capstone-constants", capstone_init.parent / "x86_const.py", "$CAPSTONE/x86_const.py", "runtime"),
+                ComponentSpec("runtime-capstone-native", capstone_init.parent / "lib/libcapstone.so", "$CAPSTONE/lib/libcapstone.so", "runtime"),
+            )
+            python_inputs = ("scripts/repo-python",)
+            python_environment = {"PYTHONPATH": str(capstone_init.parent.parent)}
         return ReplayPlan(
             driver_id=self.driver_id,
             oracle_id=self.oracle_id,
@@ -761,28 +793,31 @@ class Th10FunctionDriver(ReplayDriver):
                 ReplayStagePlan(
                     "compile",
                     (
-                        sys.executable,
+                        str(python),
                         str(build.relative_to(root)),
                         "--unit",
                         unit_name,
                     ),
                     root,
+                    environment=python_environment,
                 ),
                 ReplayStagePlan(
                     "compare",
                     (
-                        sys.executable,
+                        str(python),
                         str(compare.relative_to(root)),
                         "--unit",
                         unit_name,
                         "--json",
                     ),
                     root,
+                    environment=python_environment,
                 ),
             ),
             oracle_inputs=_identity_inputs(
                 root,
                 (
+                    *python_inputs,
                     "scripts/build-match-unit.py",
                     "scripts/compile-probe.sh",
                     "scripts/run-headless-wine.sh",

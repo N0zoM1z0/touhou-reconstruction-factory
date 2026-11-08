@@ -111,6 +111,14 @@ class ReplayJobSpec:
     def sha256(self) -> str:
         return canonical_sha256(self.to_dict())
 
+    def same_execution(self, other: ReplayJobSpec) -> bool:
+        """Retain stored provenance while recovering the same actual request."""
+        left, right = self.to_dict(), other.to_dict()
+        for value in (left, right):
+            value["source_binding"] = {k: value["source_binding"][k]
+                for k in ("repository_scope", "snapshot_sha256", "file_count")}
+        return left == right
+
     def to_dict(self) -> dict[str, Any]:
         return to_primitive(self)
 
@@ -415,7 +423,7 @@ class JobStore:
             ).fetchone()
             if existing is not None:
                 job = self._record(existing)
-                if job.spec_sha256 != spec.sha256:
+                if job.spec_sha256 != spec.sha256 and not job.spec.same_execution(spec):
                     raise JobConflictError(
                         "idempotency key already names a different replay request; "
                         "reuse the original arguments or choose a new key"

@@ -1,5 +1,10 @@
 # Release and live validation
 
+> Highest-priority current workflow: [lightweight agent work](agent-autonomy.md).
+> Prefer affected exact checks and useful Markdown knowledge. Ordinary notes
+> require no full CI, native replay, schema conversion or document-hash refresh.
+> Older broad workflow/validation requirements are superseded by that policy.
+
 The validation contract below is current. The checkpoint sections between it
 and `Deliberate limitations` are point-in-time evidence records, including
 headings that begin with `Recorded`, `Bounded`, or `Earlier`; they are not a
@@ -10,8 +15,9 @@ provider availability forward without a new observation.
 
 The Factory has two complementary validation entry points.
 
-`scripts/validate-release.py` is the portable release gate. Run it with the
-same MCP-enabled Python environment used by the service:
+`scripts/validate-release.py` is an explicit broad release check for shared
+service changes. Select affected checks for ordinary work; notes need diff
+review only. For a broad release run, use the MCP-enabled service environment:
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/validate-release.py

@@ -1,6 +1,6 @@
 {
   "name": "touhou-reconstruction-factory",
-  "version": "0.7.0+codex.20260912065904",
+  "version": "0.10.0",
   "description": "Touhou Reconstruction Factory plugin",
   "author": {
     "name": "N0zoM1z0",
@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Touhou Reconstruction Factory",
-    "shortDescription": "Develop source and verify reconstruction evidence.",
-    "longDescription": "Run autonomous evidence-first reconstruction and persistent semantic campaigns in registered live game repositories: recover non-clean work before new edits, bound non-authoritative analysis artifacts, combine broad Bash with target-attested IDA/Ghidra, preserve exact and historical-platform product/runtime feedback, create reviewable local Git checkpoints, submit milestone replays, and query only facts admitted by the Factory Truth Kernel.",
+    "shortDescription": "Reconstruct exact source and retain useful knowledge.",
+    "longDescription": "Work in registered game repositories with shared tools, composable Bash and bounded IDA/Ghidra analysis. Prefer affected exact comparisons, concise Markdown knowledge and recoverable local checkpoints.",
     "developerName": "N0zoM1z0",
     "category": "Developer Tools",
     "capabilities": [
@@ -29,9 +29,9 @@
     ],
     "websiteURL": "https://github.com/N0zoM1z0/touhou-reconstruction-factory",
     "defaultPrompt": [
-      "Advance TH095 semantics in one bounded Web conversation; checkpoint and hand off as active-incomplete.",
-      "Start one bounded TH10 exact-reconstruction packet with the native Ghidra provider.",
-      "List current accepted reconstruction facts."
+      "Continue exact reconstruction using affected comparisons and useful Markdown knowledge.",
+      "Search relevant reconstruction findings and failed attempts across registered games.",
+      "Inspect current work and choose the next useful reconstruction step."
     ]
   }
 }

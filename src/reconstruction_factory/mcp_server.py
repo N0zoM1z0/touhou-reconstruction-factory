@@ -170,30 +170,28 @@ def build_mcp_server(
     )
     server = MCPServer(
         "touhou-reconstruction-factory",
-        version="0.9.0",
+        version="0.10.0",
         instructions=(
-            "Use registered repository IDs only. Prefer the live repository workflow "
-            "for source reconstruction: it exposes the real worktree, broad composable "
-            "Bash, repository-local tools, and local Git checkpoints. Commands may edit "
-            "or commit and their partial changes persist even on failure or timeout; inspect "
-            "status before and after. Network is unavailable, so Git push is not provided. "
-            "Keep repository searches bounded: prefer Git-aware tracked searches and exclude "
-            "large ignored build, analysis, tool, and Wine state unless explicitly needed; "
-            "never follow repository-root symlinks into a Wine dosdevices tree. "
-            "For semantic reconstruction, use factory_report_semantic_debt only as a "
-            "live-bound lexical router, preserve the target exact and corresponding "
-            "historical-platform product/runtime baselines, and keep portable products "
-            "after semantic readiness. "
-            "A Git commit is a review checkpoint, never proof of exactness. Submit replays "
-            "with a stable, unique "
-            "idempotency key, then poll factory_get_job. A completed job is not proof "
-            "of exactness: inspect receipt_verdict and acceptance_decision. Only "
-            "factory_query_accepted_facts and factory_get_accepted_snapshot expose "
-            "facts admitted to the Truth Kernel. Disposable workspaces remain available "
-            "for intentionally isolated experiments, but they omit dirty, ignored, target, "
-            "and toolchain state. Game-local knowledge may be committed in its game repo "
-            "with publication authority set to none. This server exposes no Factory-knowledge promotion "
-            "tool; factory_query_knowledge reads only the packaged cross-game catalog."
+            "Highest priority: lightweight exact reconstruction and useful knowledge. "
+            "Follow the current highest-priority AGENTS requirements. Use existing Bash "
+            "and repository tools; validate affected execution inputs and complete exact "
+            "scopes, including relocations. Ordinary documentation, knowledge and handoff "
+            "edits need diff review only, not native replay, full CI or hash refreshes. "
+            "Avoid extra frameworks, schemas, validators, reporting processes and tests "
+            "that freeze prose, prompt wording or progress totals. "
+            "Use registered repository IDs, shared tools and separate game prefixes/projects. "
+            "Preserve dirty and useful ignored work. Commands can leave partial changes on "
+            "failure or timeout; inspect relevant status and recover by command/job ID. "
+            "Use bounded Git-aware searches and avoid following Wine dosdevices symlinks. "
+            "Use stable replay idempotency keys and inspect receipt_verdict and "
+            "acceptance_decision when a job completes. Accepted-fact tools expose admitted "
+            "results. Network and Web Git push are unavailable. "
+            "Plain Markdown knowledge is sufficient and can be searched across read-only "
+            "repository references. Write fluent, natural notes: finding, applicable scope, "
+            "evidence and useful next action. Remove filler, circular repetition and "
+            "defensive-claim boilerplate; state relevant uncertainty once. "
+            "Optional workspaces, semantic/product checks and the packaged rule catalog "
+            "are capabilities selected for the task, not default workflow gates."
         ),
     )
 

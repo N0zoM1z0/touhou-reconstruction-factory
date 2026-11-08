@@ -3,191 +3,28 @@ name: factory-reconstruction
 description: Run an autonomous, resumable Touhou source-reconstruction conversation in a registered live game repository through the shared Factory MCP. Use when GPT-web should inspect current work, combine Bash with IDA/Ghidra, edit and build with repo-local tools or Wine, create reviewable local Git checkpoints, and preserve continuation across conversations. Do not use for creating a new game repository or publishing cross-game Factory knowledge.
 ---
 
-# Factory Reconstruction
+Follow the **highest-priority lightweight workflow** in Factory
+`docs/agent-autonomy.md` and the selected game's AGENTS.md. Those current user
+requirements supersede older broad-CI, prose-hash and reporting requirements.
 
-Follow `gpt-web-reconstruction-session-v5`. The Factory improves accuracy,
-feedback speed, and resumability; it does not replace your engineering judgment
-with a rigid sequence of narrow tools. Prefer broad composable repository Bash
-plus the target-attested analysis and replay tools.
+Use this skill's described capability, discover the live tool schema, and use
+existing scripts/Bash for the smallest useful affected scope. Documentation,
+knowledge and handoff edits need diff review only. Exact work needs complete
+strict extent/relocation comparison; tool changes need relevant real behavior
+checks. Full suites require an explicit request or impact that cannot be narrowed.
 
-Also follow `worktree-recovery-and-analysis-artifacts-v1`. Skill injection is
-not a workflow prerequisite: when the launch prompt provides readable Factory
-contract/documentation paths, read them directly. The complete launch prompt
-remains authoritative if a path is not mounted.
+Do not add frameworks, schemas, state machines, generalized validators or tests
+for prose, prompt wording, progress totals or ordinary source spelling. Use
+searchable Markdown knowledge with scope, evidence, failed attempts and open
+questions; no JSON conversion or promotion is mandatory. Keep handoff short.
 
-When the objective is semantic reconstruction of already recovered source, use
-`factory-semantic-reconstruction`. Its specialized contract preserves the
-historical-platform order: target exact baseline, corresponding native product
-closure/runtime feedback, semantic reconstruction, then portable products.
+Write documentation and knowledge in fluent, natural English. State the finding,
+evidence and next action directly. Remove filler, circular restatements,
+repeated conclusions and unnecessary jargon. Avoid defensive-claim boilerplate;
+state a genuine uncertainty or scope limit once when it affects a decision.
 
-## Establish the live conversation
-
-1. Require a game ID and concrete campaign objective. A scope hint and prior
-   checkpoint commit are optional. Do not require one browser conversation to
-   finish the objective.
-2. Call `factory_describe`, `factory_list_repositories`, and
-   `factory_get_repository_status`. Work only in the returned game ID. Report the
-   actual branch, `HEAD`, dirty/staged/untracked counts, and upstream relation.
-3. Inspect actual Git status and the diffs or untracked files relevant to the
-   chosen work. Preserve unrelated or unknown work and investigate overlapping
-   files before editing them. Dirty work is normal; it does not require a
-   complete repository audit or a checkpoint before continuing. After an
-   interruption, recover the prior command and inspect its output and affected
-   files before deliberately executing the work again.
-4. Read the repository's current instructions, architecture, build scripts,
-   ledgers, and recent relevant Git history with
-   `factory_repository_run_shell`. Existing dirty and untracked work is part of
-   the live context: understand and preserve it; do not pretend it is absent.
-   For a command that may need reconnecting, optionally choose `command_id` as
-   `repository-command:` plus 32 lowercase hex digits before sending it. Retry
-   that ID with identical arguments to recover the original result without
-   repeating edits or builds, even if the first request disconnected while
-   queued. `reused_existing_command=true` identifies the retained result and
-   its original Git snapshots. Use a fresh ID for new execution after changes;
-   inspect interrupted work before starting it again.
-5. Bound one useful work packet. State the candidate functions, addresses,
-   extents, files, evidence, and unknowns. Do not invent a percentage when the
-   denominator is not independently known.
-
-## Reconstruct autonomously
-
-1. Use `factory-analysis` for target-attested IDA/Ghidra evidence. Operation
-   results guide source hypotheses and carry `exactness_credit="none"`.
-2. Use `factory_repository_run_shell` as the general composition surface. It
-   can run `rg`, Git, repository scripts, compilers, Wine, object comparison,
-   generated diagnostics, and other repo-local tooling. The live worktree,
-   ignored `.tools`, per-game Wine prefix, and configured shared tool roots are
-   visible. Network is unavailable; do not attempt Git push.
-   Prefer `git grep`/history for tracked content. For untracked live source, use
-   bounded `rg --hidden` searches excluding `.git`, `.analysis`, `build`, and
-   `.tools` unless a named ignored path is intentionally in scope. Never follow
-   repository-root symlinks: a Wine `dosdevices/z:` link can traverse the host.
-3. Prefer maintainable natural C/C++. Inline assembly, embedded machine-code
-   bytes, generated byte arrays, data masquerading as source, and oracle-specific
-   tricks are not routine solutions. If evidence demonstrates a genuinely
-   irreducible exception, explain its exact scope before using it.
-4. Choose and combine atomic Factory tools when they save work or add stronger
-   identity/evidence guarantees. Their presence never means that an unlisted
-   in-repository investigation is forbidden.
-5. Run feedback from cheap and local to stronger and broader: syntax/static
-   checks, affected exact function/extent checks, production translation-unit
-   compilation, then a cold whole-product build at bounded milestones. Owner,
-   ABI, layout, shared-header, link-input, or build-graph changes require both
-   affected exact replay and product closure. Neither result grants the other.
-   Page truncated command output with `factory_get_repository_command_output`.
-6. A live command is not transactional. Nonzero exit, timeout, or disconnect may
-   leave useful or partial changes. Inspect status and diffs before retrying or
-   changing direction.
-
-## Bound analysis storage
-
-Treat `.analysis/` as ignored, non-authoritative workspace rather than a
-knowledge base. Inventory its total and top-level size at preflight, but do not
-trust or hash every old artifact. Earlier outputs are only leads until their
-source HEAD, target, database, tool, and command input bindings are current or
-reproduced.
-
-Use an OS temporary directory with command-local cleanup for one-shot output.
-For multi-command work, reuse one `.analysis/gpt-web/<campaign-id>/` directory
-and create a manifest before the first large artifact. Record the campaign,
-game, starting/current HEAD, state, and each artifact's path, class, producer,
-input binding, size, references, and cleanup disposition. Use 256 MiB as a soft
-campaign review budget and 64 MiB as the large-artifact threshold. Prefer
-bounded provider queries, registered IDA/Ghidra and Wine state, one reused
-worktree, and paged output over copied providers or repeated whole-program dumps.
-
-At each checkpoint measure growth and retain compact conclusions in tracked
-evidence. Delete only explicit paths inside the current session scratch root
-when ownership is established, the producer is inactive, the artifact is
-reproducible or no longer needed, and no tracked or active reference remains.
-Never bulk-delete `.analysis/`, delete by age alone, or remove legacy-unknown or
-shared provider databases, toolchains, and Wine prefixes. Report starting and
-ending bytes plus all retained large artifacts and removed session artifacts.
-
-## Create real Git checkpoints
-
-Create local commits after coherent reviewable units; do not wait until the
-entire game is reconstructed. Before each commit, inspect `git status`, the full
-working diff, and the staged diff. Stage only intended files, run the available
-focused checks, and use an English subject beginning with `gpt-web:`. Small
-follow-up repair commits are acceptable when they preserve honest history.
-
-Git commits are checkpoints for review, continuation, bisect, and rollback.
-They are not exactness evidence. Never claim that a commit, clean worktree,
-successful build, byte count, or completed MCP command entered the Truth Kernel.
-Do not push; publication remains outside this Web workflow.
-
-## Maintain only game-local knowledge
-
-When a result will materially help a later session, update and commit
-`.reconstruction/game-knowledge.json`. Do not append a chat journal. The root
-uses schema version 1, `document_type="game-knowledge-input"`,
-`authority="game-local"`, `factory_publication="none"`, the selected repository
-ID, and an ID-sorted `entries` array.
-
-- Kinds: `scoped-fact`, `recipe`, `pitfall`, `decision`, or `unknown`.
-- Statuses: `observed`, `reproduced`, `unknown`, or `superseded`.
-- Each entry has exactly one `game:<GAME_ID>` scope; optional scopes identify a
-  target or subsystem.
-- `reproduced` requires a passed validation actually run. Every entry states a
-  limitation.
-- Replace or supersede stale knowledge instead of accumulating chronology.
-
-Never use `all`, `verified`, or `provisional` in game-local input. Never edit a
-Factory catalog, fixture, schema, prompt, or skill to promote a game observation.
-Cross-game publication is a later local-Codex review of completed repository
-history.
-
-## Preserve the evidence boundary
-
-- Analysis is provisional source-hypothesis evidence.
-- Bash/build results are engineering feedback.
-- A Git commit is a durable candidate checkpoint.
-- A replay job is execution state; a passing receipt is Oracle state.
-- Only a current acceptance-registry decision exposes accepted Truth Kernel
-  facts.
-- Function/extent exactness, production closure, runtime storage identity, and
-  runtime scenario validation are independent planes. Report each separately.
-- A successful build or playable/manual runtime report is not a runtime receipt.
-  When no Factory runtime provider exists, preserve the live runtime plane as
-  `unknown`.
-- Unknown is preferable to a guessed identity, extent, owner, provenance,
-  equivalence, or exactness conclusion.
-
-Use `factory-replay` only for a discovered claim bound to the committed source
-being checked. If pre-existing or newly created dirty changes remain, explain
-why the replay is not eligible instead of claiming verification.
-
-## Bound the Web conversation
-
-Work seriously and preserve momentum, but do not attempt to finish the entire
-game or phase in one browser conversation. Choose the amount of work from the
-actual packet difficulty, validation latency, browser responsiveness, and
-remaining reliable context. A difficult packet may occupy the whole
-conversation; several tightly related small packets may fit.
-
-After useful coherent progress, finish or revert the active experiment, close
-its applicable checks, commit durable work, and update the repository handoff
-before the browser becomes slow or context becomes unreliable. Do not wait for
-a disconnect. The next conversation resumes by auditing live Git, dirty state,
-evidence, and the handoff. A conversation boundary is not evidence that the
-campaign or phase is complete.
-
-## Handoff
-
-Always report the conversation status and active campaign state; game and objective; starting and ending
-commit; starting and ending dirty state; bounded scope completed and excluded;
-dirty-work recovery classifications, actions, and retained unknowns; starting
-and ending `.analysis/` bytes, scratch-manifest state, and retained/removed
-artifact disposition;
-analysis provider, target attestation, evidence, and limitations; changed files;
-checkpoint commit hashes and English subjects; game-local knowledge changes;
-tests and commands actually run; the status of every verification plane;
-accepted facts separately from candidate results; unknowns and blockers; and
-the next useful action.
-
-Shared tools: follow the Factory `docs/shared-runtimes.md` and the selected
-repository's `docs/SHARED_TOOLS.md`. Use its `scripts/shared_runtime.py` or
-maintained compiler/Ghidra scripts; do not copy installations or reuse another
-game's Wine prefix, Java cache or analyzer project. Local scripts work without
-Factory MCP.
+Preserve dirty/untracked work and useful evidence. Reuse shared tools with
+separate game prefixes/projects. Cross-game source/notes are read-only references;
+knowledge confers no exactness authority. Local Git checkpoints carry continuation.
+Do not push from Web. Workspaces and broad replay/product checks are optional
+capabilities selected for an actual task, not default ceremony.

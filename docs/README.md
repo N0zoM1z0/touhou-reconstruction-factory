@@ -1,5 +1,10 @@
 # Documentation authority map
 
+> Highest-priority current workflow: [lightweight agent work](agent-autonomy.md).
+> Prefer affected exact checks and useful Markdown knowledge. Ordinary notes
+> require no full CI, native replay, schema conversion or document-hash refresh.
+> Older broad workflow/validation requirements are superseded by that policy.
+
 This index separates current operating contracts from historical evidence.
 Read it before using a document to direct an agent or change the Factory.
 

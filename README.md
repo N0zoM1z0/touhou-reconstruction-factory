@@ -1,5 +1,10 @@
 # Touhou Reconstruction Factory
 
+> Highest-priority current workflow: [lightweight agent work](docs/agent-autonomy.md).
+> Prefer affected exact checks and useful Markdown knowledge. Ordinary notes
+> require no full CI, native replay, schema conversion or document-hash refresh.
+> Older broad workflow/validation requirements are superseded by that policy.
+
 Ghidra/JDK installations and the Wine entrypoint are shared by Factory MCP and
 repository-local scripts. Prefixes, projects and caches remain game-owned.
 See [shared runtime setup and use](docs/shared-runtimes.md).
@@ -239,7 +244,8 @@ The single-user deployment
 and first TH105 web test are documented in
 [`GPT-web plugin and Funnel deployment`](docs/gpt-web-plugin.md).
 
-Run the complete local release gate with the MCP-enabled service environment:
+For a shared-service release, explicit broad validation is available below.
+Ordinary work uses affected checks; documentation and knowledge need diff review.
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/validate-release.py

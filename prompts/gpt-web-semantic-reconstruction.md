@@ -1,285 +1,58 @@
-# GPT-web semantic reconstruction campaign prompt
+# Semantic reconstruction
 
-This prompt advances a persistent semantic campaign in a game repository
-registered by the shared Touhou Reconstruction Factory MCP. The campaign may
-span many bounded GPT-web conversations and consists of small, independently
-reviewable batches under `gpt-web-semantic-reconstruction-session-v4`, based on
-`gpt-web-reconstruction-session-v5`. The mandatory companion contract is
-`worktree-recovery-and-analysis-artifacts-v1`; no prompt assumes that ChatGPT
-successfully loaded a bundled skill.
-
-## Ready-to-run TH095 campaign with the plugin installed
-
-Select **@Touhou Reconstruction Factory**, then send:
+Paste this standalone prompt with the shared Factory app selected.
 
 ```text
-Shared runtime requirement: read
-`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
-and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
-compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
-work locally without MCP. Keep locked versions and game-owned Wine prefixes,
-Java settings/cache and analyzer projects; do not copy installations or borrow
-another game's mutable state.
+Contract: gpt-web-semantic-reconstruction-session-v5
+GAME_ID: <registered repository id>
+OBJECTIVE: <current semantic objective>
+Keep observations, hypotheses and unknowns distinct. Select semantic/product checks by the affected behavior.
 
-Continue TH095 semantic reconstruction as an autonomous campaign through the
-shared Factory workflow. Use $factory-semantic-reconstruction if it is actually
-available, but do not depend on the skill body being loaded.
+Communicate in Chinese; write source, notes and commits in English.
+Prioritize exact reconstruction and reusable knowledge with minimal overhead.
+These current user requirements override older broad CI, repeated preflight,
+document-hash, source-pin and reporting instructions.
 
-Before editing, try to read these Factory-controlled paths through
-factory_repository_run_shell:
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v5.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v4.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/semantic-reconstruction.md
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
-If those read-only paths are not mounted, report that once and continue under
-this complete inline prompt. Never invent missing rules or stop merely because
-automatic skill loading failed.
+Read the selected repository's AGENTS.md and short current handoff. Search only
+knowledge relevant to the task. The common guide is
+/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/agent-autonomy.md
+and shared tools are documented in that Factory's docs/shared-runtimes.md.
+If a guidance path is unavailable, continue using these complete inline rules.
 
-GAME_ID: th095
-SEMANTIC_OBJECTIVE: Continue from the live committed semantic history. Repeatedly
-select the highest-evidence bounded owner, field, representation, or protocol
-family; recover maintainable meaning; validate it under the target-exact and
-reconstructed Windows i386 feedback lanes; record the evidence; and create a
-local checkpoint before proceeding to the next family.
-DEFAULT_PHASE_STATE: active-incomplete. GPT-web has no authority to declare the
-semantic phase ready, complete, closed, or ready for porting.
-SCOPE_HINT: Read the latest committed semantic record and its named next batch,
-then verify that choice against live TH095 evidence. Prefer bounded families
-with multiple TH095-local consumers and focused exact units. Do not redo an
-already committed batch unless current evidence contradicts it.
-RESUME_AUDIT: Treat every prior semantic-readiness, completion, closure, or exit-
-audit statement as an untrusted hypothesis. Before following its proposed next
-state, actively try to falsify it with current TH095-local evidence. Search for
-a missed consumer/producer, owner/lifetime relation, protocol domain, persistent
-or ABI boundary, runtime gap, or portability hazard outside the prior audit's
-enumerated scope. One counterexample reopens the claim and becomes work. If one
-bounded route finds none, rotate to another useful coverage surface rather than
-treating that result as completion or as the sole reason to hand off. Absence of
-a found counterexample never changes active-incomplete.
-RESUME_COMMIT: current
-EVIDENCE_SEED: TH08 is workflow and adjacent-engine corroboration only. Require
-TH095-local evidence for every accepted interpretation.
+Use broad repository Bash, existing local tools and bounded IDA/Ghidra queries.
+Preserve dirty, untracked and useful ignored work. Analyze, edit natural source,
+compile and compare the complete affected scope including relocations, record
+useful learning and checkpoint coherent work. Recheck known affected consumers
+when changing shared inputs. No fixed packet count or extra workflow machinery.
 
-Communicate with me in Chinese. Write source, documentation, identifiers, and
-Git commit messages in English. Work directly in the registered live TH095
-repository with autonomous Bash, repository-selected Ghidra, Wine/VC7.1, and
-repo-native checks. Begin using tools after a compact orientation; do not spend
-the session narrating a plan that can be tested.
+Ordinary Markdown, knowledge and handoff edits need diff review only. Do not
+run a compiler, analyzer, full CI or cold replay for those edits. Do not bind
+exact freshness to prose, Git metadata or manual handoff source-SHA tables.
+Documents genuinely consumed by a build remain executable inputs. Tool changes
+need meaningful affected tests; broad suites require an explicit request or a
+stated impact that cannot be narrowed. A passing quick CI check is not exactness.
 
-Treat each batch as a small transaction: investigate one coherent family,
-change natural source, run the narrowest fast feedback first, close its actual
-regression surface, document observed/corroborated/inferred/unknown meaning,
-inspect the complete diff, and create an English `gpt-web:` commit. Refresh live
-state; continue with another batch without asking me for permission when it fits
-the current conversation, otherwise write a precise continuation handoff.
+Do not add tests for prompt wording, prose hashes, progress totals or ordinary
+source spelling. Do not add frameworks, schemas, registries, state machines,
+generalized validators or reporting processes for a local task. Use the
+smallest existing command or focused fix that addresses an observed need.
 
-This campaign is deliberately open-ended, but this browser conversation is not.
-Do not create a semantic-readiness or completion checkpoint. A local evidence
-plateau is a routing event: rotate among structural raw/unknown storage,
-canonical owners and lifetimes, weak APIs and identifiers, primary and sibling
-interpreter protocols, flags/state/resource/sound/replay domains, persistent
-formats and ABI boundaries, portability hazards, and historical-platform
-runtime gaps. Make serious useful progress, then use your own judgment to finish
-or revert the active transaction, run its checks, checkpoint it, and hand off
-before browser responsiveness or context reliability degrades. Do not try to
-finish the whole semantic phase in one conversation and do not wait for a
-disconnect. The handoff pauses execution and does not close the phase.
+Write documentation and knowledge in fluent, natural English. State the finding,
+evidence and next action directly. Remove filler, circular restatements,
+repeated conclusions and unnecessary jargon. Avoid defensive-claim boilerplate;
+state a genuine uncertainty or scope limit once when it affects a decision.
 
-Capture broad baselines once per campaign, not again before every edit. Use
-focused syntax, compile, exact-unit, format, and runtime feedback inside each
-batch. Run cold aggregate exact and whole-product gates immediately for shared
-header/layout/PCH/owner or other cross-object risk, and at campaign milestones
-and final handoff. Do not replay the entire accepted Factory receipt set after
-every private checkpoint when the next source commit would immediately stale
-it; issue current-source receipts at meaningful committed milestones and report
-deferred or stale receipt planes accurately.
+Plain Markdown knowledge is sufficient: finding, applicable scope, evidence,
+useful failed attempts and open questions. No mandatory JSON conversion or
+promotion. Read other registered games through read-only references when useful;
+verify scope before transferring a lesson. Keep counts in canonical ledgers,
+and handoff focused on current work, blockers, evidence and next action.
 
-Use factory_report_semantic_debt only as a heuristic router and supplement it
-with repository search, history, ledgers, and target evidence. Any non-clean
-worktree is a mandatory recovery gate even when no disconnect is known. Before a
-new batch, review complete staged/unstaged diffs, relevant untracked files,
-handoff/history, tests, and manifests; classify every path as recoverable,
-unrelated, generated-ephemeral, or unknown. Finish/checkpoint recoverable work
-first, preserve/exclude unrelated work, and never delete/reset/overwrite/stage
-unknown work. Do not push.
-
-Treat `.analysis/` as non-authoritative bounded workspace. Inventory its size at
-campaign start. Use command-local temporary storage for one-shot output or one
-manifested `.analysis/gpt-web/<campaign-id>/` root for multi-command work. Reuse
-bounded queries/provider state instead of accumulating whole-program exports,
-Wine-prefix copies, analysis-database copies, or probe worktrees. At each
-checkpoint retain compact tracked conclusions and remove only proven current-
-session ephemeral paths with no active producer or reference. Never bulk-delete
-`.analysis/` or touch legacy-unknown/shared provider state. Report starting and
-ending bytes plus every retained large artifact.
-
-Keep semantic interpretation, Git checkpoints, exact receipts, production
-closure, runtime storage, and runtime scenarios as separate states. Unknown is
-an accurate result. Do not begin portable Windows, Linux, or Web work inside
-this campaign; a later independent Codex or human review decides whether the
-semantic prerequisite is satisfied.
-```
-
-This is a campaign prompt delivered across multiple conversations, not a demand
-to complete the campaign in one chat. A successful checkpoint closes an inner
-transaction. Continue with another related batch when the browser and context
-remain healthy, or write an `active-incomplete` handoff when another batch would
-make the conversation fragile. The current repository and committed evidence
-decide what comes next; the prompt does not freeze a stale address, candidate
-count, time limit, or number of batches.
-
-## Standalone campaign without automatic skill selection
-
-```text
-Shared runtime requirement: read
-`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
-and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
-compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
-work locally without MCP. Keep locked versions and game-owned Wine prefixes,
-Java settings/cache and analyzer projects; do not copy installations or borrow
-another game's mutable state.
-
-Advance an autonomous evidence-first semantic reconstruction campaign under
-gpt-web-semantic-reconstruction-session-v4, based on the general
-gpt-web-reconstruction-session-v5 live-repository contract, with mandatory
-worktree-recovery-and-analysis-artifacts-v1. Do not assume a bundled skill was
-loaded. Before editing, try to read these Factory-controlled paths through
-factory_repository_run_shell:
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v5.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-semantic-reconstruction-session-v4.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/semantic-reconstruction.md
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
-If unavailable, report that once and continue under this complete inline prompt.
-
-Inputs
-- GAME_ID: th095
-- SEMANTIC_OBJECTIVE: Continue semantic reconstruction from the live committed
-  history through successive evidence-backed owner/field/representation/protocol
-  batches while preserving applicable target-exact and Windows i386 feedback.
-- DEFAULT_PHASE_STATE: active-incomplete. GPT-web cannot close the semantic
-  phase or authorize porting.
-- SCOPE_HINT: Inspect the latest committed batch and named next batch, then
-  revalidate the choice from current source, history, ledgers, and target-local
-  evidence. Prefer bounded high-evidence families; do not redo completed work
-  without a contradiction.
-- RESUME_AUDIT: Treat every prior readiness/completion/exit-audit statement as
-  an untrusted hypothesis. First try to falsify it with current TH095-local
-  evidence and coverage outside its enumerated scope. One counterexample
-  invalidates inherited closure and becomes work. If one bounded route finds no
-  counterexample, rotate to another useful coverage route. The phase remains
-  active-incomplete, and the negative result cannot by itself justify an
-  immediate handoff.
-- RESUME_COMMIT: current
-- EVIDENCE_SEED: TH08 is workflow/corroboration only; TH095 is authoritative.
-
-Communicate with the user in Chinese. Write source, documentation, identifiers,
-and Git commit messages in English.
-
-Campaign start
-1. Call factory_describe, factory_list_repositories, and
-   factory_get_repository_status for th095. Record the actual branch, HEAD,
-   upstream relation, and dirty/staged/untracked state. Preserve existing work.
-2. If the tree is non-clean, complete a recovery review before selecting or
-   editing a new batch. Inspect porcelain-v2 status, complete staged and
-   unstaged diffs, every relevant untracked path, the latest handoff/history,
-   tests, and artifact manifests. Classify paths as recoverable current work,
-   unrelated pre-existing work, generated ephemeral output, or unknown. Adopt
-   and finish/checkpoint recoverable work first; preserve/exclude unrelated
-   work; never delete, reset, overwrite, or stage unknown work. Re-run this gate
-   after interrupted commands or unexpected status changes.
-3. Through factory_repository_run_shell, read AGENTS.md, the current handoff,
-   architecture/workflow documents, semantic record, relevant source and
-   ledgers, build/oracle scripts, and recent semantic commits. Run the live
-   target, tracking, and repository-selected Ghidra preflight required by the repo.
-4. Inventory `.analysis/` total/top-level size without trusting old contents.
-   Use temporary one-shot output or one manifested
-   `.analysis/gpt-web/<campaign-id>/` scratch root. Treat 256 MiB as a soft
-   campaign review budget and 64 MiB as the large-artifact threshold. Reuse
-   bounded provider queries and never copy Wine prefixes or analysis databases
-   per probe. Only delete proven current-session ephemeral paths with no active
-   producer/reference; leave shared and legacy-unknown content untouched.
-5. Capture the live function/extent exactness, production closure, runtime
-   storage, and runtime scenario planes separately. Historical totals orient
-   work only. Do this broad orientation once and refresh only what a later
-   source/tool/target change can invalidate.
-6. Adversarially review the latest readiness, completion, or exit-audit claim
-   before trusting its handoff. Try to find a current target-local counterexample
-   in a subsystem or debt class the prior audit did not enumerate. Prior prose
-   is orientation, not phase state.
-
-Repeated bounded batch
-1. Select the latest named next batch when current evidence still supports it;
-   otherwise choose one coherent high-evidence family and state exclusions.
-   `factory_report_semantic_debt` is an optional lexical router, never a progress
-   metric. Supplement it with broad Bash and target-local analysis. Keep each
-   search bounded: prefer git grep/history for tracked content and exclude .git,
-   .analysis, build, and .tools from live rg searches unless a named ignored
-   path is the explicit subject. Never follow repository-root symlinks; Wine's
-   dosdevices/z: may otherwise traverse the host filesystem.
-2. For every proposed meaning, inspect relevant target-local offsets, widths,
-   signedness, reads/writes, callers/callees, strings, relocations, state
-   transitions, lifetime, and storage owner. Exploratory IDA/Ghidra output
-   is provisional and has zero exactness credit.
-3. Classify meaning as observed, corroborated, inferred, or unknown. Adjacent
-   games, decompiler labels, attractive names, and layout assertions cannot
-   independently prove meaning. Use neutral names and retain opaque unknowns.
-4. Make the narrowest natural C/C++ change. Preserve the historical ABI,
-   layout, width, signedness, packing, bitfields, construction order, and
-   translation-unit visibility. Keep genuine wire formats, instruction streams,
-   tagged storage, and platform ABI buffers byte-oriented.
-5. Use the feedback ladder. During editing run syntax/layout checks, the
-   smallest affected compile/object comparisons, and focused analysis. Before
-   the batch checkpoint replay every affected exact unit and run the affected
-   historical-platform compile/link, format, or runtime checks. Shared headers,
-   layout, PCH, inline bodies, ownership, persistence, callbacks, rendering,
-   input, or audio trigger their broader cold gates immediately.
-6. Record concise durable evidence and retained unknowns, inspect status and the
-   complete working/staged diff, measure `.analysis/` growth, remove only proven
-   current-session ephemeral scratch, stage only intended files, and create one
-   local English `gpt-web:` commit. Do not push.
-7. Refresh the live HEAD and worktree after a checkpoint. Begin another coherent
-   batch without asking for permission when the browser and remaining context
-   are still reliable; otherwise write a precise `active-incomplete` handoff.
-8. When one route yields no actionable change, rotate across structural layout,
-   canonical ownership/lifetime, weak APIs/identifiers, interpreter and sibling
-   protocols, flags/state/resource/sound/replay domains, persistent formats/ABI,
-   portability hazards, historical-platform runtime gaps, and adjacent-game
-   readability challenges. Do not turn a plateau or self-audit into a readiness
-   commit or use that negative result alone to justify an immediate handoff.
-
-Milestone and receipt cadence
-- Repo-native checks provide the fast inner feedback loop while source is dirty.
-- Do not replay every accepted receipt after every private checkpoint if another
-  planned source commit would immediately stale it.
-- At shared/cross-object risk, a meaningful campaign milestone, or final
-  handoff, run the repository-required cold aggregate exact gate and cold
-  historical-platform whole-product build. Submit Factory replay only against
-  the current committed source, then distinguish job completion, receipt pass,
-  registry acceptance, and accepted-fact query.
-- A deferred, unavailable, or stale plane must be reported as such. Never replace
-  it with another green check.
-
-The semantic campaign is open-ended; this browser conversation is deliberately
-bounded. Make useful progress without trying to finish the whole phase here.
-Use your own judgment about packet difficulty, validation latency, browser
-responsiveness, and remaining reliable context. Before another batch would make
-the conversation fragile, finish or revert the active experiment, preserve
-required checks and evidence in the repository, create a checkpoint when
-coherent, name the next coverage route, and hand off without leaving context-
-only work. The same applies to a concrete tool boundary, user redirection, or a
-transition out of semantic reconstruction. The handoff status remains
-active-incomplete.
-
-Continuation handoff: report the execution boundary; campaign objective; start/end
-commit and dirty state; every completed checkpoint; selected and excluded
-scope; reported verification scope; evidence classes and retained unknowns; checks by
-feedback level; broad gates run or explicitly deferred; all verification planes;
-accepted facts separately from semantic interpretation; and the exact next
-batch. Include recovery classifications/actions, starting/ending `.analysis/`
-bytes, manifest state, and retained/removed artifact disposition. Explicitly
-state that GPT-web did not close the semantic phase. Never infer completion from
-router counts, no new commit, a self-audit, an evidence plateau, or any number of
-commits.
+Preserve target/toolchain identity, readable natural source, full owned extents,
+strict byte comparison and relocation checks. Analysis, knowledge, builds and
+Git alone confer no exact credit. Preserve historical receipts without hash
+refreshes. Reuse Factory tools while keeping prefixes, projects and caches
+separate. Discover operations before calling an analyzer. Retain recoverable
+output for interrupted commands. Make coherent local commits; do not push from
+Web. Do not claim wider reconstruction completion from bounded success.
 ```

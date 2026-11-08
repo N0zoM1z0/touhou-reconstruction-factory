@@ -1,5 +1,10 @@
 # Live Repository Work Provider
 
+> Highest-priority current workflow: [lightweight agent work](agent-autonomy.md).
+> Prefer affected exact checks and useful Markdown knowledge. Ordinary notes
+> require no full CI, native replay, schema conversion or document-hash refresh.
+> Older broad workflow/validation requirements are superseded by that policy.
+
 Use the [shared runtime procedure](shared-runtimes.md) for Ghidra/JDK/Wine.
 Game scripts and native Factory providers use the same Factory-owned launcher;
 keep Wine prefixes, Java settings/cache and analyzer projects game-bound.

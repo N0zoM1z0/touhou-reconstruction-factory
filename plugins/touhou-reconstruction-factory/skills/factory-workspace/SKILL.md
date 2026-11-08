@@ -3,68 +3,28 @@ name: factory-workspace
 description: Run an intentionally isolated source experiment in a disposable Factory workspace. Use when the user explicitly wants a committed-HEAD scratch copy, a throwaway comparison, or a candidate diff that cannot affect the live game repository. Do not use as the default reconstruction workflow, for repo-local Wine/toolchains, or for Git checkpoints.
 ---
 
-# Factory Workspace
+Follow the **highest-priority lightweight workflow** in Factory
+`docs/agent-autonomy.md` and the selected game's AGENTS.md. Those current user
+requirements supersede older broad-CI, prose-hash and reporting requirements.
 
-Use the workspace provider only as an explicitly isolated scratch space, not as
-the normal reconstruction path, oracle, or deployment channel. It contains only tracked files from the selected
-repository's committed `HEAD`. Local dirty changes, untracked files, ignored
-targets, private toolchains, analysis databases, credentials, and the operator
-home are excluded.
+Use this skill's described capability, discover the live tool schema, and use
+existing scripts/Bash for the smallest useful affected scope. Documentation,
+knowledge and handoff edits need diff review only. Exact work needs complete
+strict extent/relocation comparison; tool changes need relevant real behavior
+checks. Full suites require an explicit request or impact that cannot be narrowed.
 
-For normal reconstruction, including existing dirty work, ignored `.tools`,
-Wine, native toolchains, and local Git commits, use the live-repository workflow
-in `factory-reconstruction` instead.
+Do not add frameworks, schemas, state machines, generalized validators or tests
+for prose, prompt wording, progress totals or ordinary source spelling. Use
+searchable Markdown knowledge with scope, evidence, failed attempts and open
+questions; no JSON conversion or promotion is mandatory. Keep handoff short.
 
-## Work
+Write documentation and knowledge in fluent, natural English. State the finding,
+evidence and next action directly. Remove filler, circular restatements,
+repeated conclusions and unnecessary jargon. Avoid defensive-claim boilerplate;
+state a genuine uncertainty or scope limit once when it affects a decision.
 
-1. Call `factory_describe` and confirm that `workspace.enabled` is true. Call
-   `factory_list_repositories` and select only a returned repository ID.
-2. Call `factory_create_workspace` with a stable idempotency key. Retain and
-   show the returned capability ID. Report `source_git_commit` and whether
-   `source_worktree_dirty_observed` is true; a dirty observation means the
-   workspace deliberately omits current local work.
-3. Start by reading repository instructions and architecture files. Use
-   `factory_workspace_list_files`, `factory_workspace_read_file`, and
-   `factory_workspace_search` for bounded discovery.
-4. Use `factory_workspace_apply_patch` for a precise text-only unified Git
-   diff. Use `factory_workspace_run_shell` when composable Bash, tests, code
-   generation, or several Unix tools are clearer. The shell may freely alter
-   the disposable tree, but has no network or host authority.
-5. Retain each returned command ID. If output was truncated, page both streams
-   with `factory_get_workspace_command_output`. Distinguish a command's exit
-   code from `workspace_committed`; timeout or an invalid final tree discards
-   the complete command filesystem transaction.
-6. Call `factory_get_workspace_status` after material changes. Finish by paging
-   `factory_get_workspace_diff` until `next_offset` is null and preserve its
-   whole-diff SHA-256.
-7. Report the workspace ID, baseline commit, tests actually run, command exit
-   states, diff SHA-256, and every limitation. The diff is a candidate for
-   local review and application; it has not modified the canonical repository.
-
-When the selected game's reconstruction workflow produces durable local
-knowledge, the workspace may include the canonical
-`.reconstruction/game-knowledge.json` input described by the
-`factory-reconstruction` skill. It must remain `authority="game-local"` and
-`factory_publication="none"`. A workspace must never edit Factory-owned
-cross-game catalogs, fixtures, schemas, or publication state.
-
-Use POSIX-relative paths only. Do not attempt symlinks, device files, Git
-control-data changes, host-path discovery, or network access. Do not call
-`factory_discard_workspace` unless the user asks to discard it or clearly says
-the scratch work is no longer needed.
-
-## Evidence boundary
-
-A workspace test can support an engineering recommendation, but it cannot
-produce an accepted `OracleResult`. The exact compiler, original target,
-ignored toolchain inputs, and native analysis database are intentionally absent.
-After a human or local Codex session reviews and applies the exported diff to
-the canonical game repository, discover a supported claim and use the separate
-factory replay workflow. If no canonical replay proves the requested extent,
-report it as `unknown`.
-
-Shared tools: follow the Factory `docs/shared-runtimes.md` and the selected
-repository's `docs/SHARED_TOOLS.md`. Use its `scripts/shared_runtime.py` or
-maintained compiler/Ghidra scripts; do not copy installations or reuse another
-game's Wine prefix, Java cache or analyzer project. Local scripts work without
-Factory MCP.
+Preserve dirty/untracked work and useful evidence. Reuse shared tools with
+separate game prefixes/projects. Cross-game source/notes are read-only references;
+knowledge confers no exactness authority. Local Git checkpoints carry continuation.
+Do not push from Web. Workspaces and broad replay/product checks are optional
+capabilities selected for an actual task, not default ceremony.

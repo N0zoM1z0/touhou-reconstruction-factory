@@ -342,6 +342,19 @@ target_identity_ids = ["target:test-main"]
             len(list((self.base / "evidence" / "receipts").glob("*.json"))), 1
         )
 
+    def test_doc_commit_does_not_break_keyed_recovery_or_queued_execution(self) -> None:
+        patches = self.factory_patches()
+        with patches[0], patches[1], patches[2], patches[3]:
+            service = FactoryService.from_path(self.config)
+            submitted = service.submit_replay("test", self.snapshot.claims[0].id, "notes-recovery")
+            (self.repository / "README.md").write_text("Useful notes\n")
+            subprocess.run(["git", "add", "README.md"], cwd=self.repository, check=True)
+            subprocess.run(["git", "commit", "-qm", "Update notes"], cwd=self.repository, check=True)
+            recovered = service.submit_replay("test", self.snapshot.claims[0].id, "notes-recovery")
+            self.assertEqual(recovered["job"]["job_id"], submitted["job"]["job_id"])
+            finished = ReplayWorker(self.config, worker_id="worker-notes").run_once()
+            self.assertEqual(finished.state, JobState.COMPLETED)
+
     def test_source_change_after_submission_fails_without_receipt(self) -> None:
         patches = self.factory_patches()
         with patches[0], patches[1], patches[2], patches[3]:

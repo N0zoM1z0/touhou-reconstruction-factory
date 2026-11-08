@@ -1,239 +1,61 @@
-# GPT-web TH10 exact-reconstruction prompt
+# TH10 exact reconstruction
 
-Use this after `th10` and `th10-ghidra` are visible through the public Factory MCP
-and a public native-provider smoke test passes. The prompt does not assume that
-ChatGPT injected any plugin skill.
+Paste this standalone prompt with the shared Factory app selected.
 
 ```text
-Shared runtime requirement: read
-`/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/shared-runtimes.md`
-and the selected game's `docs/SHARED_TOOLS.md`. Use the game's maintained
-compiler/Ghidra scripts or `scripts/shared_runtime.py`. The same Factory tools
-work locally without MCP. Keep locked versions and game-owned Wine prefixes,
-Java settings/cache and analyzer projects; do not copy installations or borrow
-another game's mutable state.
+Contract: gpt-web-reconstruction-session-v6
+GAME_ID: th10
+OBJECTIVE: Continue natural-source exact reconstruction.
+Provider: th10-ghidra; target: target:th10-main.
+Repository: /home/pentester/coding/codex_ida/th10-reconstruction/th10
+Target: resources/th10.exe
+Platform: Windows i386; retain the VC7.1 SP1 profile and native Ghidra target binding.
 
-Work autonomously on the TH10 exact source-reconstruction phase through the
-shared Touhou Reconstruction Factory. Do not assume any skill body was loaded.
+Communicate in Chinese; write source, notes and commits in English.
+Prioritize exact reconstruction and reusable knowledge with minimal overhead.
+These current user requirements override older broad CI, repeated preflight,
+document-hash, source-pin and reporting instructions.
 
-Communicate with me in Chinese. Write code, identifiers, documentation, ledger
-content, and Git commit messages in English.
+Read the selected repository's AGENTS.md and short current handoff. Search only
+knowledge relevant to the task. The common guide is
+/home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/agent-autonomy.md
+and shared tools are documented in that Factory's docs/shared-runtimes.md.
+If a guidance path is unavailable, continue using these complete inline rules.
 
-Select exactly:
-- repository: th10
-- analysis provider: th10-ghidra
-- target: target:th10-main
-- private game file: /home/pentester/coding/codex_ida/th10-reconstruction/th10/resources/th10.exe
-- phase: exact reconstruction, with early faithful Windows i386 build feedback
+Use broad repository Bash, existing local tools and bounded IDA/Ghidra queries.
+Preserve dirty, untracked and useful ignored work. Analyze, edit natural source,
+compile and compare the complete affected scope including relocations, record
+useful learning and checkpoint coherent work. Recheck known affected consumers
+when changing shared inputs. No fixed packet count or extra workflow machinery.
 
-The private game file above is an operator-supplied, ignored WSL-local input.
-Never commit, replace, modify, or relocate it. Do not search `/mnt`, request a
-Windows game-directory mount, or set `TH10_TARGET_PATH` during normal Factory
-work; the repository tools already default to this path.
+Ordinary Markdown, knowledge and handoff edits need diff review only. Do not
+run a compiler, analyzer, full CI or cold replay for those edits. Do not bind
+exact freshness to prose, Git metadata or manual handoff source-SHA tables.
+Documents genuinely consumed by a build remain executable inputs. Tool changes
+need meaningful affected tests; broad suites require an explicit request or a
+stated impact that cannot be narrowed. A passing quick CI check is not exactness.
 
-Read these instructions before editing, using factory_repository_run_shell:
-- /home/pentester/coding/codex_ida/th10-reconstruction/th10/AGENTS.md
-- /home/pentester/coding/codex_ida/th10-reconstruction/th10/docs/RE_HANDOFF.md
-- /home/pentester/coding/codex_ida/th10-reconstruction/th10/docs/RE_WORKFLOW.md
-- /home/pentester/coding/codex_ida/th10-reconstruction/th10/docs/ORACLES.md
-- /home/pentester/coding/codex_ida/th10-reconstruction/th10/docs/TOOLS.md
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/gpt-web-reconstruction-session-v5.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/contracts/worktree-recovery-and-analysis-artifacts-v1.json
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/ontology.md
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/verification-planes.md
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/agent-autonomy.md
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/new-game-bootstrap.md
-- /home/pentester/coding/codex_ida/touhou-reconstruction-factory/docs/worktree-recovery-and-analysis-artifacts.md
+Do not add tests for prompt wording, prose hashes, progress totals or ordinary
+source spelling. Do not add frameworks, schemas, registries, state machines,
+generalized validators or reporting processes for a local task. Use the
+smallest existing command or focused fix that addresses an observed need.
 
-The TH10 repository runner also mounts these adjacent-game repositories
-read-only as hypothesis sources:
-- /home/pentester/coding/codex_ida/th08-reconstruction/th08
-- /home/pentester/coding/codex_ida/th09-reconstruction/th09
-- /home/pentester/coding/codex_ida/th095-reconstruction/th095
+Write documentation and knowledge in fluent, natural English. State the finding,
+evidence and next action directly. Remove filler, circular restatements,
+repeated conclusions and unnecessary jargon. Avoid defensive-claim boilerplate;
+state a genuine uncertainty or scope limit once when it affects a decision.
 
-If a Factory path is not mounted, report that once and continue under the
-complete rules below. Missing skill injection or one missing guidance path is
-not itself a reason to stop.
+Plain Markdown knowledge is sufficient: finding, applicable scope, evidence,
+useful failed attempts and open questions. No mandatory JSON conversion or
+promotion. Read other registered games through read-only references when useful;
+verify scope before transferring a lesson. Keep counts in canonical ledgers,
+and handoff focused on current work, blockers, evidence and next action.
 
-Ground rules:
-1. Accuracy dominates completeness. Unknown is valid. Never guess authorship,
-   function extent, ABI, type, object owner, toolchain flag, equality, or
-   completion.
-2. Exercise broad engineering autonomy. Compose repository Bash, Python, Git,
-   the hash-pinned VC7.1 SP1 toolchain through its headless-Wine wrapper, and
-   discovered atomic Ghidra operations. The Factory improves feedback and
-   identity binding; it is not a substitute for judgment.
-3. Attempt, commit, build, analysis, exactness, whole-product closure, runtime
-   validation, and Truth Kernel acceptance are different states. Report them
-   separately.
-4. Use natural maintainable C/C++. Do not embed target bytes, fake returns, add
-   inert padding, patch the target, or use oracle-specific tricks. A genuinely
-   irreducible assembly exception requires explicit target evidence and the
-   smallest possible scope.
-5. Work in the real registered repository and create coherent local
-   `gpt-web:` commits. Never push.
-6. Do not optimize for function count or easy exact wins. Function size,
-   relocation count, control-flow complexity, or an earlier mismatch is not a
-   reason to leave structurally important target code until the end.
-
-Campaign pressure target: drive both reviewed authored-function exactness and
-reviewed authored-byte exactness toward at least 99.5%, while continuously
-challenging and expanding the authored boundary denominator. This is a moving
-work objective, not an automatic stop condition and not a whole-executable or
-whole-game exactness claim. Even if the current ledger crosses it, GPT-web does
-not declare the phase complete; the operator will decide after later audit.
-
-Mandatory recovery gate:
-1. Call factory_describe, factory_list_repositories, and
-   factory_get_repository_status(th10).
-2. Regardless of whether a disconnect is known, inspect branch, HEAD, recent
-   commits, porcelain-v2 status, staged and unstaged diffs, all relevant
-   untracked files, ignored analysis/build state, and the handoff.
-3. Classify each dirty path as recoverable interrupted work, unrelated
-   pre-existing work, reproducible generated output, or unknown. Finish and
-   checkpoint recoverable work first. Preserve and exclude unrelated or unknown
-   work. Never reset, overwrite, delete, or stage it merely to obtain a clean
-   tree.
-4. Select `th10-ghidra` and discover operation schemas.
-   Start with a useful bounded query. Do not run complete environment, ledger,
-   compiler or replay preflights merely to begin exploration. Run comparisons
-   relevant to the source actually changed; inspect status and durable output
-   after failed or timed-out commands.
-
-Native Ghidra use:
-1. Discover `th10-ghidra` operations instead of inventing tool names or schemas.
-   Confirm target `target:th10-main`. Exploratory Ghidra results report
-   `attestation.status=not-checked` and grant no exactness credit.
-   Read each returned input schema before calling it: `{}` is valid only for
-   operations whose schema has no required fields. Never probe address-, range-,
-   or name-dependent operations with empty arguments.
-   The native core is: `check {}`;
-   `function`/`decompile`/`callers`/`callees {"addresses":["0x..."]}`;
-   `disassemble {"addresses":["0x..."],"instruction_count":N}`;
-   `xrefs_to`/`xrefs_from {"addresses":["0x..."],"limit":N}`;
-   `list_functions {"query":"optional","offset":N,"limit":N}`; and
-   `search_strings {"query":"required","limit":N}`. Discovery schemas remain
-   authoritative; do not extrapolate one operation's fields to another.
-2. Decompilation, disassembly, xrefs, bytes, names, types, and boundaries are
-   provisional hypotheses with `exactness_credit=none`.
-3. The native Ghidra provider is read-only. Mirror durable conclusions into
-   source, ledgers, scripts, or concise game-local knowledge; do not expect
-   Ghidra renames/comments to persist through this surface. Never request
-   target-byte patching.
-4. If a query fails, inspect its error and correct the selected repository,
-   project or arguments. Continue useful source work; do not invent results or
-   substitute another game's output as target-specific evidence.
-
-Autonomous exact loop:
-1. Maintain a mixed frontier rather than a smallest-function strategy. Inspect
-   unresolved candidates by target extent, call-graph/owner importance,
-   relocation/data dependencies, control-flow complexity, subsystem coverage,
-   and prior mismatch history. Select one evidence-connected bounded packet: a
-   caller/callee cohort, one subsystem seam, or one candidate plus its necessary
-   data/ABI context. State why it is representative, its addresses and current
-   ledger state, known evidence, unknowns, and the observable outcome sought for
-   that packet.
-   Do not spend the conversation accumulating only easy function-count wins.
-   Regularly attack a hard frontier: a materially larger function/cohort,
-   central owner or dispatcher, complex ABI/control flow, relocation/data-owner
-   boundary, or a previously blocked near-match.
-   A hard-frontier result may honestly be exact, source-present/non-exact, a
-   corrected boundary/origin, or a documented unknown; never force promotion to
-   satisfy the scheduling rule.
-2. Reconcile entry/exit, tails, padding, tables, xrefs, relocations, and physical
-   ownership before treating the Ghidra candidate as an authored function extent.
-3. Classify origin independently from implementation and exactness. Keep
-   uncertain candidates `unknown/review`.
-4. Recover ABI, layout, constants, globals, side effects, error paths, and
-   compiler-sensitive source shape. Add source presence without claiming a
-   match.
-5. Start from only the compiler facts already demonstrated by the tracked lock
-   and real preflight. The pinned VC7.1 SP1 candidate reports compiler/linker
-   build 6030. Target Rich product IDs record 131 normal C, 15 normal C++, and
-   52 LTCG C++ inputs at build 6030. Per-function profile and physical owner,
-   translation-unit partition, libraries, production resources, and link order
-   remain unknown and must be established from TH10 evidence.
-6. Run the cheapest focused compile/diff feedback first. Use
-   `scripts/compile-probe.sh` for hypotheses. A canonical exact unit must
-   explicitly declare `artifact_kind = "coff"`; use
-   `scripts/build-match-unit.py` and `scripts/compare-coff-function.py` to
-   compare its complete owned extent and relocations. Those scripts deliberately
-   reject `/GL`. Do not strip LTCG merely to fit the standalone-object Oracle:
-   preserve the LTCG hypothesis and exactness as unknown until a target-bound
-   linked-image extent workflow exists. Distinguish source mismatch,
-   compiler-profile mismatch, boundary error, owner error, optimizer context,
-   and library code. Exercise the honest whole-build diagnostic at useful
-   milestones without confusing it with product closure.
-7. Add canonical match/exact ledger rows only after a repeatable zero-difference
-   target-bound check. Never promote a Ghidra observation or plausible C source.
-8. Review status and complete diffs, run focused validation, update the handoff
-   and durable game-local knowledge when warranted, then create one coherent
-   English `gpt-web:` checkpoint. Continue with another connected bounded packet
-   while the browser and context remain reliable; do not stop after orientation
-   or one trivial edit.
-
-Adjacent-game hypothesis discipline:
-- Search focused TH08, TH09, or TH095 source, history, scripts, and
-  game-local notes
-  when a TH10 target observation suggests a related engine subsystem. These
-  repositories may accelerate naming, source-shape, ownership, ABI, and compiler
-  hypotheses; they do not prove any TH10 fact.
-- Treat every adjacent game's names, owners, layouts, abstractions, phase state,
-  and uncommitted work as provisional hypothesis material for TH10.
-- Prefer committed adjacent source. Record its repository, observed HEAD, and
-  dirty status when it materially shapes a hypothesis; treat any consulted
-  uncommitted content as volatile. Validate the proposal through TH10 target bytes,
-  Ghidra/xrefs, ABI evidence, compiler output, and the relevant TH10 Oracle. Never
-  transfer addresses, extents, data ownership, exactness, or completion claims.
-- If adjacent source conflicts with TH10 evidence, TH10 wins. If TH10 cannot
-  decide, retain unknown rather than selecting the more familiar implementation.
-
-Whole-build discipline:
-- Keep `config/build.toml` honestly open while inputs are unknown, but exercise
-  the build skeleton early and update it as evidence appears.
-- Function exactness does not prove source/data ownership, compilation, link
-  closure, resources, initialized globals, imports, relocations, launch, or
-  runtime behavior.
-- Do not enter semantic rewriting or portability yet. The required gates are
-  exact reconstruction, faithful Windows i386 build/runtime closure, semantic
-  reconstruction under original-plus-reconstructed dual Oracles, then ports.
-
-Artifact discipline:
-- Treat `.analysis/` as ignored scratch, not a knowledge base. Inventory its
-  size at entry and exit without recursively hashing large old trees.
-- Keep searches bounded. Prefer git grep/history for tracked content; exclude
-  .git, .analysis, build, and .tools from live rg searches unless a named
-  ignored path is deliberately in scope. Never follow repository-root symlinks;
-  a Wine dosdevices/z: link can escape into the host filesystem.
-- Reuse one `.analysis/gpt-web/<campaign-id>/` directory with a manifest for
-  multi-command work. Prefer bounded provider queries and temporary directories.
-- Review at 256 MiB per campaign and record disposition for files over 64 MiB.
-  Delete only reproducible current-session scratch with known ownership and no
-  references; never bulk-delete legacy/unknown analysis state, IDBs, toolchains,
-  targets, Wine prefixes, or another process's output.
-
-At each checkpoint and final handoff report:
-- starting/ending HEAD, branch, and dirty-state counts;
-- recovered dirty paths and preserved unknown/unrelated paths;
-- exact bounded scope, addresses, and source/ledger files changed;
-- commands actually run and their results, including unavailable checks;
-- separate states for source presence, exactness, whole-build closure, runtime,
-  and accepted Factory facts;
-- checkpoint hashes/subjects, with confirmation that nothing was pushed;
-- `.analysis/` starting/ending size and retained/removed artifacts;
-- remaining unknowns, blockers, and the next evidence-connected packet.
-- packet-selection balance since the last hard-frontier attempt, including why
-  the next candidate is not merely the easiest remaining function.
-
-Work seriously and keep the exact feedback loop fast, but do not try to finish
-the entire TH10 exact phase in this one browser conversation. Judge the amount
-of work from packet difficulty, compile/Oracle latency, browser responsiveness,
-and remaining reliable context. One difficult packet may be enough; several
-tightly connected small packets may fit. Before another packet would make the
-conversation slow or fragile, finish or revert the current experiment, run its
-applicable checks, commit coherent work, and write an exact continuation handoff.
-Do not wait for a disconnect. The next conversation will audit and continue from
-live repository state. A handoff does not mean the exact phase is complete. Do
-not claim completion, exactness, acceptance, or push without direct evidence for
-that exact state.
+Preserve target/toolchain identity, readable natural source, full owned extents,
+strict byte comparison and relocation checks. Analysis, knowledge, builds and
+Git alone confer no exact credit. Preserve historical receipts without hash
+refreshes. Reuse Factory tools while keeping prefixes, projects and caches
+separate. Discover operations before calling an analyzer. Retain recoverable
+output for interrupted commands. Make coherent local commits; do not push from
+Web. Do not claim wider reconstruction completion from bounded success.
 ```

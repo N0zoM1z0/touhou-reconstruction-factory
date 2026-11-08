@@ -28,6 +28,7 @@ from .ontology import (
 RECEIPT_SCHEMA_VERSION = 1
 RUNNER_ID = "touhou-reconstruction-factory.replay"
 RUNNER_VERSION = "1"
+SOURCE_BINDING_KIND = "nonprose-files-v2"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _RECEIPT_ID = re.compile(r"^receipt:[0-9a-f]{64}$")
 _ID = re.compile(r"^[a-z0-9][a-z0-9._:-]*$")
@@ -96,6 +97,12 @@ class SourceBinding:
     file_count: int
     dirty: bool
     untracked_files: int
+
+    def same_inputs(self, other: SourceBinding) -> bool:
+        """Git position and worktree bookkeeping are provenance, not inputs."""
+        return (self.repository_scope, self.snapshot_sha256, self.file_count) == (
+            other.repository_scope, other.snapshot_sha256, other.file_count,
+        )
 
     def __post_init__(self) -> None:
         if not isinstance(self.git_commit, str) or not re.fullmatch(
@@ -405,7 +412,10 @@ class OracleReceipt:
                 raise ValidationError("a passing receipt cannot contain acceptance errors")
             if not self.target.matches:
                 raise ValidationError("a passing receipt requires observed target identity")
-            if self.source_before != self.source_after:
+            stable_source = (self.source_before.same_inputs(self.source_after)
+                             if self.metadata.get("source_binding_kind") == SOURCE_BINDING_KIND
+                             else self.source_before == self.source_after)
+            if not stable_source:
                 raise ValidationError("a passing receipt requires a stable source snapshot")
             if (
                 self.runner_implementation_sha256

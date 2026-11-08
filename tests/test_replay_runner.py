@@ -279,6 +279,72 @@ print(json.dumps({'result': 'exact', 'address': '0x00401000', 'size': 4}))
         ):
             self.assertEqual(verify_live_freshness(document, self.root), ())
 
+    def test_notes_and_doc_only_commits_do_not_expire_new_receipts(self) -> None:
+        driver = FakeDriver()
+        run = self.run_with(driver)
+        document = self.store.verify_receipt_document(run.receipt_path)
+        (self.root / "README.md").write_text("Useful new knowledge.\n")
+        with (
+            patch("reconstruction_factory.replay_runner.inspect_repository", return_value=self.snapshot),
+            patch("reconstruction_factory.replay_runner.select_driver", return_value=driver),
+        ):
+            self.assertEqual(verify_live_freshness(document, self.root), ())
+            subprocess.run(["git", "add", "README.md"], cwd=self.root, check=True)
+            subprocess.run(["git", "commit", "-qm", "Retain knowledge"], cwd=self.root, check=True)
+            self.assertEqual(verify_live_freshness(document, self.root), ())
+            (self.root / "source.txt").write_text("A changed executable input\n")
+            self.assertIn("source-snapshot-stale", verify_live_freshness(document, self.root))
+
+    def test_explicit_markdown_build_input_remains_bound(self) -> None:
+        driver = FakeDriver()
+        document_path = self.root / "generated-source.md"
+        document_path.write_text("Executable generator input\n")
+        prepare = driver.prepare
+        def with_markdown(*args):
+            plan = prepare(*args)
+            return replace(plan, oracle_inputs=(*plan.oracle_inputs, document_path))
+        with patch.object(driver, "prepare", side_effect=with_markdown):
+            run = self.run_with(driver)
+            document = self.store.verify_receipt_document(run.receipt_path)
+            document_path.write_text("Changed generator input\n")
+            with (
+                patch("reconstruction_factory.replay_runner.inspect_repository", return_value=self.snapshot),
+                patch("reconstruction_factory.replay_runner.select_driver", return_value=driver),
+            ):
+                self.assertIn("source-snapshot-stale", verify_live_freshness(document, self.root))
+
+    def test_stage_override_binds_execution_not_callers_ambient_path(self) -> None:
+        driver = FakeDriver()
+        prepare = driver.prepare
+        def fixed_environment(*args):
+            plan = prepare(*args)
+            return replace(plan, environment_names=(*plan.environment_names, "PYTHONPATH"),
+                           stages=tuple(replace(stage, environment={"PYTHONPATH": str(self.root / "selected")})
+                                        for stage in plan.stages))
+        with patch.object(driver, "prepare", side_effect=fixed_environment):
+            with patch.dict(os.environ, {"PYTHONPATH": "/worker-path"}):
+                run = self.run_with(driver)
+            document = self.store.verify_receipt_document(run.receipt_path)
+            with (
+                patch.dict(os.environ, {"PYTHONPATH": "/api-path"}),
+                patch("reconstruction_factory.replay_runner.inspect_repository", return_value=self.snapshot),
+                patch("reconstruction_factory.replay_runner.select_driver", return_value=driver),
+            ):
+                self.assertEqual(verify_live_freshness(document, self.root), ())
+
+    def test_legacy_receipt_keeps_whole_snapshot_semantics(self) -> None:
+        driver = FakeDriver()
+        run = self.run_with(driver)
+        metadata = {k: v for k, v in run.receipt.metadata.items()
+                    if k not in {"source_binding_kind", "source_required_inputs"}}
+        legacy = replace(run.receipt, metadata=metadata, receipt_id="").seal()
+        (self.root / "README.md").write_text("A later note\n")
+        with (
+            patch("reconstruction_factory.replay_runner.inspect_repository", return_value=self.snapshot),
+            patch("reconstruction_factory.replay_runner.select_driver", return_value=driver),
+        ):
+            self.assertIn("source-snapshot-stale", verify_live_freshness(to_primitive(legacy), self.root))
+
     def test_freshness_snapshot_reuses_expensive_live_observations(self) -> None:
         driver = FakeDriver()
         run = self.run_with(driver)

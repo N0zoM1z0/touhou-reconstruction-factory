@@ -1,0 +1,60 @@
+{
+  "schema_version": 5,
+  "id": "gpt-web-semantic-reconstruction-session-v5",
+  "purpose": "Lightweight autonomous exact reconstruction and reusable knowledge",
+  "priority": "User lightweight workflow overrides older broad CI, prose hash, repeated audit and reporting requirements.",
+  "required_inputs": [
+    "game_id",
+    "objective"
+  ],
+  "workflow": [
+    "inspect relevant live state",
+    "search relevant knowledge",
+    "analyze and edit natural source",
+    "compile and compare affected complete scope",
+    "retain useful findings and failures",
+    "checkpoint coherent work"
+  ],
+  "validation": {
+    "ordinary_notes": "diff review only; no native replay, full CI or receipt refresh",
+    "source": "complete affected comparison and known affected consumers",
+    "tools": "relevant positive/negative cases and bounded real smoke",
+    "broad_suite": "explicit request or demonstrated impact that cannot be narrowed"
+  },
+  "prohibited_routine_overhead": [
+    "prose-hash freshness gates",
+    "prompt wording snapshots",
+    "historical progress-total assertions",
+    "manual handoff source-SHA tables",
+    "mandatory knowledge JSON conversion or promotion",
+    "new frameworks, schemas or check families without a concrete need"
+  ],
+  "knowledge": {
+    "format": "existing Markdown notes are sufficient",
+    "contents": [
+      "finding",
+      "applicable scope",
+      "evidence links",
+      "useful failed attempts",
+      "open questions"
+    ],
+    "cross_game_access": "read-only repository references; scope observations before reuse",
+    "writing": "Fluent, natural, direct prose. No filler, circular repetition, repeated summaries, unnecessary jargon or defensive-claim boilerplate. State relevant uncertainty/scope once."
+  },
+  "exactness": {
+    "required": [
+      "target/toolchain identity",
+      "natural readable source",
+      "complete owned extents",
+      "zero unexplained byte differences",
+      "correct relocation handling"
+    ],
+    "knowledge_and_git_are_exact_proof": false
+  },
+  "continuation": "Preserve dirty and useful ignored work. Keep a short handoff. A conversation boundary does not imply game completion.",
+  "source_freshness": "Bind executable inputs and relevant verification settings. Keep ordinary prose and Git metadata as provenance. Declare documents genuinely consumed by builds.",
+  "state_isolation": "Shared installations; game-owned Wine prefixes, analyzer projects and evidence.",
+  "factory_publication": "Knowledge notes are freely referenceable; changing automated acceptance rules remains separate reviewed maintenance.",
+  "base_contract_revision": "gpt-web-reconstruction-session-v6",
+  "semantic_scope": "Retain observed meaning and unknowns. Select product/runtime checks when affected by the requested work; do not force every checkpoint through all verification planes."
+}

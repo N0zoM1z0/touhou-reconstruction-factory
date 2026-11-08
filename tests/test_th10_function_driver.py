@@ -111,6 +111,17 @@ size = 4
                     root, snapshot, claim, subject, "test-run"
                 )
 
+            wrapper = root / "scripts/repo-python"
+            wrapper.write_text("#!/bin/sh\nexec python3 \"$@\"\n")
+            with (
+                patch.dict("os.environ", {"TH10_MSVC71_ROOT": str(tool_root)}),
+                patch("reconstruction_factory.replay_drivers._th10_repo_python_runtime",
+                      return_value=(wrapper, Path("/selected/python"), root / "capstone/__init__.py")),
+            ):
+                selected = driver.prepare(root, snapshot, claim, subject, "selected-runtime")
+            self.assertTrue(all(stage.argv[0] == str(wrapper) for stage in selected.stages))
+            self.assertIn(wrapper, selected.oracle_inputs)
+
             self.assertTrue(driver.supports(snapshot, claim))
             self.assertEqual(plan.coldness, Coldness.FORCED_RECOMPILE)
             self.assertEqual(plan.oracle_id, "windows.msvc71.normal-coff-function-exact")

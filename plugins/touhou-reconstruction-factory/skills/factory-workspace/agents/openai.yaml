@@ -1,4 +1,4 @@
 interface:
   display_name: "Factory Workspace"
   short_description: "Run a deliberately isolated source experiment"
-  default_prompt: "Use $factory-workspace to test a throwaway committed-HEAD source experiment without changing the live game repository."
+  default_prompt: "Use $factory-workspace with the lightweight agent workflow: affected checks, useful knowledge and clear, natural notes."

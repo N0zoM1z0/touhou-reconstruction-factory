@@ -3,40 +3,28 @@ name: factory-analysis
 description: Use repository-selected IDA or Ghidra for autonomous source investigation, with Bash and read-only references to all registered repositories. Analysis never grants exactness credit.
 ---
 
-# Factory Analysis
+Follow the **highest-priority lightweight workflow** in Factory
+`docs/agent-autonomy.md` and the selected game's AGENTS.md. Those current user
+requirements supersede older broad-CI, prose-hash and reporting requirements.
 
-1. Select a repository/provider from `factory_list_repositories` and
-   `factory_list_analysis_providers`.
-2. Discover operation arguments with `factory_list_analysis_operations`, then
-   call `factory_analysis_call` for a useful bounded query. Ghidra discovery
-   does not start the analyzer.
-   For native Ghidra function investigation, `function_context` returns
-   metadata, callers, callees and decompilation in a single analyzer launch.
-   An instruction address inside a defined function is sufficient for native
-   Ghidra decompilation; the returned header identifies its actual entry.
-3. Confirm the returned repository/target and read the actual verification
-   scope. Ghidra exploratory calls report `not-checked`; native IDA checks
-   database metadata only. Neither is complete target verification.
-   Native Ghidra previews default to 8,000 characters; `max_output_chars` can
-   increase the preview. Read `output.artifact_path` with repository Bash for
-   the complete result, using `next_line` or function start/end lines to select
-   a range. Reading another page does not require another Ghidra call.
-   Native IDA uses the same text preview budget. Oversized IDA returns also
-   provide `structured_artifact_path` for the complete JSON representation.
-   Ghidra errors provide a complete diagnostics log and preserve partial text.
-4. Treat names, extents, types, xrefs and decompilation as hypotheses with
-   `exactness_credit=none`. Preserve useful errors and truncation information.
-5. Compose repository Bash and searches under `/references/<id>` freely.
-   Every other registered repository is mounted read-only automatically.
-6. Native IDA metadata edits are available when advertised. Read important
-   edits back and record durable conclusions in source or local notes.
-7. Run affected compiler/comparison/Oracle commands when needed. Full
-   environment scans, implementation pin refreshes and complete replay are not
-   prerequisites for exploration. Only explicitly accepted receipts establish
-   exactness.
+Use this skill's described capability, discover the live tool schema, and use
+existing scripts/Bash for the smallest useful affected scope. Documentation,
+knowledge and handoff edits need diff review only. Exact work needs complete
+strict extent/relocation comparison; tool changes need relevant real behavior
+checks. Full suites require an explicit request or impact that cannot be narrowed.
 
-Shared tools: follow the Factory `docs/shared-runtimes.md` and the selected
-repository's `docs/SHARED_TOOLS.md`. Use its `scripts/shared_runtime.py` or
-maintained compiler/Ghidra scripts; do not copy installations or reuse another
-game's Wine prefix, Java cache or analyzer project. Local scripts work without
-Factory MCP.
+Do not add frameworks, schemas, state machines, generalized validators or tests
+for prose, prompt wording, progress totals or ordinary source spelling. Use
+searchable Markdown knowledge with scope, evidence, failed attempts and open
+questions; no JSON conversion or promotion is mandatory. Keep handoff short.
+
+Write documentation and knowledge in fluent, natural English. State the finding,
+evidence and next action directly. Remove filler, circular restatements,
+repeated conclusions and unnecessary jargon. Avoid defensive-claim boilerplate;
+state a genuine uncertainty or scope limit once when it affects a decision.
+
+Preserve dirty/untracked work and useful evidence. Reuse shared tools with
+separate game prefixes/projects. Cross-game source/notes are read-only references;
+knowledge confers no exactness authority. Local Git checkpoints carry continuation.
+Do not push from Web. Workspaces and broad replay/product checks are optional
+capabilities selected for an actual task, not default ceremony.

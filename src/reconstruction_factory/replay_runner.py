@@ -61,6 +61,8 @@ from .replay_identity import (
     observe_component,
     repository_lock,
 )
+from .replay_drivers import required_source_inputs
+from .oracle_receipts import SOURCE_BINDING_KIND
 
 
 _RUNNER_IMPLEMENTATION_RELATIVE_PATHS = (
@@ -108,13 +110,13 @@ class FreshnessObservationCache:
     """Reuse exact live observations within one acceptance-registry snapshot."""
 
     snapshots: dict[Path, RepositorySnapshot] = field(default_factory=dict)
-    source_bindings: dict[Path, SourceBinding] = field(default_factory=dict)
+    source_bindings: dict[tuple[Path, tuple[str, ...], bool], SourceBinding] = field(default_factory=dict)
     target_bindings: dict[Path, tuple[str, int]] = field(default_factory=dict)
     component_bindings: dict[
         tuple[str, Path, str, str | None],
         tuple[ComponentObservation | None, str | None],
     ] = field(default_factory=dict)
-    environment_bindings: dict[tuple[str, ...], tuple[tuple[str, ...], str]] = field(
+    environment_bindings: dict[tuple, tuple[tuple[str, ...], str]] = field(
         default_factory=dict
     )
     driver_versions: dict[
@@ -127,10 +129,12 @@ class FreshnessObservationCache:
             self.snapshots[root] = inspect_repository(root)
         return self.snapshots[root]
 
-    def source(self, root: Path) -> SourceBinding:
-        if root not in self.source_bindings:
-            self.source_bindings[root] = capture_source_binding(root)
-        return self.source_bindings[root]
+    def source(self, root: Path, required_inputs: tuple[str, ...] = (), *, legacy: bool = False) -> SourceBinding:
+        key = (root, required_inputs, legacy)
+        if key not in self.source_bindings:
+            self.source_bindings[key] = (capture_source_binding(root) if not required_inputs and not legacy
+                else capture_source_binding(root, required_inputs=required_inputs, legacy=legacy))
+        return self.source_bindings[key]
 
     def target(self, path: Path) -> tuple[str, int]:
         resolved = path.resolve(strict=True)
@@ -166,10 +170,11 @@ class FreshnessObservationCache:
                 errors.append(error)
         return tuple(sorted(components, key=lambda item: item.id)), tuple(errors)
 
-    def environment(self, names: tuple[str, ...]) -> tuple[tuple[str, ...], str]:
-        key = tuple(sorted(set(names)))
+    def environment(self, names: tuple[str, ...], overrides: dict[str, str] | None = None) -> tuple[tuple[str, ...], str]:
+        ordered = tuple(sorted(set(names)))
+        key = (ordered, tuple(sorted((overrides or {}).items())))
         if key not in self.environment_bindings:
-            self.environment_bindings[key] = environment_binding(key)
+            self.environment_bindings[key] = environment_binding(ordered, overrides)
         return self.environment_bindings[key]
 
     def runner(self) -> str:
@@ -262,10 +267,11 @@ class ReplayRunner:
     ) -> ReplayRun:
         if self.cancel_requested():
             raise ReplayCancelled("replay was cancelled before evidence capture")
-        source_before = capture_source_binding(root)
+        required_inputs = required_source_inputs(root, plan)
+        source_before = capture_source_binding(root, required_inputs=required_inputs)
         if (
             self.expectation is not None
-            and source_before != self.expectation.source_binding
+            and not source_before.same_inputs(self.expectation.source_binding)
         ):
             raise ReplayError(
                 "queued source binding is stale; no replay stage was started"
@@ -273,7 +279,7 @@ class ReplayRunner:
         target_before_sha256, target_before_size = _observe_target(plan.target_path)
         components_before, component_errors_before = _observe_components(plan)
         environment_names, environment_sha256 = environment_binding(
-            plan.environment_names
+            plan.environment_names, _common_stage_environment(plan)
         )
         runner_implementation_before = runner_implementation_sha256()
         version = driver_version(plan)
@@ -327,7 +333,7 @@ class ReplayRunner:
                 attestation=AttestationLevel.UNKNOWN,
             )
 
-        source_after = capture_source_binding(root)
+        source_after = capture_source_binding(root, required_inputs=required_inputs)
         runner_implementation_after = runner_implementation_sha256()
         target_after_sha256, target_after_size = _observe_target(plan.target_path)
         components_after, component_errors_after = _observe_components(plan)
@@ -371,7 +377,7 @@ class ReplayRunner:
 
         errors = set(preflight_errors)
         errors.update(component_errors_after)
-        if source_before != source_after:
+        if not source_before.same_inputs(source_after):
             errors.add("source-mutated-during-replay")
         if runner_implementation_before != runner_implementation_after:
             errors.add("runner-mutated-during-replay")
@@ -513,6 +519,8 @@ class ReplayRunner:
             runner_implementation_sha256=runner_implementation_before,
             runner_observed_after_sha256=runner_implementation_after,
             metadata={
+                "source_binding_kind": SOURCE_BINDING_KIND,
+                "source_required_inputs": list(required_inputs),
                 "run_id": run_id,
                 "native_report_kind": (
                     "structured" if native_report_ref is not None else "absent"
@@ -701,8 +709,18 @@ def verify_live_freshness(
     if claim_doc.get("subject_sha256") != subject_sha256:
         errors.append("subject-or-extents-changed")
     source_doc = document.get("source_after")
-    current_source = live.source(root)
-    if not isinstance(source_doc, dict) or source_doc != to_primitive(current_source):
+    binding_kind = metadata.get("source_binding_kind") if isinstance(metadata, dict) else None
+    if binding_kind not in {None, SOURCE_BINDING_KIND}:
+        return ("source-binding-kind-unsupported",)
+    required_inputs = required_source_inputs(root, plan)
+    current_source = live.source(root, required_inputs, legacy=binding_kind is None)
+    if binding_kind == SOURCE_BINDING_KIND:
+        stable = (isinstance(source_doc, dict) and all(source_doc.get(k) == to_primitive(current_source)[k]
+                  for k in ("repository_scope", "snapshot_sha256", "file_count"))
+                  and metadata.get("source_required_inputs") == list(required_inputs))
+    else:
+        stable = isinstance(source_doc, dict) and source_doc == to_primitive(current_source)
+    if not stable:
         errors.append("source-snapshot-stale")
     target_doc = document.get("target")
     current_target_sha256, current_target_size = live.target(plan.target_path)
@@ -728,7 +746,8 @@ def verify_live_freshness(
     current_components, component_errors = live.components(plan)
     current_component_digest = canonical_sha256(to_primitive(current_components))
     current_environment_names, current_environment = live.environment(
-        plan.environment_names
+        plan.environment_names,
+        _common_stage_environment(plan) if binding_kind == SOURCE_BINDING_KIND else None,
     )
     if not isinstance(toolchain_doc, dict):
         errors.append("toolchain-binding-malformed")
@@ -775,6 +794,13 @@ def verify_live_freshness(
         if invocation_doc.get("stages") != to_primitive(current_stages):
             errors.append("invocation-plan-stale")
     return tuple(sorted(set(errors)))
+
+
+def _common_stage_environment(plan: ReplayPlan) -> dict[str, str]:
+    # An override used by every execution stage replaces the caller's ambient
+    # value. Its actual value is also bound in every invocation stage.
+    return {name: value for name, value in plan.stages[0].environment.items()
+            if all(stage.environment.get(name) == value for stage in plan.stages)}
 
 
 def runner_implementation_sha256() -> str:

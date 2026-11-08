@@ -1,5 +1,10 @@
 # Cross-Game Knowledge Base
 
+> Highest-priority current workflow: [lightweight agent work](agent-autonomy.md).
+> Prefer affected exact checks and useful Markdown knowledge. Ordinary notes
+> require no full CI, native replay, schema conversion or document-hash refresh.
+> Older broad workflow/validation requirements are superseded by that policy.
+
 The factory is the shared knowledge layer above individual game repositories.
 Its job is not to copy every note. It preserves rules that affect truth,
 acceptance, provider selection, or workflow safety across projects.

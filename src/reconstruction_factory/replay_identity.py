@@ -23,13 +23,24 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def environment_binding(names: Iterable[str]) -> tuple[tuple[str, ...], str]:
+def environment_binding(names: Iterable[str], overrides: dict[str, str] | None = None) -> tuple[tuple[str, ...], str]:
     ordered = tuple(sorted(set(names)))
     values = {name: os.environ.get(name) for name in ordered}
+    values.update({k: v for k, v in (overrides or {}).items() if k in values})
     return ordered, canonical_sha256(values)
 
 
-def capture_source_binding(repository: Path) -> SourceBinding:
+def is_documentation(path: str) -> bool:
+    """Ordinary notes are provenance, unless an oracle declares them as input."""
+    name = Path(path)
+    return (name.suffix.lower() in {".md", ".rst"}
+            or name.as_posix() == ".reconstruction/game-knowledge.json"
+            or name.name.lower() in {"readme", "readme.txt", "changelog", "changelog.txt"})
+
+
+def capture_source_binding(
+    repository: Path, *, required_inputs: Iterable[str] = (), legacy: bool = False,
+) -> SourceBinding:
     root = repository.resolve(strict=True)
     git_root = Path(_git(root, "rev-parse", "--show-toplevel")).resolve(strict=True)
     if not root.is_relative_to(git_root):
@@ -53,6 +64,16 @@ def capture_source_binding(repository: Path) -> SourceBinding:
         for item in listed.split(b"\0")
         if item
     )
+    required = set(required_inputs)
+    for relative in required:
+        path = Path(relative)
+        if path.is_absolute() or ".." in path.parts:
+            raise ReplayError("explicit source input must be repository-relative")
+    if not legacy:
+        required = {str(Path(scope) / p) if scope != "." else p for p in required}
+        relative_paths = sorted({p for p in relative_paths
+                                 if not is_documentation(Path(p).relative_to(scope).as_posix()
+                                                         if scope != "." else p)} | required)
     index_raw = _git_bytes(
         git_root,
         "ls-files",
@@ -82,7 +103,9 @@ def capture_source_binding(repository: Path) -> SourceBinding:
         "--",
         pathspec,
     )
-    untracked = sum(bool(item) for item in untracked_raw.split(b"\0"))
+    selected = set(relative_paths)
+    untracked = sum(item.decode("utf-8", "surrogateescape") in selected
+                    for item in untracked_raw.split(b"\0") if item)
     digest = hashlib.sha256()
     digest.update(scope.encode("utf-8", "surrogateescape"))
     expanded_file_count = 0
@@ -126,13 +149,15 @@ def capture_source_binding(repository: Path) -> SourceBinding:
         "--",
         pathspec,
     )
+    dirty = any(item[3:].decode("utf-8", "surrogateescape") in selected
+                for item in status.split(b"\0") if item)
     return SourceBinding(
         git_commit=head,
         git_tree=tree,
         repository_scope=scope,
         snapshot_sha256=digest.hexdigest(),
         file_count=expanded_file_count,
-        dirty=bool(status),
+        dirty=dirty,
         untracked_files=untracked,
     )
 

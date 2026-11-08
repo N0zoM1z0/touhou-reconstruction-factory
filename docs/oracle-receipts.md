@@ -19,9 +19,11 @@ Every receipt binds all of the following values:
 - the declared `ToolchainIdentity`, the environment variables that can select
   execution surfaces, and conservative hashes of the toolchain surfaces
   observed by the driver;
-- the Git commit and tree plus a content digest of every tracked or
-  non-ignored untracked file in the instance repository scope, both before and
-  after execution;
+- a conservative digest of tracked/non-ignored executable inputs before and
+  after execution; ordinary Markdown, README notes and optional game knowledge
+  are omitted unless declared as executable oracle/build inputs. Git commit and
+  tree remain provenance. New receipts mark this mode as `nonprose-files-v2`;
+  unmarked legacy receipts keep their original whole-snapshot semantics;
 - the driver version, defined by the exact checked-in native scripts and
   manifests that implement its build and comparison contract;
 - the complete factory Python implementation before and after the replay, so
@@ -31,6 +33,11 @@ Every receipt binds all of the following values:
   duration, and complete stdout and stderr artifacts;
 - structured native comparison evidence, explicit coverage, normalizations,
   and the final truth-kernel `OracleResult`.
+
+When every stage supplies the same environment override, that executed value
+is bound instead of the caller's ambient value. The selected repository Python
+and decoder components are observed. This keeps an API reader's unrelated
+Python search path from invalidating a replay with a fixed execution path.
 
 The receipt ID is the SHA-256 of the canonical envelope with an empty
 `receipt_id`. Any edit invalidates the ID. Evidence artifacts use their own

@@ -1,4 +1,4 @@
 interface:
   display_name: "Factory Semantic Reconstruction"
   short_description: "Run semantic campaigns without losing exactness"
-  default_prompt: "Use $factory-semantic-reconstruction to advance TH095 in a bounded Web conversation and hand off as active-incomplete."
+  default_prompt: "Use $factory-semantic-reconstruction with the lightweight agent workflow: affected checks, useful knowledge and clear, natural notes."
