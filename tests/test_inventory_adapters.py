@@ -34,7 +34,7 @@ entry_point = "0x00401000"
     def test_native_matching_status_grants_only_provisional_boundary(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            for game in ("th06", "th07", "th11", "th20"):
+            for game in ("th06", "th07", "th11", "th16", "th20"):
                 self.make_pe(root, game)
                 snapshot = inspect_repository(root)
                 self.assertEqual(snapshot.adapter_id, "windows-pe-inventory-v1")

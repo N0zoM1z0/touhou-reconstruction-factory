@@ -20,7 +20,7 @@ class PeInventoryRepositoryAdapter(RepositoryAdapter):
     """Import PE inventory without guessing incompatible acceptance semantics."""
 
     id = "windows-pe-inventory-v1"
-    games = {"th06", "th07", "th11", "th20", "efz"}
+    games = {"th06", "th07", "th11", "th16", "th20", "efz"}
     _required = ("config/target.toml", "config/functions.csv", "config/tools.lock.toml")
 
     def detect(self, root: Path) -> bool:
