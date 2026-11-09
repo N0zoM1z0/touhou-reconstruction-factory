@@ -276,9 +276,9 @@ class RepositoryWorkPolicy:
                 "repository_work.shared_tool_roots must be sorted and unique"
             )
         for path in self.shared_tool_roots:
-            if not path.is_absolute() or not path.is_dir():
+            if not path.is_absolute():
                 raise ServiceConfigError(
-                    "repository_work shared tool roots must be existing absolute directories"
+                    "repository_work shared tool roots must be absolute paths"
                 )
 
     def public_dict(self) -> dict[str, Any]:
@@ -320,9 +320,9 @@ class RepositoryRegistration:
     def __post_init__(self) -> None:
         _require_id(self.id, "repository registration id")
         _require_id(self.adapter_id, "repository adapter id")
-        if not self.path.is_absolute() or not self.path.is_dir():
+        if not self.path.is_absolute():
             raise ServiceConfigError(
-                "registered repository path must be an existing absolute directory"
+                "registered repository path must be absolute"
             )
         _require_sorted_ids(self.target_identity_ids, "target_identity_ids")
         if not self.target_identity_ids:
@@ -351,9 +351,9 @@ class RepositoryRegistration:
                 "repository work state roots must be sorted and unique"
             )
         for path in self.work_state_roots:
-            if not path.is_absolute() or not path.is_dir():
+            if not path.is_absolute():
                 raise ServiceConfigError(
-                    "repository work state roots must be existing absolute directories"
+                    "repository work state roots must be absolute paths"
                 )
 
     def public_dict(self) -> dict[str, Any]:
@@ -660,7 +660,7 @@ class ServiceConfig:
 
 
 def load_service_config(path: str | Path) -> ServiceConfig:
-    """Load one exact, closed-world operator configuration."""
+    """Load registrations without requiring every game or tool to be available."""
 
     config_path = Path(path).expanduser().resolve(strict=True)
     try:
@@ -808,7 +808,6 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                         base,
                         item,
                         f"repository_work.shared_tool_roots[{index}]",
-                        must_exist=True,
                     )
                     for index, item in enumerate(raw_tool_roots)
                 )
@@ -847,7 +846,6 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                     base,
                     item["path"],
                     f"repositories[{index}].path",
-                    must_exist=True,
                 ),
                 adapter_id=_string(
                     item["adapter_id"], f"repositories[{index}].adapter_id"
@@ -876,7 +874,6 @@ def load_service_config(path: str | Path) -> ServiceConfig:
                             base,
                             value,
                             f"repositories[{index}].work_state_roots[{root_index}]",
-                            must_exist=True,
                         )
                         for root_index, value in enumerate(raw_state_roots)
                     )

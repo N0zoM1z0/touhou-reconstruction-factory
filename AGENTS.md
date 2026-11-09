@@ -14,6 +14,10 @@ actual exactness, target identity, natural-source and state-isolation rules.
   change needed for an observed problem. Do not introduce a framework, schema,
   registry, state machine, generalized validator, test family or reporting
   process merely to make a local reconstruction task look more engineered.
+- Keep discovery and ordinary repository work independent of other games and
+  optional tools. Do not add registry-wide file, prefix or provider preflights.
+  Resolve availability when a command actually uses a resource; report its
+  error on that call and let other work continue.
 - Documentation, knowledge and handoff edits require no compiler, analyzer,
   full CI, cold replay or receipt refresh. Inspect the diff. Check syntax only
   for machine-readable inputs actually changed.

@@ -77,6 +77,11 @@ a lasting pitfall deserves a concise knowledge entry, not another full report.
 
 ## Factory boundary
 
+Check resource availability when an operation uses it. A removed game, Wine
+prefix, tool or reference must not disable discovery or unrelated work. Skip
+absent auxiliary mounts; let the command that needs a missing file report it.
+Do not introduce registry-wide preflights or repair deleted state automatically.
+
 One shared MCP provides registered repository access, composable Bash, bounded
 analysis, recoverable logs, local Git checkpoints and cross-game references.
 Reuse Factory Ghidra/JDK/Wine installations locally or through MCP; keep each

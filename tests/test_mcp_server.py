@@ -99,6 +99,41 @@ target_identity_ids = ["target:th08-v1.00d-original"]
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
+    async def test_removed_game_state_does_not_disable_other_mcp_calls(self) -> None:
+        removed = self.root / "removed-repository"
+        removed.mkdir()
+        prefix = self.root / "removed-prefix"
+        prefix.mkdir()
+        with self.config.open("a") as handle:
+            handle.write('''
+[[repositories]]
+id = "th07"
+path = "removed-repository"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:th07"]
+work_state_roots = ["removed-prefix"]
+''')
+        async with Client(build_mcp_server(self.config)) as client:
+            shutil.rmtree(removed)
+            prefix.rmdir()
+            described = await client.call_tool("factory_describe")
+            listed = await client.call_tool("factory_list_repositories")
+            unavailable = await client.call_tool("factory_get_repository_status", {"repository_id": "th07"})
+            status = await client.call_tool("factory_get_repository_status", {"repository_id": "th08"})
+            command = await client.call_tool("factory_repository_run_shell", {
+                "repository_id": "th08", "script": "cat README.md",
+                "relative_cwd": ".", "timeout_seconds": 5,
+            })
+        self.assertFalse(described.is_error)
+        self.assertFalse(listed.is_error)
+        self.assertTrue(unavailable.is_error)
+        self.assertFalse(status.is_error)
+        self.assertFalse(command.is_error)
+        self.assertEqual(command.structured_content["exit_code"], 0)
+        self.assertIn("committed fixture", command.structured_content["stdout"]["text"])
+        self.assertFalse(removed.exists())
+        self.assertFalse(prefix.exists())
+
     async def test_hot_registration_uses_explicit_worker_binding_for_replays(self) -> None:
         worker = self.root / "worker.toml"
         worker.write_text(self.config.read_text())

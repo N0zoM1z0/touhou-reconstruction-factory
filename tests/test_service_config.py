@@ -173,6 +173,34 @@ work_state_roots = ["{work_state.as_posix()}"]
         self.assertNotIn(str(work_state), json.dumps(public))
         self.assertEqual(original.replay_sha256, changed.replay_sha256)
 
+    def test_missing_repository_and_auxiliary_paths_do_not_block_loading(self) -> None:
+        path = self.write_config()
+        document = path.read_text() + '''
+work_state_roots = ["removed-prefix"]
+
+[[repositories]]
+id = "th095"
+path = "removed-game"
+adapter_id = "windows-pe-ledgers-v1"
+target_identity_ids = ["target:th095"]
+
+[repository_work]
+enabled = true
+root = "state/repository-work"
+command_timeout_seconds = 10
+max_command_output_bytes = 1024
+git_author_name = "gpt-web"
+git_author_email = "gpt-web@example.invalid"
+shared_tool_roots = ["removed-tools"]
+'''
+        path.write_text(document)
+        config = load_service_config(path)
+        self.assertEqual([item.id for item in config.repositories], ["th08", "th095"])
+        self.assertEqual(config.repository("th08").work_state_roots, (self.root / "removed-prefix",))
+        self.assertEqual(config.repository_work.shared_tool_roots, (self.root / "removed-tools",))
+        for name in ("removed-game", "removed-prefix", "removed-tools"):
+            self.assertFalse((self.root / name).exists())
+
     def test_registered_repositories_share_references_without_manual_lists(
         self,
     ) -> None:

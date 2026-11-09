@@ -671,10 +671,10 @@ def _sandbox_argv(
             argv.extend(("--ro-bind", str(optional), str(optional)))
     for tool_root in shared_tool_roots:
         _add_parent_dirs(argv, tool_root, created)
-        argv.extend(("--ro-bind", str(tool_root), str(tool_root)))
+        argv.extend(("--ro-bind-try", str(tool_root), str(tool_root)))
     for state_root in work_state_roots:
         _add_parent_dirs(argv, state_root, created)
-        argv.extend(("--bind", str(state_root), str(state_root)))
+        argv.extend(("--bind-try", str(state_root), str(state_root)))
     _add_parent_dirs(argv, repository, created)
     argv.extend(("--bind", str(repository), str(repository)))
     if reference_repositories:

@@ -23,6 +23,13 @@ The repository ID is the only MCP-side selector. The caller cannot supply a host
 path. The operator maps that ID to a canonical Git worktree and any transitional
 tool/state mounts in private service configuration.
 
+Registrations describe paths, not a global availability check. A missing game,
+tool directory or Wine prefix does not block discovery or another game's work.
+Shells mount auxiliary tools, references and state only when present; missing
+files fail the command that actually uses them. Factory does not recreate
+deleted prefixes or restore removed files. Existing mounts retain their usual
+read-only or game-owned write access.
+
 ## Authority model
 
 Repository work is intentionally powerful but has no truth-publication

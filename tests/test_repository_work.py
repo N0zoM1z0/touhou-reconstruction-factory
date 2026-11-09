@@ -121,6 +121,27 @@ target_identity_ids = ["target:reference"]
         self.assertEqual(status["source_mode"], "live-including-ignored")
         self.assertTrue(status["git_commit_is_checkpoint_only"])
 
+    @unittest.skipUnless(shutil.which("bwrap"), "bubblewrap is not installed")
+    def test_removed_auxiliary_mounts_only_fail_commands_that_use_them(self) -> None:
+        for path in (self.wine_prefix, self.shared_tools, self.reference_repository):
+            shutil.rmtree(path)
+        store = RepositoryWorkStore(load_service_config(self.config_path))
+        self.assertTrue(store.status("fixture")["dirty"])
+        command = store.run_shell("fixture", "cat README.md", relative_cwd=".", timeout_seconds=5)
+        self.assertEqual(command["exit_code"], 0, command["stderr"])
+        self.assertIn("fixture", command["stdout"]["text"])
+        missing = store.run_shell("fixture", "cat /references/reference/reference.txt",
+                                  relative_cwd=".", timeout_seconds=5)
+        self.assertNotEqual(missing["exit_code"], 0)
+        self.reference_repository.mkdir()
+        (self.reference_repository / "reference.txt").write_text("reference restored\n")
+        recovered = store.run_shell("fixture", "cat /references/reference/reference.txt",
+                                    relative_cwd=".", timeout_seconds=5)
+        self.assertEqual(recovered["exit_code"], 0, recovered["stderr"])
+        self.assertIn("reference restored", recovered["stdout"]["text"])
+        self.assertFalse(self.wine_prefix.exists())
+        self.assertFalse(self.shared_tools.exists())
+
     def test_semantic_debt_report_is_snapshot_bound_routing_only(self) -> None:
         report = self.store.semantic_debt_report(
             "fixture",
