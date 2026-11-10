@@ -114,6 +114,52 @@ v2 status. Ignored files are usable even though Git does not enumerate them in
 that summary. An advanced HEAD records new commit IDs and subjects; a rewritten
 or divergent HEAD is reported without pretending to infer a safe commit list.
 
+## Offline command history
+
+Use `scripts/archive-repository-commands.py` to reduce the small-file overhead
+of old command captures while retaining them for tool analysis. It plans by
+default; `--apply` archives completed and timed-out commands older than seven
+days under the writer's existing per-repository lock. A busy repository is
+skipped. Recent, interrupted, running, malformed, mismatched and unexpected
+files stay in live storage.
+
+```bash
+python3 scripts/archive-repository-commands.py \
+  --root .factory/web-live/state/repository-work \
+  --destination .factory/web-live/history/NEW_BATCH
+# Inspect the plan, then repeat with --apply.
+```
+
+Each game gets a `.tar.gz` containing the original `record.json`, `stdout.bin`
+and `stderr.bin`, plus a `.jsonl.gz` index with complete parsed records and
+archive member locations. Every archive member is compared to its source,
+and the index is checked before the artifacts are persisted and the original
+files removed. A new destination is required for each batch. There is no
+automatic retention job or service restart.
+
+Archived command IDs no longer support MCP output paging. Their empty original
+directories reserve the IDs: the existing runner rejects a retry rather than
+executing it again. Keep these directories. Restore the three original files
+from the matching archive to resume online inspection of a specific command.
+An interrupted archival run may leave original files alongside the verified
+archive; inspect that batch before trying again.
+
+For analysis, stream the index directly:
+
+```python
+import gzip, json
+with gzip.open("PATH/TO/GAME.jsonl.gz", "rt") as history:
+    for line in history:
+        record = json.loads(line)["record"]
+        # Group by script_sha256, state, exit_code, durations or output sizes.
+```
+
+Records retain their original Git summaries, script digest, execution outcome,
+timing, captured/observed byte counts and truncation flags. Historical records
+do not contain script bodies, so a digest alone cannot recover the command
+text. The receipt store, replay jobs, workspaces and repository files are
+outside this cleanup's scope.
+
 ## Execution environment
 
 Bubblewrap constructs a networkless process namespace with:

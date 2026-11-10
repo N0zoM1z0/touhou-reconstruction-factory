@@ -2,17 +2,30 @@ from __future__ import annotations
 
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
+import gzip
+import importlib.util
+import io
 import json
 import time
 import shutil
 import subprocess
 import tempfile
+import tarfile
 import unittest
+from unittest.mock import patch
 
 from reconstruction_factory.errors import RepositoryWorkError
 from reconstruction_factory.repository_work import RepositoryWorkStore
 from reconstruction_factory.replay_identity import repository_lock
 from reconstruction_factory.service_config import load_service_config
+
+
+_archive_spec = importlib.util.spec_from_file_location(
+    "archive_repository_commands", Path(__file__).parents[1] / "scripts/archive-repository-commands.py"
+)
+archive_commands = importlib.util.module_from_spec(_archive_spec)
+_archive_spec.loader.exec_module(archive_commands)
 
 
 class RepositoryWorkTests(unittest.TestCase):
@@ -111,6 +124,87 @@ target_identity_ids = ["target:reference"]
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
+
+    def archive_fixture(self, suffix="a" * 32, *, state="completed", age_days=30):
+        self.store._ensure_layout()
+        directory = self.store.commands / "fixture" / suffix
+        directory.mkdir(parents=True)
+        payload = b"repeated diagnostic\n" * 1000 + bytes(range(256))
+        record = {
+            "schema_version": 1, "repository_id": "fixture",
+            "command_id": f"repository-command:{suffix}", "state": state,
+            "finished_at": (datetime.now(timezone.utc) - timedelta(days=age_days)).isoformat(),
+            "stdout_captured_bytes": len(payload), "stderr_captured_bytes": 0,
+            "exit_code": 0,
+        }
+        (directory / "record.json").write_text(json.dumps(record))
+        (directory / "stdout.bin").write_bytes(payload)
+        (directory / "stderr.bin").write_bytes(b"")
+        return directory, record, payload
+
+    def test_offline_archive_is_lossless_and_keeps_old_ids_reserved(self):
+        directory, record, payload = self.archive_fixture()
+        original_record = (directory / "record.json").read_bytes()
+        destination = self.root / "history"
+        cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        plan = archive_commands.archive_repository(self.store.root, destination, "fixture", cutoff)
+        self.assertEqual(plan["commands"], 1)
+        self.assertTrue((directory / "stdout.bin").exists())
+        self.assertFalse(destination.exists())
+        archive_commands.archive_repository(self.store.root, destination, "fixture", cutoff, apply=True)
+        with tarfile.open(destination / "fixture.tar.gz") as archive:
+            prefix = f"fixture/{directory.name}/"
+            self.assertEqual(archive.extractfile(prefix + "record.json").read(), original_record)
+            self.assertEqual(archive.extractfile(prefix + "stdout.bin").read(), payload)
+            self.assertEqual(archive.extractfile(prefix + "stderr.bin").read(), b"")
+        with gzip.open(destination / "fixture.jsonl.gz", "rt") as index:
+            self.assertEqual(json.loads(index.readline())["record"], record)
+            self.assertEqual(index.read(), "")
+        self.assertTrue(directory.is_dir())
+        self.assertEqual(list(directory.iterdir()), [])
+        with self.assertRaisesRegex(RepositoryWorkError, "unknown repository command ID"):
+            self.store.run_shell("fixture", "touch should-not-exist", relative_cwd=".", timeout_seconds=1, command_id=record["command_id"])
+        self.assertFalse((self.repository / "should-not-exist").exists())
+        repeat = archive_commands.archive_repository(self.store.root, self.root / "later", "fixture", cutoff, apply=True)
+        self.assertEqual(repeat["commands"], 0)
+
+    def test_offline_archive_preserves_recent_nonterminal_invalid_and_unknown_files(self):
+        recent, _, _ = self.archive_fixture("b" * 32, age_days=1)
+        running, _, _ = self.archive_fixture("c" * 32, state="running")
+        invalid, _, _ = self.archive_fixture("d" * 32)
+        (invalid / "record.json").write_text("broken")
+        unknown, _, _ = self.archive_fixture("e" * 32)
+        (unknown / "continuation.patch").write_text("valuable")
+        mismatched, _, _ = self.archive_fixture("f" * 32)
+        (mismatched / "stdout.bin").write_bytes(b"partial")
+        result = archive_commands.archive_repository(self.store.root, self.root / "history", "fixture", datetime.now(timezone.utc) - timedelta(days=7), apply=True)
+        self.assertEqual(result["commands"], 0)
+        self.assertEqual(sum(result["skipped"].values()), 5)
+        for directory in (recent, running, invalid, unknown, mismatched):
+            self.assertTrue((directory / "stdout.bin").exists())
+
+    def test_offline_archive_verification_and_writer_lock_prevent_removal(self):
+        directory, _, _ = self.archive_fixture()
+        destination = self.root / "history"
+        cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        verify = archive_commands.verify_archive
+
+        def corrupt_archive(archive, originals):
+            with tarfile.open(archive, "w:gz") as target:
+                member = tarfile.TarInfo(next(iter(originals)))
+                member.size = 1
+                target.addfile(member, io.BytesIO(b"x"))
+            verify(archive, originals)
+
+        with patch.object(archive_commands, "verify_archive", side_effect=corrupt_archive):
+            with self.assertRaisesRegex(ValueError, "archive content mismatch"):
+                archive_commands.archive_repository(self.store.root, destination, "fixture", cutoff, apply=True)
+        self.assertTrue((directory / "stdout.bin").exists())
+        self.assertFalse((destination / "fixture.tar.gz").exists())
+        with self.store._repository_lock("fixture"):
+            with self.assertRaises(BlockingIOError):
+                archive_commands.archive_repository(self.store.root, destination, "fixture", cutoff, apply=True)
+        self.assertTrue((directory / "stdout.bin").exists())
 
     def test_status_reports_the_real_dirty_worktree(self) -> None:
         status = self.store.status("fixture")
