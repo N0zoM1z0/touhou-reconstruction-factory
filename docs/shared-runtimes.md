@@ -46,8 +46,10 @@ shell scripts select their own repository's prefix before using them.
 | Game `.analysis/factory-runtime/ghidra` | Separate Java home, temporary files, settings and caches |
 | Game configured Wine prefix | Persistent game/toolchain-specific Windows state |
 
-Ghidra/Java launch headlessly on one allowed CPU with lowered priority and a
-768 MiB default headless heap; an explicit repository heap setting is retained.
+Shared tools inherit the caller's CPU affinity, allowing the scheduler to use
+all permitted CPUs. An explicit `taskset` or service CPU limit is preserved.
+Ghidra/Java launch headlessly with lowered priority and a 768 MiB default
+headless heap; an explicit repository heap setting is retained.
 Each game keeps its existing project and project lock. Existing tool versions
 are retained: different locked versions may coexist in the shared store. Tool
 hashes are not refreshed merely because an installation moved.

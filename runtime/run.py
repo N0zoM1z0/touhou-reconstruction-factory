@@ -148,8 +148,6 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         arguments = args.arguments[1:] if args.arguments[:1] == ["--"] else args.arguments
         os.setpriority(os.PRIO_PROCESS, 0, max(10, os.getpriority(os.PRIO_PROCESS, 0)))
-        if hasattr(os, "sched_setaffinity"):
-            os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
         command = [str(executable), *arguments]
         if args.tool in {"ghidra", "java", "wineserver"}:
             # Recovery commands such as wineserver -k must not queue behind

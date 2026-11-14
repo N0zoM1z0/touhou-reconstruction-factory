@@ -111,6 +111,28 @@ class SharedRuntimeTests(unittest.TestCase):
         self.assertEqual(metadata['repository_id'], 'alpha')
         self.assertEqual(json.loads((self.a / runtime.SPEC).read_text())['ghidra'], 'ghidra-test')
 
+    @unittest.skipUnless(hasattr(os, 'sched_getaffinity'), 'CPU affinity is unavailable')
+    def test_tools_preserve_the_callers_cpu_affinity(self):
+        allowed = os.sched_getaffinity(0)
+        if len(allowed) < 2:
+            self.skipTest('requires at least two allowed CPUs')
+        factory = self.base / 'factory'
+        (factory / 'runtime').mkdir(parents=True)
+        (factory / '.factory').mkdir()
+        (factory / '.factory/shared-tools').symlink_to(self.tools)
+        script = factory / 'runtime/run.py'
+        script.write_text((ROOT / 'runtime/run.py').read_text())
+        for executable in self.tools.rglob('*'):
+            if executable.is_file():
+                executable.write_text(f'#!{sys.executable}\nimport json,os\nprint(json.dumps(sorted(os.sched_getaffinity(0))))\n')
+        for cpus in (allowed, {max(allowed)}):
+            for tool in ('wine', 'winepath', 'wineserver', 'java', 'ghidra'):
+                with self.subTest(cpus=sorted(cpus), tool=tool):
+                    result = subprocess.run([sys.executable, str(script), '--repository', str(self.a), tool],
+                        preexec_fn=lambda: os.sched_setaffinity(0, cpus),
+                        capture_output=True, text=True, check=True, timeout=5)
+                    self.assertEqual(json.loads(result.stdout), sorted(cpus))
+
     def test_wine_lock_serializes_one_repository_but_not_other_repositories(self):
         # Run an isolated copy so the CLI uses this test's fake store.
         factory = self.base / 'factory'
