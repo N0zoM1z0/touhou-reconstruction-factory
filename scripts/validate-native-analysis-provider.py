@@ -53,10 +53,11 @@ async def validate(arguments: argparse.Namespace) -> dict[str, Any]:
     result: dict[str, Any] = {
         "status": "passed",
         "provider": provider.public_dict(),
-        "attestation": discovery["attestation"],
         "operation_count": discovery["total"],
         "operation_names": [item["name"] for item in discovery["items"]],
     }
+    if "attestation" in discovery:
+        result["attestation"] = discovery["attestation"]
     if arguments.operation:
         result["call"] = await gateway.call(
             provider.id,

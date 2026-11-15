@@ -104,7 +104,7 @@ def main() -> int:
         fcntl.flock(gate, fcntl.LOCK_EX)
         fcntl.flock(project_gate, fcntl.LOCK_EX)
         result = subprocess.run(
-            ["nice", "-n", "10", "taskset", "-c", str(min(os.sched_getaffinity(0))),
+            ["nice", "-n", "10",
              *launcher, str(project), name, "-process", filename,
              "-readOnly", "-noanalysis", "-max-cpu", "1", *query,
              "-scriptPath", script_paths],
