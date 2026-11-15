@@ -42,6 +42,7 @@ service when the task depends on live state.
 | Agent autonomy and evidence boundaries | [`agent-autonomy.md`](agent-autonomy.md) |
 | Semantic campaign workflow | [`semantic-reconstruction.md`](semantic-reconstruction.md) |
 | Dirty-work recovery and artifact lifecycle | [`worktree-recovery-and-analysis-artifacts.md`](worktree-recovery-and-analysis-artifacts.md) |
+| Pruning tests and checks in a game repository | [`test-and-check-cleanup.md`](test-and-check-cleanup.md) |
 | New-game and native-provider bootstrap | [`new-game-bootstrap.md`](new-game-bootstrap.md) |
 | Game-local knowledge input | [`game-knowledge.md`](game-knowledge.md) |
 | Reviewed cross-game knowledge | [`knowledge-base.md`](knowledge-base.md) |
